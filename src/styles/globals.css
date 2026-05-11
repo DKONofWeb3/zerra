@@ -1,0 +1,328 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   DESIGN TOKENS
+   Source of truth for colors, gradients, and effects.
+   Tweak these values to match Figma exactly when you have access.
+   All values are R G B (no commas) so Tailwind <alpha-value> works.
+   ============================================================ */
+
+:root {
+  /* SURFACES */
+  --bg-base: 6 8 14;            /* near-black with cool blue undertone */
+  --bg-sidebar: 8 10 16;        /* sidebar slightly differs from main */
+  --bg-card: 8 10 16;           /* card surface — near-black, matches design */
+  --bg-elevated: 14 17 26;      /* hover/elevated states */
+
+  /* TEXT */
+  --fg-primary: 245 245 247;    /* near-white */
+  --fg-secondary: 158 162 175;  /* mid grey for body */
+  --fg-tertiary: 110 115 128;   /* dim grey for meta */
+  --fg-muted: 78 82 95;         /* very dim — labels, dividers */
+
+  /* STROKES */
+  --stroke: 28 32 44;           /* subtle border */
+  --stroke-strong: 44 50 65;    /* visible border */
+
+  /* BRAND */
+  --brand: 74 125 255;          /* the blue accent strip & active states */
+  --brand-glow: 100 145 255;    /* slightly lighter for glow effects */
+
+  /* SEMANTIC */
+  --success: 61 214 140;        /* +1.9% green, "Stacked" */
+  --danger: 232 80 80;          /* -0.2% red, "Sold" */
+  --warning: 240 180 70;        /* "Pending" amber */
+  --streak: 255 122 56;         /* flame orange */
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+
+* {
+  border-color: rgb(var(--stroke));
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: rgb(var(--bg-base));
+  color: rgb(var(--fg-primary));
+  font-family: "Satoshi", ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "ss01", "ss02", "cv01", "cv02";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Nicer scrollbar in the dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--stroke-strong));
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--fg-muted));
+}
+
+/* ============================================================
+   ATMOSPHERIC EFFECTS
+
+   Two distinct layers from the Figma design:
+
+   1. BASE GLOW (.atmosphere-base-glow)
+      A soft blue radial gradient baked into the dashboard area,
+      anchored around the "All Activity Update" heading. This is
+      what gives the upper-left its blue cast even without the ray.
+
+   2. LIGHT RAY ELLIPSE (.atmosphere-glow)
+      A pure white rotated ellipse with mix-blend-mode: plus-lighter
+      that lays a diagonal stripe of brightness on top, picking up
+      the blue from the base glow and amplifying it.
+
+   Don't merge these — each does a job the other can't.
+   ============================================================ */
+
+:root {
+  /* Light ray ellipse — starts AT the Adam avatar in the sidebar,
+     trails diagonally down-right to just below "All Activity Update".
+     The ellipse's bright "head" should be visible at the very top of
+     the sidebar around the avatar.  */
+  --glow-top: 40px;       /* head sits around the avatar row */
+  --glow-left: 60px;      /* horizontal start: Adam profile area */
+  --glow-width: 90px;     /* short axis */
+  --glow-height: 900px;   /* long axis — tail ends below the heading */
+  --glow-rotate: -55deg;  /* angle: head upper-left, tail lower-right */
+  --glow-opacity: 0.85;
+  --glow-blur: 80px;
+
+  /* Base blue glow around "All Activity Update" heading */
+  --base-glow-x: 22%;
+  --base-glow-y: 22%;
+  --base-glow-size-x: 700px;
+  --base-glow-size-y: 600px;
+  --base-glow-intensity: 0.30;
+}
+
+.atmosphere-root {
+  position: relative;
+  isolation: isolate;
+}
+
+/* LAYER 1 — base blue glow (the gradient bake-in) */
+.atmosphere-base-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(
+      ellipse var(--base-glow-size-x) var(--base-glow-size-y)
+        at var(--base-glow-x) var(--base-glow-y),
+      rgb(var(--brand) / var(--base-glow-intensity)),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 1000px 800px at 18% 12%,
+      rgb(var(--brand-glow) / 0.12),
+      transparent 65%
+    );
+}
+
+/* LAYER 2 — white ellipse, the directional reflective ray.
+   Rotation, opacity, blur and plus-lighter blend together
+   produce the "lit from within" diagonal sweep. */
+.atmosphere-glow {
+  position: absolute;
+  top: var(--glow-top);
+  left: var(--glow-left);
+  width: var(--glow-width);
+  height: var(--glow-height);
+
+  background: #ffffff;
+  border-radius: 9999px;
+
+  transform: rotate(var(--glow-rotate));
+  transform-origin: top center;
+
+  opacity: var(--glow-opacity);
+  filter: blur(var(--glow-blur));
+  mix-blend-mode: plus-lighter;
+
+  pointer-events: none;
+  z-index: 2;
+}
+
+.atmosphere-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   GRADIENT TEXT — used for big display headings and key numbers.
+   White at top fading to muted blue-grey at bottom of each glyph.
+   ============================================================ */
+
+.text-gradient {
+  background: linear-gradient(180deg, #ffffff 0%, #ffffff 45%, #7d8aa8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Softer variant — for medium-sized numbers */
+.text-gradient-soft {
+  background: linear-gradient(180deg, #f5f5f7 0%, #c8cdd9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* ============================================================
+   FLAT BUTTONS — for "Learn more" pills and similar.
+   No glassy gloss, just a thin border on a slightly lighter surface.
+   ============================================================ */
+
+.btn-flat {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(255 255 255 / 0.07);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.btn-flat:hover {
+  background: rgb(var(--bg-elevated));
+  border-color: rgb(255 255 255 / 0.12);
+}
+
+/* ============================================================
+   GLASS SURFACES
+   The shared recipe used by every pill / button / active state.
+   Subtle top-down lighter→darker gradient + barely-there border +
+   a 1px inner highlight at the top edge that catches the eye as
+   the "glass rim". Apply via .glass utility class.
+   ============================================================ */
+
+.glass {
+  background:
+    linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.09) 0%,
+      rgb(255 255 255 / 0.03) 35%,
+      rgb(255 255 255 / 0) 70%,
+      rgb(0 0 0 / 0.15) 100%
+    ),
+    rgb(var(--bg-card));
+  border: 1px solid rgb(255 255 255 / 0.07);
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.14),
+    inset 0 -1px 0 0 rgb(0 0 0 / 0.45),
+    0 2px 8px -2px rgb(0 0 0 / 0.5),
+    0 1px 0 0 rgb(0 0 0 / 0.4);
+}
+
+/* Slightly stronger glass for active / important surfaces */
+.glass-strong {
+  background:
+    linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.13) 0%,
+      rgb(255 255 255 / 0.05) 35%,
+      rgb(255 255 255 / 0.01) 70%,
+      rgb(0 0 0 / 0.20) 100%
+    ),
+    rgb(var(--bg-card));
+  border: 1px solid rgb(255 255 255 / 0.10);
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.18),
+    inset 0 -1px 0 0 rgb(0 0 0 / 0.5),
+    0 4px 14px -2px rgb(0 0 0 / 0.5);
+}
+
+/* Card with subtle inner highlight + brand accent strip on the left */
+.card-base {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.025) 0%, rgb(255 255 255 / 0) 50%),
+    rgb(var(--bg-card));
+  border: 1px solid rgb(var(--stroke));
+  border-radius: 1.25rem;
+  overflow: hidden;
+}
+
+/* The vertical brand accent strip on the left edge of cards */
+.card-accent::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 28px;
+  bottom: 28px;
+  width: 3px;
+  background: rgb(var(--brand));
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 12px rgb(var(--brand-glow) / 0.6);
+}
+
+/* Subtle dot grid texture (optional, can be applied to bg) */
+.dot-grid {
+  background-image: radial-gradient(
+    rgb(255 255 255 / 0.02) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+}
+
+/* Marquee mask edges so content fades at the boundaries */
+.marquee-mask {
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    black 6%,
+    black 94%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    black 6%,
+    black 94%,
+    transparent 100%
+  );
+}
+
+/* Pause marquee on hover (gives users a chance to read) */
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+/* Pill input/button base */
+.pill-surface {
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--stroke));
+  border-radius: 9999px;
+}
+
+/* Number tabular figures for prices */
+.num-tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid rgb(var(--brand));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
