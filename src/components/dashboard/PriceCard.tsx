@@ -18,7 +18,6 @@ interface PriceCardProps {
 }
 
 function formatPrice(n: number): string {
-  // For large numbers (>=1000), no decimals; for smaller, 2 decimals
   if (n >= 1000) {
     return `$${n.toLocaleString("en-US", { maximumFractionDigits: 1 })}`;
   }
@@ -28,23 +27,15 @@ function formatPrice(n: number): string {
   })}`;
 }
 
-/**
- * Convert a CoinGecko hourly sparkline (24 numeric points) into the
- * { x, y, label? }[] shape SparklineChart expects, with a labeled peak.
- */
 function liveSparklineToPoints(
   prices: number[],
   changePercent: number
 ): { x: number; y: number; label?: string }[] {
   if (prices.length === 0) return [];
-
   const min = Math.min(...prices);
   const max = Math.max(...prices);
   const range = max - min || 1;
-
-  // Find the highest point — that's where we put the label
   const peakIdx = prices.indexOf(max);
-
   return prices.map((p, i) => ({
     x: i / (prices.length - 1),
     y: (p - min) / range,
@@ -55,15 +46,24 @@ function liveSparklineToPoints(
   }));
 }
 
+/**
+ * Layout (top → bottom inside the card):
+ *   1. Header  — token icon + pair/name on left, more-menu on right
+ *   2. "Price" label
+ *   3. Big price number (gradient text)
+ *   4. Trend pill row
+ *   5. Chart wave (occupies only the lower half)
+ *
+ * The numbers all live in the upper half of the card. The chart is
+ * positioned absolutely in the bottom half so there's no visual overlap.
+ */
 export function PriceCard({ data, live, loading }: PriceCardProps) {
-  // Resolve display values: live data wins when available, else fall back to mock
   const effectivePrice = live?.price ?? data.price;
   const effectiveChange = live?.changePercent24h ?? data.changePercent;
   const isUp = effectiveChange >= 0;
   const TrendIcon = isUp ? TrendingUp : TrendingDown;
   const showSkeletons = loading && data.coinGeckoId !== undefined;
 
-  // Build sparkline points from live data when present, else use mock
   const sparklinePoints = live
     ? liveSparklineToPoints(live.sparkline, effectiveChange)
     : data.sparkline;
@@ -74,8 +74,6 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
       ? labeledIdx - 2
       : undefined;
 
-  // Derive trend direction from the effective change so live cards
-  // get correct line color regardless of mock value
   const effectiveTrend = isUp ? "up" : "down";
 
   return (
@@ -87,6 +85,7 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
       )}
       style={{ background: "rgb(var(--bg-card))" }}
     >
+      {/* Top rim */}
       <div
         className="absolute inset-x-0 top-0 h-px pointer-events-none"
         style={{
@@ -95,34 +94,40 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
         }}
       />
 
+      {/* Vertical brand-blue accent strip — aligned with the upper price block */}
       <div
         aria-hidden
-        className="absolute left-0 top-[100px] w-[3px] h-[44px] rounded-r-sm z-10"
+        className="absolute left-0 top-[180px] w-[3px] h-[44px] rounded-r-sm z-10"
         style={{
           background: "rgb(var(--brand))",
           boxShadow: "0 0 14px 1px rgb(var(--brand-glow) / 0.7)",
         }}
       />
 
-      {/* Chart fills the entire card as a background layer */}
-      <div className="absolute inset-0 pointer-events-none">
+      {/*
+        Chart layer — occupies the BOTTOM half of the card, below the
+        numbers. Tight to the edges, no overlap with the price block.
+      */}
+      <div className="absolute left-0 right-0 bottom-0 top-[55%] pointer-events-none">
         {showSkeletons ? (
-          <div className="absolute inset-0 grid place-items-end pb-12 px-7">
-            <Skeleton className="w-full h-[140px] opacity-50" />
+          <div className="absolute inset-0 grid place-items-center px-7">
+            <Skeleton className="w-full h-[120px] opacity-50" />
           </div>
         ) : (
           <SparklineChart
             data={sparklinePoints}
             trend={effectiveTrend}
             width={600}
-            height={420}
+            height={220}
             neighborDotIndex={neighborIdx}
             className="w-full h-full"
           />
         )}
       </div>
 
-      <div className="relative h-full flex flex-col p-7 z-[1]">
+      {/* Foreground content — header + price block all stacked at the top */}
+      <div className="relative flex flex-col p-7 z-[1]">
+        {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <TokenIcon
@@ -152,8 +157,10 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
           </button>
         </div>
 
+        {/* Price label */}
         <div className="mt-7 text-[13px] text-fg-tertiary">Price</div>
 
+        {/* Big gradient price */}
         {showSkeletons ? (
           <Skeleton className="mt-2 h-[52px] w-[260px]" />
         ) : (
@@ -168,7 +175,7 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
           </div>
         )}
 
-        {/* Inline trend row */}
+        {/* Trend pill row — directly under the price */}
         {showSkeletons ? (
           <div className="mt-4 flex items-center gap-2">
             <Skeleton className="w-6 h-6 rounded-full" />
@@ -205,8 +212,6 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
             </span>
           </div>
         )}
-
-        <div className="flex-1" />
       </div>
     </div>
   );
