@@ -4,18 +4,110 @@ import { UserActivityMarquee } from "@/components/dashboard/UserActivityMarquee"
 import { PriceCard } from "@/components/dashboard/PriceCard";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { InfluenceSection } from "@/components/dashboard/InfluenceSection";
-import { ProjectOverview } from "@/components/dashboard/ProjectOverview";
 import { useCryptoPrices } from "@/lib/useCryptoPrices";
+import { useBounties } from "@/hooks/useBounties";
 import type { CoinGeckoId } from "@/lib/crypto-api";
-import {
-  activityFeed,
-  priceCards,
-  influenceBounties,
-  projectRows,
-} from "@/lib/mock-data";
+import type { InfluenceBountyItem, ActivityItem } from "@/lib/types";
+import { priceCards } from "@/lib/mock-data";
+
+// ── Empty state components ──────────────────────────────────────────────────
+
+function EmptyBounties() {
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-card",
+        "border border-white/[0.06] shadow-card min-h-[420px]",
+        "flex flex-col items-center justify-center gap-4"
+      )}
+      style={{ background: "rgb(var(--bg-card))" }}
+    >
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-px pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)",
+        }}
+      />
+      <div
+        className="w-12 h-12 rounded-2xl border border-white/[0.06] bg-bg-elevated flex items-center justify-center"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--fg-muted))" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+        </svg>
+      </div>
+      <div className="text-center px-8">
+        <p className="text-[15px] font-medium text-fg-primary mb-1">No active bounties</p>
+        <p className="text-[13px] text-fg-tertiary leading-relaxed">
+          Influence bounties will appear here once campaigns go live.
+        </p>
+      </div>
+      <div
+        className="px-4 py-2 rounded-full border border-white/[0.06] bg-bg-elevated text-[12px] text-fg-tertiary"
+      >
+        Coming soon
+      </div>
+    </div>
+  );
+}
+
+function EmptyProjectOverview() {
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-card",
+        "border border-white/[0.06] shadow-card min-h-[420px]",
+        "flex flex-col items-center justify-center gap-4"
+      )}
+      style={{ background: "rgb(var(--bg-card))" }}
+    >
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-px pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)",
+        }}
+      />
+      <div
+        className="w-12 h-12 rounded-2xl border border-white/[0.06] bg-bg-elevated flex items-center justify-center"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--fg-muted))" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <path d="M3 9h18M9 21V9" />
+        </svg>
+      </div>
+      <div className="text-center px-8">
+        <p className="text-[15px] font-medium text-fg-primary mb-1">No projects yet</p>
+        <p className="text-[13px] text-fg-tertiary leading-relaxed">
+          Projects you participate in will show up here.
+        </p>
+      </div>
+      <div
+        className="px-4 py-2 rounded-full border border-white/[0.06] bg-bg-elevated text-[12px] text-fg-tertiary"
+      >
+        Coming soon
+      </div>
+    </div>
+  );
+}
+
+// ── Map backend bounty → frontend InfluenceBountyItem ──────────────────────
+
+function mapBounty(b: any): InfluenceBountyItem {
+  return {
+    id: b.id,
+    projectName: b.project_name,
+    tokenIconUrl: b.token_icon ?? "",
+    bountyUsdc: Number(b.reward_usdc),
+    description: b.description ?? "",
+  };
+}
+
+// ── Dashboard ───────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  // Collect the CoinGecko ids needed by the live price cards
   const liveIds = Array.from(
     new Set(
       priceCards
@@ -24,19 +116,36 @@ export default function DashboardPage() {
     )
   );
   const { prices, loading } = useCryptoPrices(liveIds);
+  const { bounties, loading: bountiesLoading } = useBounties();
+
+  const mappedBounties: InfluenceBountyItem[] = bounties.map(mapBounty);
+
+  // No real activity feed yet — marquee is hidden until we have real data
+  const activityItems: ActivityItem[] = [];
+
+  const now = new Date();
+  const formattedNow = now.toLocaleString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 
   return (
     <div className="space-y-8">
-      {/* User activity marquee */}
-      <UserActivityMarquee items={activityFeed} />
+      {/* Only show marquee if there are real activity items */}
+      {activityItems.length > 0 && (
+        <UserActivityMarquee items={activityItems} />
+      )}
 
-      {/* All Activity Update header */}
+      {/* Header */}
       <div className="pt-2">
         <div className="flex items-center gap-2.5 text-fg-tertiary">
           <DiamondIcon size={14} />
           <span className="text-[12.5px]">Last Update</span>
           <span className="text-[12.5px] text-fg-secondary ml-2 tabular-nums">
-            10:00am 1st Jan 2026
+            {formattedNow}
           </span>
         </div>
         <h2
@@ -53,7 +162,7 @@ export default function DashboardPage() {
         </h2>
       </div>
 
-      {/* Price cards row */}
+      {/* Price cards — real CoinGecko data */}
       <div className="-mx-10 px-10 overflow-x-auto pb-2 scroll-smooth">
         <div className="flex gap-6 min-w-max">
           {priceCards.map((card) => (
@@ -68,15 +177,30 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Bottom split — Influence Section + Project Overview */}
+      {/* Bottom split */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr] gap-8 pt-4">
         <div>
           <SectionHeader label="Live Update" title="Influence Section" />
-          <InfluenceSection bounties={influenceBounties} />
+          {bountiesLoading ? (
+            <div
+              className={cn(
+                "relative overflow-hidden rounded-card border border-white/[0.06] shadow-card min-h-[420px]",
+                "flex items-center justify-center"
+              )}
+              style={{ background: "rgb(var(--bg-card))" }}
+            >
+              <p className="text-[13px] text-fg-tertiary">Loading bounties...</p>
+            </div>
+          ) : mappedBounties.length > 0 ? (
+            <InfluenceSection bounties={mappedBounties} />
+          ) : (
+            <EmptyBounties />
+          )}
         </div>
+
         <div>
           <SectionHeader label="Live Update" title="Project overview" />
-          <ProjectOverview rows={projectRows} />
+          <EmptyProjectOverview />
         </div>
       </div>
     </div>
