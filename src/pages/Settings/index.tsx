@@ -124,7 +124,7 @@ function AccountInformation() {
 }
 
 function ConnectedAccounts() {
-  const { accounts, loading, connectTikTok, disconnect } = useSocialAccounts();
+ const { accounts, connectTikTok, disconnect } = useSocialAccounts();
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
 
   const tiktok = accounts.find((a) => a.platform === "tiktok");
@@ -338,7 +338,6 @@ function SettingsContent({ active }: { active: string }) {
 }
 
 export default function SettingsPage() {
-  const [active, setActive] = useState("account");
 
   // Auto-switch to connected if redirected after TikTok connect
   const params = new URLSearchParams(window.location.search);
