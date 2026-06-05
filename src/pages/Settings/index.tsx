@@ -11,7 +11,6 @@ import { useSocialAccounts } from "@/hooks/useSocialAccounts";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
-usePageTitle("Zerra · Settings");
 interface SettingsItem {
   id: string;
   label: string;
@@ -19,18 +18,18 @@ interface SettingsItem {
 }
 
 const SETTINGS_ITEMS: SettingsItem[] = [
-  { id: "account",     label: "Account",            icon: User },
-  { id: "profile",     label: "Profile",            icon: IdCard },
-  { id: "notifications", label: "Notifications",    icon: Bell },
-  { id: "email",       label: "Email Preferences",  icon: Mail },
-  { id: "security",    label: "Security",           icon: Shield },
-  { id: "privacy",     label: "Privacy",            icon: Lock },
-  { id: "payment",     label: "Payment Methods",    icon: CreditCard },
-  { id: "connected",   label: "Connected Accounts", icon: Link2 },
-  { id: "team",        label: "Team",               icon: Users },
-  { id: "billing",     label: "Billing",            icon: Receipt },
-  { id: "help",        label: "Help & Support",     icon: HelpCircle },
-  { id: "appearance",  label: "Appearance",         icon: Palette },
+  { id: "account",       label: "Account",            icon: User },
+  { id: "profile",       label: "Profile",            icon: IdCard },
+  { id: "notifications", label: "Notifications",      icon: Bell },
+  { id: "email",         label: "Email Preferences",  icon: Mail },
+  { id: "security",      label: "Security",           icon: Shield },
+  { id: "privacy",       label: "Privacy",            icon: Lock },
+  { id: "payment",       label: "Payment Methods",    icon: CreditCard },
+  { id: "connected",     label: "Connected Accounts", icon: Link2 },
+  { id: "team",          label: "Team",               icon: Users },
+  { id: "billing",       label: "Billing",            icon: Receipt },
+  { id: "help",          label: "Help & Support",     icon: HelpCircle },
+  { id: "appearance",    label: "Appearance",         icon: Palette },
 ];
 
 function SettingsMenuRow({ item, active, onClick }: { item: SettingsItem; active: boolean; onClick: () => void }) {
@@ -58,7 +57,8 @@ function CardSection({ children, className }: { children: React.ReactNode; class
       style={{ background: "rgb(8 10 16 / 0.7)" }}
     >
       <div
-        aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-px pointer-events-none"
         style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }}
       />
       <div className="relative">{children}</div>
@@ -94,7 +94,7 @@ function AccountInformation() {
       <div className="text-[15px] font-semibold text-fg-primary">Account Information</div>
       <div className="text-[12.5px] text-fg-tertiary mt-1">Update your personal information.</div>
 
-      <div className="mt-6 grid grid-cols-[auto_1fr_1fr_1fr_1fr] gap-6 items-center">
+      <div className="mt-6 grid grid-cols-[auto_1fr_1fr_1fr] gap-6 items-center">
         <div className="relative">
           <div className="w-16 h-16 rounded-2xl bg-bg-elevated border border-white/10 grid place-items-center overflow-hidden">
             {avatar ? (
@@ -114,8 +114,10 @@ function AccountInformation() {
         </div>
         <Field label="Full Name" value={name} />
         <Field label="Email Address" value={email} trailing={
-          <span className="ml-2 px-2 py-0.5 rounded-full text-[10.5px] font-medium border"
-            style={{ backgroundColor: "rgb(var(--success) / 0.15)", borderColor: "rgb(var(--success) / 0.25)", color: "rgb(var(--success))" }}>
+          <span
+            className="ml-2 px-2 py-0.5 rounded-full text-[10.5px] font-medium border"
+            style={{ backgroundColor: "rgb(var(--success) / 0.15)", borderColor: "rgb(var(--success) / 0.25)", color: "rgb(var(--success))" }}
+          >
             Verified
           </span>
         } />
@@ -126,7 +128,7 @@ function AccountInformation() {
 }
 
 function ConnectedAccounts() {
- const { accounts, connectTikTok, disconnect } = useSocialAccounts();
+  const { accounts, connectTikTok, disconnect } = useSocialAccounts();
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
 
   const tiktok = accounts.find((a) => a.platform === "tiktok");
@@ -146,7 +148,7 @@ function ConnectedAccounts() {
       account: tiktok,
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V9.15a8.16 8.16 0 0 0 4.77 1.52V7.22a4.85 4.85 0 0 1-1-.53z"/>
+          <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V9.15a8.16 8.16 0 0 0 4.77 1.52V7.22a4.85 4.85 0 0 1-1-.53z" />
         </svg>
       ),
       onConnect: connectTikTok,
@@ -158,12 +160,12 @@ function ConnectedAccounts() {
       account: instagram,
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+          <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
         </svg>
       ),
-      onConnect: null, // coming soon
+      onConnect: null,
     },
   ];
 
@@ -176,31 +178,26 @@ function ConnectedAccounts() {
 
       <div className="mt-6 space-y-4">
         {platforms.map(({ key, label, description, account, icon, onConnect }) => (
-          <div
-            key={key}
-            className="flex items-center gap-4 p-4 rounded-xl border border-white/[0.05] bg-bg-base/40"
-          >
+          <div key={key} className="flex items-center gap-4 p-4 rounded-xl border border-white/[0.05] bg-bg-base/40">
             <div className="grid place-items-center w-10 h-10 rounded-xl bg-bg-elevated border border-white/[0.06] text-fg-secondary shrink-0">
               {icon}
             </div>
-
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-[14px] font-medium text-fg-primary">{label}</span>
                 {account && (
-                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-medium border"
-                    style={{ backgroundColor: "rgb(var(--success) / 0.15)", borderColor: "rgb(var(--success) / 0.25)", color: "rgb(var(--success))" }}>
+                  <span
+                    className="px-2 py-0.5 rounded-full text-[10.5px] font-medium border"
+                    style={{ backgroundColor: "rgb(var(--success) / 0.15)", borderColor: "rgb(var(--success) / 0.25)", color: "rgb(var(--success))" }}
+                  >
                     Connected
                   </span>
                 )}
               </div>
               <div className="text-[12px] text-fg-tertiary mt-0.5">
-                {account
-                  ? `@${account.username ?? "connected"}`
-                  : description}
+                {account ? `@${account.username ?? "connected"}` : description}
               </div>
             </div>
-
             {account ? (
               <button
                 onClick={() => handleDisconnect(account.id)}
@@ -230,9 +227,9 @@ function ConnectedAccounts() {
 
 function NotificationPrefs() {
   const items = [
-    { icon: AtSign, title: "Email Notification", sub: "Receive updates and alerts via email" },
-    { icon: Smartphone, title: "Push Notification", sub: "Receive push notifications on your devices." },
-    { icon: Megaphone, title: "Campaign Opportunities", sub: "Get notified about new campaigns that match your profile" },
+    { icon: AtSign,     title: "Email Notification",      sub: "Receive updates and alerts via email" },
+    { icon: Smartphone, title: "Push Notification",       sub: "Receive push notifications on your devices." },
+    { icon: Megaphone,  title: "Campaign Opportunities",  sub: "Get notified about new campaigns that match your profile" },
   ];
   return (
     <CardSection>
@@ -271,9 +268,7 @@ function SignOutSection() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-[15px] font-semibold text-fg-primary">Sign Out</div>
-          <div className="text-[12.5px] text-fg-tertiary mt-1">
-            Sign out of your Zerra account on this device.
-          </div>
+          <div className="text-[12.5px] text-fg-tertiary mt-1">Sign out of your Zerra account on this device.</div>
         </div>
         <button
           onClick={signOut}
@@ -304,8 +299,6 @@ function DangerZone() {
     </CardSection>
   );
 }
-
-// ── Panel renderer ───────────────────────────────────────────────────────────
 
 function ComingSoonPanel({ label }: { label: string }) {
   return (
@@ -340,8 +333,8 @@ function SettingsContent({ active }: { active: string }) {
 }
 
 export default function SettingsPage() {
+  usePageTitle("Zerra · Settings");
 
-  // Auto-switch to connected if redirected after TikTok connect
   const params = new URLSearchParams(window.location.search);
   const connected = params.get("connected");
   const initialActive = connected ? "connected" : "account";
@@ -354,24 +347,28 @@ export default function SettingsPage() {
           <DiamondIcon size={14} />
           <span className="text-[12.5px]">Manage your account, preferences and payment method</span>
         </div>
-        <h2 className={cn(
-          "mt-4 font-display font-medium tracking-[-0.03em]",
-          "text-[64px] leading-[0.95]",
-          "bg-clip-text text-transparent",
-          "bg-gradient-to-b from-white via-white to-[#7d8aa8]"
-        )}>
+        <h2
+          className={cn(
+            "mt-4 font-display font-medium tracking-[-0.03em]",
+            "text-[64px] leading-[0.95]",
+            "bg-clip-text text-transparent",
+            "bg-gradient-to-b from-white via-white to-[#7d8aa8]"
+          )}
+        >
           My Setting
         </h2>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6 mt-8">
-        {/* Menu */}
         <div
           className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-3 self-start"
           style={{ background: "rgb(8 10 16 / 0.7)" }}
         >
-          <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
-            style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
+          <div
+            aria-hidden
+            className="absolute inset-x-0 top-0 h-px pointer-events-none"
+            style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }}
+          />
           <div className="relative space-y-1">
             {SETTINGS_ITEMS.map((item) => (
               <SettingsMenuRow
@@ -384,7 +381,6 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Content */}
         <div className="space-y-4">
           <SettingsContent active={activeTab} />
         </div>
