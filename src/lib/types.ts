@@ -44,7 +44,7 @@ export interface PriceCardData {
    * are replaced with live data fetched from CoinGecko. When absent (e.g.
    * Hoot Dog, which isn't a real coin), the mock data above is shown as-is.
    */
-  coinGeckoId?: "bitcoin" | "solana" | "ethereum";
+  coinGeckoId?: "bitcoin" | "solana" | "ethereum" | "dogecoin";
 }
 
 export interface InfluenceBountyItem {
