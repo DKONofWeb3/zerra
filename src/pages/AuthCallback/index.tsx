@@ -1,8 +1,10 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/api/supabase";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 export default function AuthCallback() {
+  usePageTitle("Signing in to Zerra");
   const navigate = useNavigate();
 
   useEffect(() => {

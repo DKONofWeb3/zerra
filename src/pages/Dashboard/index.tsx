@@ -11,10 +11,6 @@ import type { InfluenceBountyItem, ActivityItem } from "@/lib/types";
 import { priceCards } from "@/lib/mock-data";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
-usePageTitle("Zerra · Overview");
-
-// ── Empty state components ──────────────────────────────────────────────────
-
 function EmptyBounties() {
   return (
     <div
@@ -33,9 +29,7 @@ function EmptyBounties() {
             "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)",
         }}
       />
-      <div
-        className="w-12 h-12 rounded-2xl border border-white/[0.06] bg-bg-elevated flex items-center justify-center"
-      >
+      <div className="w-12 h-12 rounded-2xl border border-white/[0.06] bg-bg-elevated flex items-center justify-center">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--fg-muted))" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
         </svg>
@@ -46,9 +40,7 @@ function EmptyBounties() {
           Influence bounties will appear here once campaigns go live.
         </p>
       </div>
-      <div
-        className="px-4 py-2 rounded-full border border-white/[0.06] bg-bg-elevated text-[12px] text-fg-tertiary"
-      >
+      <div className="px-4 py-2 rounded-full border border-white/[0.06] bg-bg-elevated text-[12px] text-fg-tertiary">
         Coming soon
       </div>
     </div>
@@ -73,9 +65,7 @@ function EmptyProjectOverview() {
             "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)",
         }}
       />
-      <div
-        className="w-12 h-12 rounded-2xl border border-white/[0.06] bg-bg-elevated flex items-center justify-center"
-      >
+      <div className="w-12 h-12 rounded-2xl border border-white/[0.06] bg-bg-elevated flex items-center justify-center">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--fg-muted))" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="3" width="18" height="18" rx="2" />
           <path d="M3 9h18M9 21V9" />
@@ -87,16 +77,12 @@ function EmptyProjectOverview() {
           Projects you participate in will show up here.
         </p>
       </div>
-      <div
-        className="px-4 py-2 rounded-full border border-white/[0.06] bg-bg-elevated text-[12px] text-fg-tertiary"
-      >
+      <div className="px-4 py-2 rounded-full border border-white/[0.06] bg-bg-elevated text-[12px] text-fg-tertiary">
         Coming soon
       </div>
     </div>
   );
 }
-
-// ── Map backend bounty → frontend InfluenceBountyItem ──────────────────────
 
 function mapBounty(b: any): InfluenceBountyItem {
   return {
@@ -108,9 +94,9 @@ function mapBounty(b: any): InfluenceBountyItem {
   };
 }
 
-// ── Dashboard ───────────────────────────────────────────────────────────────
-
 export default function DashboardPage() {
+  usePageTitle("Zerra · Overview");
+
   const liveIds = Array.from(
     new Set(
       priceCards
@@ -122,8 +108,6 @@ export default function DashboardPage() {
   const { bounties, loading: bountiesLoading } = useBounties();
 
   const mappedBounties: InfluenceBountyItem[] = bounties.map(mapBounty);
-
-  // No real activity feed yet — marquee is hidden until we have real data
   const activityItems: ActivityItem[] = [];
 
   const now = new Date();
@@ -137,12 +121,10 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Only show marquee if there are real activity items */}
       {activityItems.length > 0 && (
         <UserActivityMarquee items={activityItems} />
       )}
 
-      {/* Header */}
       <div className="pt-2">
         <div className="flex items-center gap-2.5 text-fg-tertiary">
           <DiamondIcon size={14} />
@@ -165,7 +147,6 @@ export default function DashboardPage() {
         </h2>
       </div>
 
-      {/* Price cards — real CoinGecko data */}
       <div className="-mx-10 px-10 overflow-x-auto pb-2 scroll-smooth">
         <div className="flex gap-6 min-w-max">
           {priceCards.map((card) => (
@@ -180,7 +161,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Bottom split */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr] gap-8 pt-4">
         <div>
           <SectionHeader label="Live Update" title="Influence Section" />

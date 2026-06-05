@@ -4,11 +4,11 @@ import { CampaignCard } from "@/components/influence/CampaignCard";
 import { campaigns } from "@/lib/mock-data";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
-usePageTitle("Zerra · Influence");
 export default function InfluencePage() {
+  usePageTitle("Zerra · Influence");
+
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="pt-2">
         <div className="flex items-center gap-2.5 text-fg-tertiary">
           <DiamondIcon size={14} />
@@ -29,7 +29,6 @@ export default function InfluencePage() {
         </h2>
       </div>
 
-      {/* Campaigns grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
         {campaigns.map((c) => (
           <CampaignCard key={c.id} campaign={c} />
