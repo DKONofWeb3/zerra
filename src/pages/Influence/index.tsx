@@ -2,7 +2,9 @@ import { cn } from "@/lib/cn";
 import { DiamondIcon } from "@/components/icons/DiamondIcon";
 import { CampaignCard } from "@/components/influence/CampaignCard";
 import { campaigns } from "@/lib/mock-data";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
+usePageTitle("Zerra · Influence");
 export default function InfluencePage() {
   return (
     <div className="space-y-8">

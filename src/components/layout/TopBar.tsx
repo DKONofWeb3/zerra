@@ -1,18 +1,30 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Bell, ChevronLeft, ChevronRight } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/cn";
 
-const TABS = ["Update", "Dashboard"] as const;
-type Tab = (typeof TABS)[number];
+function getTabsForRoute(pathname: string): readonly [string, string] {
+  if (pathname.startsWith("/influence")) return ["Top Creators", "Top Performing"];
+  if (pathname.startsWith("/explore")) return ["Active Campaigns", "Past Campaigns"];
+  return ["Update", "Dashboard"];
+}
 
 export function TopBar() {
-  const [activeTab, setActiveTab] = useState<Tab>("Dashboard");
+  const location = useLocation();
+  const tabs = getTabsForRoute(location.pathname);
+  const [activeTab, setActiveTab] = useState<string>(tabs[1]);
+
+  // Reset active tab when route changes
+  useEffect(() => {
+    const newTabs = getTabsForRoute(location.pathname);
+    setActiveTab(newTabs[1]);
+  }, [location.pathname]);
 
   return (
     <div className="flex items-center justify-between gap-6 px-10 pt-6 pb-2">
       {/* Tabs */}
       <div className="flex items-baseline gap-8">
-        {TABS.map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -30,7 +42,7 @@ export function TopBar() {
 
       {/* Right cluster */}
       <div className="flex items-center gap-3">
-        {/* Search — glass pill */}
+        {/* Search */}
         <div className="relative">
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-tertiary pointer-events-none" />
           <input
@@ -44,13 +56,11 @@ export function TopBar() {
           />
         </div>
 
-        {/* Notifications — glass pill */}
-        <button
-          className={cn(
-            "glass h-12 pl-4 pr-5 rounded-full flex items-center gap-3",
-            "transition-colors hover:border-white/[0.12]"
-          )}
-        >
+        {/* Notifications */}
+        <button className={cn(
+          "glass h-12 pl-4 pr-5 rounded-full flex items-center gap-3",
+          "transition-colors hover:border-white/[0.12]"
+        )}>
           <span className="relative">
             <Bell className="w-5 h-5 text-fg-secondary" />
             <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-danger ring-2 ring-bg-card" />
@@ -58,21 +68,15 @@ export function TopBar() {
           <span className="text-[13px] text-fg-secondary">2 new</span>
         </button>
 
-        {/* Date stepper — glass pill, flat chevrons */}
+        {/* Date stepper */}
         <div className="glass h-12 px-3 rounded-full flex items-center gap-2">
-          <button
-            aria-label="Previous day"
-            className="grid place-items-center w-7 h-7 rounded-full text-fg-tertiary hover:text-fg-primary transition-colors"
-          >
+          <button aria-label="Previous day" className="grid place-items-center w-7 h-7 rounded-full text-fg-tertiary hover:text-fg-primary transition-colors">
             <ChevronLeft className="w-4 h-4" />
           </button>
           <span className="text-[13px] text-fg-primary px-1 whitespace-nowrap font-medium">
             Today, Apr 8
           </span>
-          <button
-            aria-label="Next day"
-            className="grid place-items-center w-7 h-7 rounded-full text-fg-tertiary hover:text-fg-primary transition-colors"
-          >
+          <button aria-label="Next day" className="grid place-items-center w-7 h-7 rounded-full text-fg-tertiary hover:text-fg-primary transition-colors">
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>

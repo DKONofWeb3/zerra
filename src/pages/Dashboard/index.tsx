@@ -9,6 +9,9 @@ import { useBounties } from "@/hooks/useBounties";
 import type { CoinGeckoId } from "@/lib/crypto-api";
 import type { InfluenceBountyItem, ActivityItem } from "@/lib/types";
 import { priceCards } from "@/lib/mock-data";
+import { usePageTitle } from "@/hooks/usePageTitle";
+
+usePageTitle("Zerra · Overview");
 
 // ── Empty state components ──────────────────────────────────────────────────
 

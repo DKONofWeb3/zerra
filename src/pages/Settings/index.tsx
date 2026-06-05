@@ -9,7 +9,9 @@ import { DiamondIcon } from "@/components/icons/DiamondIcon";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useSocialAccounts } from "@/hooks/useSocialAccounts";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
+usePageTitle("Zerra · Settings");
 interface SettingsItem {
   id: string;
   label: string;

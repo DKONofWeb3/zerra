@@ -4,6 +4,19 @@ import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import App from "./App";
 import "./styles/globals.css";
+import { HelmetProvider } from "react-helmet-async";
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <BrowserRouter>
+      <HelmetProvider>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </HelmetProvider>
+    </BrowserRouter>
+  </StrictMode>
+);
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

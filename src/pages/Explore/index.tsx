@@ -4,7 +4,8 @@ import { CampaignCard } from "@/components/influence/CampaignCard";
 import { ProjectsTalkAboutTable } from "@/components/explore/ProjectsTalkAboutTable";
 import { FiltersPanel } from "@/components/explore/FiltersPanel";
 import { campaigns, talkProjects } from "@/lib/mock-data";
-
+import { usePageTitle } from "@/hooks/usePageTitle";
+usePageTitle("Zerra · Explore");
 /**
  * Explore page.
  *

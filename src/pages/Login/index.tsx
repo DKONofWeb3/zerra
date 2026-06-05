@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { signInWithGoogle } from "../../lib/api/auth";
 import { supabase } from "../../lib/api/supabase";
 
+
 const CARDS = [
   {
     src: "/creator-cards/card-1.png",
