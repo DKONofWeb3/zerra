@@ -24,37 +24,40 @@ function liveSparklineToPoints(
   changePercent: number
 ): { x: number; y: number; label?: string }[] {
   if (prices.length === 0) return [];
-  const min  = Math.min(...prices);
-  const max  = Math.max(...prices);
+  const min   = Math.min(...prices);
+  const max   = Math.max(...prices);
   const range = max - min || 1;
   const peakIdx = prices.indexOf(max);
   return prices.map((p, i) => ({
     x: i / (prices.length - 1),
     y: (p - min) / range,
-    label: i === peakIdx ? `${changePercent >= 0 ? "+" : ""}${changePercent.toFixed(1)}%` : undefined,
+    label: i === peakIdx
+      ? `${changePercent >= 0 ? "+" : ""}${changePercent.toFixed(1)}%`
+      : undefined,
   }));
 }
 
-/** Interpolate price at a given X fraction (0-1) across the sparkline data. */
 function interpolatePrice(
   hoverX: number,
   sparklinePoints: { x: number; y: number }[],
   minPrice: number,
   maxPrice: number,
-  cardWidth: number,
   padX: number,
   innerW: number
 ): number {
   if (sparklinePoints.length < 2) return minPrice;
   const svgX = padX + hoverX * innerW;
-  const xs = sparklinePoints.map((_, i) => (i / (sparklinePoints.length - 1)) * innerW + padX);
-  const hi = xs.findIndex((x) => x >= svgX);
+  const xs   = sparklinePoints.map((_, i) => (i / (sparklinePoints.length - 1)) * innerW + padX);
+  const hi   = xs.findIndex((x) => x >= svgX);
   if (hi <= 0) return minPrice + sparklinePoints[0].y * (maxPrice - minPrice);
-  const lo = hi - 1;
+  const lo   = hi - 1;
   const frac = (svgX - xs[lo]) / (xs[hi] - xs[lo]);
-  const y = sparklinePoints[lo].y + (sparklinePoints[hi].y - sparklinePoints[lo].y) * Math.max(0, Math.min(1, frac));
+  const y    = sparklinePoints[lo].y + (sparklinePoints[hi].y - sparklinePoints[lo].y) * Math.max(0, Math.min(1, frac));
   return minPrice + y * (maxPrice - minPrice);
 }
+
+const PAD_X  = 12;
+const INNER_W = 576; // 600 - 12 * 2
 
 export function PriceCard({ data, live, loading }: PriceCardProps) {
   const [hoverX, setHoverX] = useState<number | null>(null);
@@ -69,25 +72,21 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
     ? liveSparklineToPoints(live.sparkline, effectiveChange)
     : data.sparkline;
 
-  const labeledIdx  = sparklinePoints.findIndex((p) => p.label !== undefined);
-  const neighborIdx = labeledIdx > 0 && labeledIdx < sparklinePoints.length - 1 ? labeledIdx - 2 : undefined;
+  const labeledIdx     = sparklinePoints.findIndex((p) => p.label !== undefined);
+  const neighborIdx    = labeledIdx > 0 && labeledIdx < sparklinePoints.length - 1 ? labeledIdx - 2 : undefined;
   const effectiveTrend = isUp ? "up" : "down";
 
-  // Estimate price range for hover tooltip interpolation
-  const prices     = sparklinePoints.map((p) => p.y);
-  const minY       = Math.min(...prices);
-  const maxY       = Math.max(...prices);
-  const priceRange = effectivePrice * 0.05; // ±5% estimate if we don't have raw prices
+  const priceRange = effectivePrice * 0.05;
   const minPrice   = effectivePrice - priceRange;
   const maxPrice   = effectivePrice + priceRange;
 
   const hoverPrice = hoverX !== null
-    ? interpolatePrice(hoverX, sparklinePoints, minPrice, maxPrice, 600, 12, 576)
+    ? interpolatePrice(hoverX, sparklinePoints, minPrice, maxPrice, PAD_X, INNER_W)
     : null;
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;
+    const x    = (e.clientX - rect.left) / rect.width;
     setHoverX(Math.max(0, Math.min(1, x)));
   }, []);
 
