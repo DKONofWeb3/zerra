@@ -11,7 +11,7 @@
 const BASE = "https://api.coingecko.com/api/v3";
 
 /** Map CoinGecko id → ticker pair string used in priceCards. */
-export type CoinGeckoId = "bitcoin" | "solana" | "ethereum";
+export type CoinGeckoId = "bitcoin" | "solana" | "ethereum" | "dogecoin";
 
 export interface LivePrice {
   /** Last known USD price. */
