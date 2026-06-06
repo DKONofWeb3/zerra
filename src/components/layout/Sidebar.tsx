@@ -1,4 +1,3 @@
-import { useRef } from "react";
 import { NavLink, useLocation, Link } from "react-router-dom";
 import {
   LayoutDashboard, Briefcase, MessageSquareText,
