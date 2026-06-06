@@ -3,8 +3,11 @@ import { cn } from "@/lib/cn";
 import { StatsBar } from "@/components/influence/StatsBar";
 import { CreatorsTable } from "@/components/influence/CreatorsTable";
 import { topCreators, topCreatorsStats } from "@/lib/mock-data";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 export default function TopCreatorsPage() {
+  usePageTitle("Zerra · Top Creators");
+  
   return (
     <div className="pb-12 space-y-8">
       {/* Header */}

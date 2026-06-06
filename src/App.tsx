@@ -46,9 +46,9 @@ export default function App() {
       >
         <Route index element={<DashboardPage />} />
         <Route path="/portfolio" element={<PortfolioPage />} />
-        <Route path="/influence" element={<InfluencePage />} />
-        <Route path="/influence/top-creators" element={<TopCreatorsPage />} />
-        <Route path="/influence/top-performing" element={<TopPerformingPage />} />
+       <Route path="/influence" element={<TopCreatorsPage />} />
+<Route path="/influence/top-creators" element={<InfluencePage />} />
+       <Route path="/influence/top-performing" element={<TopPerformingPage />} />
         <Route path="/explore" element={<ExplorePage />} />
         <Route path="/market" element={<MarketPage />} />
         <Route path="/wallet" element={<WalletPage />} />
