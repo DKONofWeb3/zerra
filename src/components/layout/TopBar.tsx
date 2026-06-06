@@ -1,4 +1,3 @@
-import { useCallback } from "react";
 import { Search, Bell, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/cn";
