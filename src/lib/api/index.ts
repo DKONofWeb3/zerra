@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiGetPublic } from "./client";
+import { apiGet, apiPost, apiGetPublic, apiPut } from "./client";
 
 // ——— Auth / User ———
 export const getMe = () => apiGet<{ user: any }>("/me");
@@ -32,3 +32,19 @@ export const getTikTokAnalytics = () =>
 
 export const getTopCreators = () =>
   apiGetPublic<{ creators: any[] }>("/analytics/top-creators");
+
+// ——— Profile ———
+export const updateProfile = (body: { name?: string; username?: string }) =>
+  apiPut<{ user: any }>("/me/profile", body);
+
+// ——— Notifications ———
+export const updateNotifications = (body: { email: boolean; push: boolean; campaigns: boolean }) =>
+  apiPut<{ user: any }>("/me/notifications", body);
+
+// ——— Privacy ———
+export const updatePrivacy = (body: { public_profile: boolean }) =>
+  apiPut<{ user: any }>("/me/privacy", body);
+
+// ——— Password ———
+export const changePassword = (body: { new_password: string }) =>
+  apiPut<{ success: boolean }>("/me/password", body);
