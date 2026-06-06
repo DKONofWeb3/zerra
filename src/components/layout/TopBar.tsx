@@ -1,5 +1,5 @@
-import { Search, Bell, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Search, Bell } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 interface TabConfig {
@@ -9,15 +9,14 @@ interface TabConfig {
 }
 
 function useTabConfig(): TabConfig {
-  const location = useLocation();
-  const navigate = useNavigate();
+  const location   = useLocation();
+  const navigate   = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const pathname = location.pathname;
+  const pathname   = location.pathname;
 
   if (pathname.startsWith("/influence")) {
     const activeTab = pathname.startsWith("/influence/top-performing")
-      ? "Top Performing"
-      : "Top Creators";
+      ? "Top Performing" : "Top Creators";
     return {
       tabs: ["Top Creators", "Top Performing"],
       activeTab,
@@ -30,8 +29,7 @@ function useTabConfig(): TabConfig {
 
   if (pathname.startsWith("/explore")) {
     const activeTab = searchParams.get("tab") === "past"
-      ? "Past Campaigns"
-      : "Active Campaigns";
+      ? "Past Campaigns" : "Active Campaigns";
     return {
       tabs: ["Active Campaigns", "Past Campaigns"],
       activeTab,
@@ -44,8 +42,7 @@ function useTabConfig(): TabConfig {
 
   if (pathname.startsWith("/portfolio")) {
     const activeTab = searchParams.get("tab") === "payments"
-      ? "Payments"
-      : "Overview";
+      ? "Payments" : "Overview";
     return {
       tabs: ["Overview", "Payments"],
       activeTab,
@@ -65,6 +62,13 @@ function useTabConfig(): TabConfig {
 
 export function TopBar() {
   const { tabs, activeTab, onTabClick } = useTabConfig();
+
+  // Real current date
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
 
   return (
     <div className="flex items-center justify-between gap-6 px-10 pt-6 pb-2">
@@ -88,40 +92,33 @@ export function TopBar() {
 
       {/* Right cluster */}
       <div className="flex items-center gap-3">
+        {/* Search */}
         <div className="relative">
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-tertiary pointer-events-none" />
           <input
             type="text"
-            placeholder="Next Payout"
+            placeholder="Search..."
             className={cn(
-              "glass h-12 pl-12 pr-6 w-[400px] rounded-full",
+              "glass h-12 pl-12 pr-6 w-[300px] rounded-full",
               "text-[14px] text-fg-primary placeholder:text-fg-tertiary",
               "focus:outline-none focus:border-white/[0.12]"
             )}
           />
         </div>
 
+        {/* Notifications */}
         <button className={cn(
-          "glass h-12 pl-4 pr-5 rounded-full flex items-center gap-3",
+          "glass h-12 px-4 rounded-full flex items-center gap-3",
           "transition-colors hover:border-white/[0.12]"
         )}>
-          <span className="relative">
-            <Bell className="w-5 h-5 text-fg-secondary" />
-            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-danger ring-2 ring-bg-card" />
-          </span>
-          <span className="text-[13px] text-fg-secondary">2 new</span>
+          <Bell className="w-5 h-5 text-fg-secondary" />
         </button>
 
-        <div className="glass h-12 px-3 rounded-full flex items-center gap-2">
-          <button aria-label="Previous day" className="grid place-items-center w-7 h-7 rounded-full text-fg-tertiary hover:text-fg-primary transition-colors">
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <span className="text-[13px] text-fg-primary px-1 whitespace-nowrap font-medium">
-            Today, Apr 8
+        {/* Real date */}
+        <div className="glass h-12 px-5 rounded-full flex items-center">
+          <span className="text-[13px] text-fg-primary font-medium whitespace-nowrap">
+            {today}
           </span>
-          <button aria-label="Next day" className="grid place-items-center w-7 h-7 rounded-full text-fg-tertiary hover:text-fg-primary transition-colors">
-            <ChevronRight className="w-4 h-4" />
-          </button>
         </div>
       </div>
     </div>

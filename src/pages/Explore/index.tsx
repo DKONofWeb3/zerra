@@ -1,20 +1,42 @@
 import { cn } from "@/lib/cn";
 import { DiamondIcon } from "@/components/icons/DiamondIcon";
-import { CampaignCard } from "@/components/influence/CampaignCard";
-import { ProjectsTalkAboutTable } from "@/components/explore/ProjectsTalkAboutTable";
-import { FiltersPanel } from "@/components/explore/FiltersPanel";
-import { campaigns, talkProjects } from "@/lib/mock-data";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useSearchParams } from "react-router-dom";
 
-const activeCampaigns = campaigns.slice(0, 4);
-const pastCampaigns   = campaigns.slice(4);
+function EmptyState({ title, description }: { title: string; description: string }) {
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-card border border-white/[0.06]",
+        "min-h-[400px] flex flex-col items-center justify-center gap-4"
+      )}
+      style={{ background: "rgb(var(--bg-card))" }}
+    >
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-px pointer-events-none"
+        style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }}
+      />
+      <div className="w-12 h-12 rounded-2xl border border-white/[0.06] bg-bg-elevated flex items-center justify-center">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--fg-muted))" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+        </svg>
+      </div>
+      <div className="text-center px-8">
+        <p className="text-[15px] font-medium text-fg-primary mb-1">{title}</p>
+        <p className="text-[13px] text-fg-tertiary leading-relaxed max-w-sm">{description}</p>
+      </div>
+      <div className="px-4 py-2 rounded-full border border-white/[0.06] bg-bg-elevated text-[12px] text-fg-tertiary">
+        Coming soon
+      </div>
+    </div>
+  );
+}
 
 export default function ExplorePage() {
   usePageTitle("Zerra · Explore");
   const [searchParams] = useSearchParams();
   const tab = searchParams.get("tab") === "past" ? "past" : "active";
-  const displayed = tab === "active" ? activeCampaigns : pastCampaigns;
 
   return (
     <div className="space-y-8 pb-12">
@@ -35,42 +57,17 @@ export default function ExplorePage() {
         </h2>
       </div>
 
-      {displayed.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
-          {displayed.map((c) => (
-            <div key={c.id} className="relative">
-              <CampaignCard campaign={c} />
-              {tab === "past" && (
-                <div className="absolute inset-0 rounded-card bg-black/40 flex items-center justify-center pointer-events-none">
-                  <span className="px-3 py-1.5 rounded-full text-[11px] font-semibold border border-white/[0.12] bg-bg-card/80 text-fg-tertiary uppercase tracking-wider">
-                    Ended
-                  </span>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+      {tab === "active" ? (
+        <EmptyState
+          title="No active campaigns"
+          description="Active influence campaigns from crypto projects will appear here once they go live."
+        />
       ) : (
-        <div className={cn(
-          "relative overflow-hidden rounded-card border border-white/[0.06]",
-          "min-h-[280px] flex flex-col items-center justify-center gap-4"
-        )} style={{ background: "rgb(var(--bg-card))" }}>
-          <div className="w-12 h-12 rounded-2xl border border-white/[0.06] bg-bg-elevated flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--fg-muted))" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-            </svg>
-          </div>
-          <div className="text-center px-8">
-            <p className="text-[15px] font-medium text-fg-primary mb-1">No past campaigns yet</p>
-            <p className="text-[13px] text-fg-tertiary">Ended campaigns will appear here.</p>
-          </div>
-        </div>
+        <EmptyState
+          title="No past campaigns yet"
+          description="Ended campaigns will appear here so you can review your past participation."
+        />
       )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-6">
-        <ProjectsTalkAboutTable rows={talkProjects} />
-        <FiltersPanel />
-      </div>
     </div>
   );
 }

@@ -1,42 +1,30 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { NavLink, useLocation, Link } from "react-router-dom";
 import {
-  LayoutDashboard,
-  Briefcase,
-  MessageSquareText,
-  Compass,
-  TrendingUp,
-  Wallet,
-  ChevronRight,
-  Settings as SettingsIcon,
+  LayoutDashboard, Briefcase, MessageSquareText,
+  Compass, TrendingUp, Wallet, ChevronRight, Settings as SettingsIcon,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useSocialAccounts } from "@/hooks/useSocialAccounts";
 import { useAuth } from "@/contexts/AuthContext";
-import { SubNavFlyout, INFLUENCE_SUB_NAV } from "./SubNavFlyout";
 
 interface NavItem {
   to: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  hasFlyout?: boolean;
 }
 
 const accountItems: NavItem[] = [
   { to: "/portfolio", label: "Portfolio", icon: Briefcase },
-  { to: "/influence", label: "Influence", icon: MessageSquareText, hasFlyout: true },
-  { to: "/explore", label: "Explore", icon: Compass },
+  { to: "/influence",  label: "Influence",  icon: MessageSquareText },
+  { to: "/explore",    label: "Explore",    icon: Compass },
 ];
 
 const activityItems: NavItem[] = [
   { to: "/market", label: "Market", icon: TrendingUp },
   { to: "/wallet", label: "Wallet", icon: Wallet },
 ];
-
-function influenceActiveStatic(path: string): boolean {
-  return path === "/influence" || path.startsWith("/influence/");
-}
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -48,15 +36,8 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function UserAvatar({ name, avatar }: { name: string | null; avatar: string | null }) {
   if (avatar) {
-    return (
-      <img
-        src={avatar}
-        alt={name ?? "User"}
-        className="w-full h-full object-cover"
-      />
-    );
+    return <img src={avatar} alt={name ?? "User"} className="w-full h-full object-cover" />;
   }
-  // Fallback initials
   const initials = name
     ? name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
     : "?";
@@ -98,24 +79,17 @@ function DashboardRow() {
   );
 }
 
-interface NavRowProps {
-  item: NavItem;
-  onChevronClick?: (e: React.MouseEvent) => void;
-  onPointerEnter?: () => void;
-  onPointerLeave?: () => void;
-  forceActive?: boolean;
-  isPinned?: boolean;
-  rowRef?: React.RefObject<HTMLAnchorElement>;
-}
-
-function NavRow({ item, onChevronClick, onPointerEnter, onPointerLeave, forceActive, isPinned, rowRef }: NavRowProps) {
+function NavRow({ item }: { item: NavItem }) {
   const Icon = item.icon;
+  const location = useLocation();
+  // For influence, mark active for any /influence/* route
+  const forceActive = item.to === "/influence"
+    ? location.pathname === "/influence" || location.pathname.startsWith("/influence/")
+    : undefined;
+
   return (
     <NavLink
       to={item.to}
-      ref={rowRef}
-      onPointerEnter={onPointerEnter}
-      onPointerLeave={onPointerLeave}
       className={({ isActive }) => {
         const active = forceActive ?? isActive;
         return cn(
@@ -139,19 +113,10 @@ function NavRow({ item, onChevronClick, onPointerEnter, onPointerLeave, forceAct
             <span className={cn("flex-1 text-[15px] font-medium", active ? "text-fg-primary" : "text-fg-secondary")}>
               {item.label}
             </span>
-            {item.hasFlyout ? (
-              <button
-                type="button"
-                aria-label={isPinned ? "Close sub-menu" : "Open sub-menu"}
-                aria-expanded={isPinned}
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onChevronClick?.(e); }}
-                className={cn("shrink-0 grid place-items-center w-6 h-6 rounded-md transition-all hover:bg-white/[0.06]", isPinned && "bg-white/[0.06]")}
-              >
-                <ChevronRight className={cn("w-4 h-4 transition-transform", active ? "text-fg-secondary" : "text-fg-muted", isPinned && "rotate-90")} />
-              </button>
-            ) : (
-              <ChevronRight className={cn("w-4 h-4 shrink-0 transition-colors", active ? "text-fg-secondary" : "text-fg-muted group-hover:text-fg-tertiary")} />
-            )}
+            <ChevronRight className={cn(
+              "w-4 h-4 shrink-0 transition-colors",
+              active ? "text-fg-secondary" : "text-fg-muted group-hover:text-fg-tertiary"
+            )} />
           </>
         );
       }}
@@ -160,7 +125,6 @@ function NavRow({ item, onChevronClick, onPointerEnter, onPointerLeave, forceAct
 }
 
 export function Sidebar() {
-  const location = useLocation();
   const { session } = useAuth();
   const { user } = useCurrentUser();
   const { accounts } = useSocialAccounts();
@@ -168,66 +132,11 @@ export function Sidebar() {
   const tiktokAccount = accounts.find((a) => a.platform === "tiktok");
   const firstName = user?.name?.split(" ")[0] ?? "Creator";
 
-  // Format login time from session
   const loginTime = session?.user?.last_sign_in_at
     ? new Date(session.user.last_sign_in_at).toLocaleDateString("en-US", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
+        day: "numeric", month: "short", year: "numeric",
       })
     : null;
-
-  // Influence flyout state
-  const [hoveringInfluence, setHoveringInfluence] = useState(false);
-  const [hoveringFlyout, setHoveringFlyout] = useState(false);
-  const [pinned, setPinned] = useState(false);
-  const [manuallyClosed, setManuallyClosed] = useState(false);
-  const influenceRowRef = useRef<HTMLAnchorElement>(null);
-  const [flyoutTop, setFlyoutTop] = useState(0);
-
-  const onInfluenceSubroute =
-    location.pathname.startsWith("/influence/") && location.pathname !== "/influence";
-
-  const wasInInfluenceRef = useRef(influenceActiveStatic(location.pathname));
-  useEffect(() => {
-    const inInfluence = influenceActiveStatic(location.pathname);
-    if (wasInInfluenceRef.current && !inInfluence) {
-      setManuallyClosed(false);
-      setPinned(false);
-    }
-    wasInInfluenceRef.current = inInfluence;
-  }, [location.pathname]);
-
-  const showFlyout =
-    hoveringInfluence || hoveringFlyout || pinned || (onInfluenceSubroute && !manuallyClosed);
-
-  const updateFlyoutPosition = () => {
-    if (!influenceRowRef.current) return;
-    const rect = influenceRowRef.current.getBoundingClientRect();
-    setFlyoutTop(rect.top);
-  };
-
-  const handleInfluenceEnter = () => { updateFlyoutPosition(); setHoveringInfluence(true); };
-  const handleInfluenceLeave = () => setHoveringInfluence(false);
-  const handleFlyoutEnter = () => setHoveringFlyout(true);
-  const handleFlyoutLeave = () => setHoveringFlyout(false);
-
-  const handleChevronClick = () => {
-    updateFlyoutPosition();
-    if (showFlyout) {
-      setPinned(false); setManuallyClosed(true);
-      setHoveringInfluence(false); setHoveringFlyout(false);
-    } else {
-      setPinned(true); setManuallyClosed(false);
-    }
-  };
-
-  const handleSubNavClick = () => {
-    setPinned(false); setManuallyClosed(false);
-    setHoveringInfluence(false); setHoveringFlyout(false);
-  };
-
-  const influenceActive = location.pathname === "/influence" || onInfluenceSubroute;
 
   return (
     <aside className="relative w-[320px] shrink-0 h-screen flex flex-col bg-bg-sidebar">
@@ -272,9 +181,7 @@ export function Sidebar() {
           Back, {firstName}
         </h1>
         {loginTime && (
-          <p className="mt-3.5 text-[12px] text-fg-tertiary">
-            Last login: {loginTime}
-          </p>
+          <p className="mt-3.5 text-[12px] text-fg-tertiary">Last login: {loginTime}</p>
         )}
       </div>
 
@@ -291,23 +198,9 @@ export function Sidebar() {
       <nav className="px-3 pt-6 flex-1 overflow-y-auto pb-6">
         <SectionLabel>Account</SectionLabel>
         <div className="space-y-1">
-          {accountItems.map((item) => {
-            if (item.hasFlyout && item.to === "/influence") {
-              return (
-                <NavRow
-                  key={item.to}
-                  item={item}
-                  rowRef={influenceRowRef}
-                  onPointerEnter={handleInfluenceEnter}
-                  onPointerLeave={handleInfluenceLeave}
-                  onChevronClick={handleChevronClick}
-                  forceActive={influenceActive}
-                  isPinned={pinned || onInfluenceSubroute}
-                />
-              );
-            }
-            return <NavRow key={item.to} item={item} />;
-          })}
+          {accountItems.map((item) => (
+            <NavRow key={item.to} item={item} />
+          ))}
         </div>
 
         <div className="h-6" />
@@ -319,18 +212,6 @@ export function Sidebar() {
           ))}
         </div>
       </nav>
-
-      {showFlyout && (
-        <div className="fixed z-40" style={{ left: 320, top: flyoutTop }}>
-          <SubNavFlyout
-            topOffset={0}
-            items={INFLUENCE_SUB_NAV}
-            onPointerEnter={handleFlyoutEnter}
-            onPointerLeave={handleFlyoutLeave}
-            onItemClick={handleSubNavClick}
-          />
-        </div>
-      )}
     </aside>
   );
 }
