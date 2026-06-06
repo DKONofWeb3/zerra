@@ -13,6 +13,8 @@ import SettingsPage from "./pages/Settings";
 import NotFoundPage from "./pages/NotFound";
 import LoginPage from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
+import TermsPage from "./pages/Terms";
+import PrivacyPage from "./pages/Privacy";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
@@ -35,6 +37,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <Routes>
+      <Route path="/terms" element={<TermsPage />} />
+<Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route
