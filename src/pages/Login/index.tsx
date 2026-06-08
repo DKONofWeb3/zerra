@@ -4,22 +4,10 @@ import { signInWithGoogle } from "../../lib/api/auth";
 import { supabase } from "../../lib/api/supabase";
 
 const CARDS = [
-  {
-    src: "/creator-cards/card-1.png",
-    style: { top: "8%", left: "52%", width: 210, transform: "rotate(-1.5deg)", zIndex: 5 },
-  },
-  {
-    src: "/creator-cards/card-2.png",
-    style: { top: "28%", left: "30%", width: 185, transform: "rotate(1deg)", zIndex: 4 },
-  },
-  {
-    src: "/creator-cards/card-3.png",
-    style: { top: "53%", left: "24%", width: 195, transform: "rotate(-1deg)", zIndex: 5 },
-  },
-  {
-    src: "/creator-cards/card-4.png",
-    style: { top: "50%", left: "53%", width: 200, transform: "rotate(1.5deg)", zIndex: 4 },
-  },
+  { src: "/creator-cards/card-1.png", style: { top: "8%",  left: "52%", width: 210, transform: "rotate(-1.5deg)", zIndex: 5 } },
+  { src: "/creator-cards/card-2.png", style: { top: "28%", left: "30%", width: 185, transform: "rotate(1deg)",    zIndex: 4 } },
+  { src: "/creator-cards/card-3.png", style: { top: "53%", left: "24%", width: 195, transform: "rotate(-1deg)",   zIndex: 5 } },
+  { src: "/creator-cards/card-4.png", style: { top: "50%", left: "53%", width: 200, transform: "rotate(1.5deg)",  zIndex: 4 } },
 ];
 
 export default function LoginPage() {
@@ -48,7 +36,7 @@ export default function LoginPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate("/", { replace: true });
+        navigate("/dashboard", { replace: true });
       }
     } catch (err: any) {
       setError(err.message || "Something went wrong.");
@@ -68,38 +56,20 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{
-      display: "flex",
-      minHeight: "100vh",
-      background: "#000",
-      fontFamily: '"Satoshi", ui-sans-serif, system-ui, sans-serif',
-      WebkitFontSmoothing: "antialiased",
-      overflow: "hidden",
-    }}>
-      {/* ── LEFT PANEL ─────────────────────────────────────────────────── */}
-      <div style={{
-        flex: "0 0 55%",
-        position: "relative",
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "flex-end",
-        padding: "48px",
-        background: "#000",
-      }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: "#000", fontFamily: '"Satoshi", ui-sans-serif, system-ui, sans-serif', WebkitFontSmoothing: "antialiased", overflow: "hidden" }}>
+
+      {/* LEFT PANEL */}
+      <div style={{ flex: "0 0 55%", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: "48px", background: "#000" }}>
         <img src="/login-bg/rect-blue.png" alt="" aria-hidden draggable={false}
-          style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "fill", pointerEvents: "none", userSelect: "none" }}
-        />
+          style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "fill", pointerEvents: "none", userSelect: "none" }} />
         <img src="/login-bg/rect-overlay.png" alt="" aria-hidden draggable={false}
-          style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "fill", mixBlendMode: "overlay", opacity: 0.5, pointerEvents: "none", userSelect: "none" }}
-        />
+          style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "fill", mixBlendMode: "overlay", opacity: 0.5, pointerEvents: "none", userSelect: "none" }} />
         <div aria-hidden style={{ position: "absolute", bottom: 0, left: 0, width: "60%", height: "35%", background: "radial-gradient(ellipse 80% 80% at 0% 100%, rgb(40 70 160 / 0.4) 0%, transparent 70%)", pointerEvents: "none", zIndex: 1 }} />
 
         {CARDS.map((card, i) => (
           <img key={i} src={card.src} alt={`Creator card ${i + 1}`} draggable={false}
             style={{ position: "absolute", borderRadius: 16, boxShadow: "0 24px 64px rgb(0 0 0 / 0.55), 0 4px 12px rgb(0 0 0 / 0.4)", objectFit: "cover", userSelect: "none", ...card.style }}
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-          />
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
         ))}
 
         <div style={{ position: "relative", zIndex: 10, maxWidth: 460 }}>
@@ -123,7 +93,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* ── RIGHT PANEL ─────────────────────────────────────────────────── */}
+      {/* RIGHT PANEL */}
       <div style={{ flex: "0 0 45%", position: "relative", display: "flex", alignItems: "center", justifyContent: "center", background: "rgb(8 9 14)", borderLeft: "1px solid rgb(18 20 28)", overflow: "hidden" }}>
         <div aria-hidden style={{ position: "absolute", bottom: "-10%", left: "-10%", right: "-10%", height: "55%", background: "radial-gradient(ellipse 90% 80% at 40% 100%, rgb(40 70 180 / 0.2) 0%, rgb(70 30 160 / 0.1) 45%, transparent 70%)", pointerEvents: "none" }} />
 
@@ -152,18 +122,17 @@ export default function LoginPage() {
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="adamcaptain@icreatorfi.com"
             style={{ display: "block", width: "100%", marginBottom: 16, padding: "13px 15px", background: "rgb(5 6 10)", border: "1px solid rgb(22 25 36)", borderRadius: 10, fontSize: 13.5, color: "rgb(245 245 247)", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
             onFocus={(e) => (e.target.style.borderColor = "rgba(74,125,255,0.45)")}
-            onBlur={(e) => (e.target.style.borderColor = "rgb(22 25 36)")}
-          />
+            onBlur={(e) => (e.target.style.borderColor = "rgb(22 25 36)")} />
 
           <p style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 500, color: "rgb(158 162 175)" }}>
             {mode === "signup" ? "Create Password" : "Password"}
           </p>
           <div style={{ position: "relative", marginBottom: 28 }}>
-            <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••••••••••" onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+            <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••••••••••" onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
               style={{ display: "block", width: "100%", padding: "13px 42px 13px 15px", background: "rgb(5 6 10)", border: "1px solid rgb(22 25 36)", borderRadius: 10, fontSize: 13.5, color: "rgb(245 245 247)", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
               onFocus={(e) => (e.target.style.borderColor = "rgba(74,125,255,0.45)")}
-              onBlur={(e) => (e.target.style.borderColor = "rgb(22 25 36)")}
-            />
+              onBlur={(e) => (e.target.style.borderColor = "rgb(22 25 36)")} />
             <button onClick={() => setShowPassword((p) => !p)}
               style={{ position: "absolute", right: 13, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "rgb(60 64 78)", padding: 0, display: "flex", alignItems: "center" }}>
               {showPassword ? (
