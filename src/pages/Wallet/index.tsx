@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { useAuth } from "@/contexts/AuthContext";
 import { saveWallet } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { DiamondIcon } from "@/components/icons/DiamondIcon";
@@ -28,14 +27,9 @@ function WalletCard({ address, chain, onDisconnect }: { address: string; chain: 
   };
 
   return (
-    <div
-      className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-6"
-      style={{ background: "rgb(var(--bg-card))" }}
-    >
+    <div className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-6" style={{ background: "rgb(var(--bg-card))" }}>
       <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
         style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
-
-      {/* Glow */}
       <div aria-hidden className="absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none"
         style={{ background: `radial-gradient(circle, ${chainInfo.color}20 0%, transparent 70%)` }} />
 
@@ -58,7 +52,6 @@ function WalletCard({ address, chain, onDisconnect }: { address: string; chain: 
         </button>
       </div>
 
-      {/* Address */}
       <div className="relative mt-6 p-4 rounded-xl border border-white/[0.05] bg-bg-base/60">
         <p className="text-[11px] text-fg-tertiary mb-1.5">Wallet Address</p>
         <div className="flex items-center justify-between gap-3">
@@ -70,28 +63,23 @@ function WalletCard({ address, chain, onDisconnect }: { address: string; chain: 
         </div>
       </div>
 
-      {/* Airdrop status */}
       <div className="relative mt-4 p-4 rounded-xl border border-white/[0.05] bg-bg-base/60">
         <p className="text-[11px] text-fg-tertiary mb-1.5">Airdrop / Reward Address</p>
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
-          <p className="text-[13px] text-fg-primary">
-            {truncateAddress(address)} is set as your reward address
-          </p>
+          <p className="text-[13px] text-fg-primary">{truncateAddress(address)} is set as your reward address</p>
         </div>
-        <p className="mt-1.5 text-[11.5px] text-fg-tertiary">
-          Campaign rewards and airdrops will be sent to this address.
-        </p>
+        <p className="mt-1.5 text-[11.5px] text-fg-tertiary">Campaign rewards and airdrops will be sent to this address.</p>
       </div>
     </div>
   );
 }
 
 function ConnectWalletForm({ onConnect }: { onConnect: (address: string, chain: string) => void }) {
-  const [address,  setAddress]  = useState("");
-  const [chain,    setChain]    = useState("ethereum");
-  const [saving,   setSaving]   = useState(false);
-  const [error,    setError]    = useState<string | null>(null);
+  const [address, setAddress] = useState("");
+  const [chain,   setChain]   = useState("ethereum");
+  const [saving,  setSaving]  = useState(false);
+  const [error,   setError]   = useState<string | null>(null);
 
   const validateAddress = (addr: string, chainId: string) => {
     if (chainId === "solana") return addr.length >= 32 && addr.length <= 44;
@@ -116,18 +104,12 @@ function ConnectWalletForm({ onConnect }: { onConnect: (address: string, chain: 
   };
 
   return (
-    <div
-      className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-6"
-      style={{ background: "rgb(var(--bg-card))" }}
-    >
+    <div className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-6" style={{ background: "rgb(var(--bg-card))" }}>
       <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
         style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
-
       <div className="relative">
         <h3 className="text-[15px] font-semibold text-fg-primary">Connect Your Wallet</h3>
-        <p className="text-[12.5px] text-fg-tertiary mt-1">
-          Add your wallet address to receive campaign rewards and airdrops.
-        </p>
+        <p className="text-[12.5px] text-fg-tertiary mt-1">Add your wallet address to receive campaign rewards and airdrops.</p>
 
         {error && (
           <div className="mt-4 p-3 rounded-xl text-[13px] bg-[rgb(var(--danger)/0.08)] border border-[rgb(var(--danger)/0.2)] text-[rgb(var(--danger))]">
@@ -135,7 +117,6 @@ function ConnectWalletForm({ onConnect }: { onConnect: (address: string, chain: 
           </div>
         )}
 
-        {/* Chain selector */}
         <div className="mt-5">
           <p className="text-[12.5px] text-fg-tertiary mb-2">Select Network</p>
           <div className="grid grid-cols-3 gap-3">
@@ -143,42 +124,28 @@ function ConnectWalletForm({ onConnect }: { onConnect: (address: string, chain: 
               <button key={c.id} onClick={() => { setChain(c.id); setAddress(""); setError(null); }}
                 className={cn(
                   "p-3 rounded-xl border text-center transition-all",
-                  chain === c.id
-                    ? "border-brand/50 bg-brand/10"
-                    : "border-white/[0.06] bg-bg-base/40 hover:border-white/[0.12]"
+                  chain === c.id ? "border-brand/50 bg-brand/10" : "border-white/[0.06] bg-bg-base/40 hover:border-white/[0.12]"
                 )}>
-                <p className="text-[13px] font-semibold" style={{ color: chain === c.id ? c.color : "rgb(var(--fg-primary))" }}>
-                  {c.label}
-                </p>
+                <p className="text-[13px] font-semibold" style={{ color: chain === c.id ? c.color : "rgb(var(--fg-primary))" }}>{c.label}</p>
                 <p className="text-[11px] text-fg-tertiary mt-0.5">{c.symbol}</p>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Address input */}
         <div className="mt-4">
           <p className="text-[12.5px] text-fg-tertiary mb-2">Wallet Address</p>
-          <input
-            type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value.trim())}
+          <input type="text" value={address} onChange={(e) => setAddress(e.target.value.trim())}
             placeholder={chain === "solana" ? "Enter Solana address..." : "0x..."}
-            className="w-full px-4 py-3 rounded-xl border border-white/[0.06] bg-bg-base/60 text-[13.5px] font-mono text-fg-primary placeholder:text-fg-muted focus:outline-none focus:border-white/[0.15] transition-colors"
-          />
+            className="w-full px-4 py-3 rounded-xl border border-white/[0.06] bg-bg-base/60 text-[13.5px] font-mono text-fg-primary placeholder:text-fg-muted focus:outline-none focus:border-white/[0.15] transition-colors" />
           <p className="mt-1.5 text-[11.5px] text-fg-muted">
-            {chain === "solana"
-              ? "Solana wallet address (32-44 characters)"
-              : "Ethereum-compatible address starting with 0x"}
+            {chain === "solana" ? "Solana wallet address (32-44 characters)" : "Ethereum-compatible address starting with 0x"}
           </p>
         </div>
 
-        <button
-          onClick={handleConnect}
-          disabled={saving || !address}
-          className="mt-5 w-full py-3 rounded-xl text-[13.5px] font-semibold border border-white/[0.08] bg-brand text-white hover:bg-brand/90 transition-colors disabled:opacity-50"
-          style={{ background: "rgb(74 125 255)" }}
-        >
+        <button onClick={handleConnect} disabled={saving || !address}
+          className="mt-5 w-full py-3 rounded-xl text-[13.5px] font-semibold text-white transition-colors disabled:opacity-50"
+          style={{ background: "rgb(74 125 255)" }}>
           {saving ? "Saving..." : "Connect Wallet"}
         </button>
       </div>
@@ -189,7 +156,6 @@ function ConnectWalletForm({ onConnect }: { onConnect: (address: string, chain: 
 export default function WalletPage() {
   usePageTitle("Zerra · Wallet");
   const { user, refresh } = useCurrentUser() as any;
-  const { session } = useAuth();
 
   const walletAddress = user?.wallet_address ?? null;
   const walletChain   = user?.wallet_chain   ?? "ethereum";
@@ -230,10 +196,8 @@ export default function WalletPage() {
           )}
         </div>
 
-        {/* Info panel */}
         <div className="space-y-4">
-          <div className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-6"
-            style={{ background: "rgb(var(--bg-card))" }}>
+          <div className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-6" style={{ background: "rgb(var(--bg-card))" }}>
             <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
               style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
             <div className="relative">
@@ -242,7 +206,7 @@ export default function WalletPage() {
                 {[
                   { step: "1", title: "Connect your wallet", desc: "Add your Ethereum, Solana, or Base wallet address." },
                   { step: "2", title: "Participate in campaigns", desc: "Claim bounties and create qualifying content." },
-                  { step: "3", title: "Receive rewards", desc: "USDC and airdrop tokens are sent directly to your wallet." },
+                  { step: "3", title: "Receive rewards",         desc: "USDC and airdrop tokens are sent directly to your wallet." },
                 ].map(({ step, title, desc }) => (
                   <div key={step} className="flex gap-4">
                     <div className="w-7 h-7 rounded-full bg-brand/15 border border-brand/25 flex items-center justify-center text-[12px] font-bold text-brand shrink-0">
@@ -258,8 +222,7 @@ export default function WalletPage() {
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-5"
-            style={{ background: "rgb(var(--bg-card))" }}>
+          <div className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-5" style={{ background: "rgb(var(--bg-card))" }}>
             <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
               style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
             <div className="relative flex items-start gap-3">

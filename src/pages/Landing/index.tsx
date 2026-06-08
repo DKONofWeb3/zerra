@@ -202,7 +202,7 @@ export default function LandingPage() {
                 textAlign: "center",
                 boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.04)",
               }}>
-                Create your account — it's free
+                Create your account
               </Link>
             </div>
           </div>

@@ -50,7 +50,7 @@ function UserAvatar({ name, avatar }: { name: string | null; avatar: string | nu
 function DashboardRow() {
   return (
     <NavLink
-      to="/"
+      to="/dashboard"
       end
       className={({ isActive }) =>
         cn(
