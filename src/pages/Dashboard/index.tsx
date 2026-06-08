@@ -65,8 +65,6 @@ function mapBounty(b: any): InfluenceBountyItem {
 
 // ── Analytics empty state ──────────────────────────────────────────────────
 function AnalyticsView() {
-  const { user } = useCurrentUser();
-  const hasTikTok = false; // will be true once TikTok posts are synced
 
   const stats = [
     { label: "Total Views",        value: "—", sub: "All time" },
