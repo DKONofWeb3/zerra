@@ -7,7 +7,6 @@ import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { InfluenceSection } from "@/components/dashboard/InfluenceSection";
 import { useCryptoPrices } from "@/lib/useCryptoPrices";
 import { useBounties } from "@/hooks/useBounties";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import type { CoinGeckoId } from "@/lib/crypto-api";
 import type { InfluenceBountyItem, ActivityItem } from "@/lib/types";
 import { priceCards } from "@/lib/mock-data";
