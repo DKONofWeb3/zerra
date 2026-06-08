@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { MoreVertical, TrendingUp, TrendingDown } from "lucide-react";
+import { MoreVertical } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { TokenIcon, tokenVariantFromName } from "./TokenIcon";
 import { SparklineChart } from "./SparklineChart";
@@ -56,8 +56,8 @@ function interpolatePrice(
   return minPrice + y * (maxPrice - minPrice);
 }
 
-const PAD_X  = 12;
-const INNER_W = 576; // 600 - 12 * 2
+const PAD_X   = 12;
+const INNER_W = 576;
 
 export function PriceCard({ data, live, loading }: PriceCardProps) {
   const [hoverX, setHoverX] = useState<number | null>(null);
@@ -65,7 +65,6 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
   const effectivePrice  = live?.price ?? data.price;
   const effectiveChange = live?.changePercent24h ?? data.changePercent;
   const isUp            = effectiveChange >= 0;
-  const TrendIcon       = isUp ? TrendingUp : TrendingDown;
   const showSkeletons   = loading && data.coinGeckoId !== undefined;
 
   const sparklinePoints = live
@@ -118,18 +117,14 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
         }}
       />
 
-      {/* Chart background layer */}
-      <div className="absolute inset-0 pointer-events-none">
-        {showSkeletons ? (
-          <div className="absolute inset-0 grid place-items-end pb-12 px-7">
-            <Skeleton className="w-full h-[140px] opacity-50" />
-          </div>
-        ) : (
+      {/* Chart — only occupies bottom 52% of card so it doesn't bleed into text */}
+      <div className="absolute bottom-0 left-0 right-0 pointer-events-none" style={{ height: "52%" }}>
+        {!showSkeletons && (
           <SparklineChart
             data={sparklinePoints}
             trend={effectiveTrend}
             width={600}
-            height={420}
+            height={220}
             neighborDotIndex={neighborIdx}
             className="w-full h-full"
             hoverX={hoverX}
@@ -138,8 +133,20 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
         )}
       </div>
 
+      {/* Fade gradient — blends chart top edge into card background */}
+      <div
+        aria-hidden
+        className="absolute left-0 right-0 pointer-events-none"
+        style={{
+          bottom: "52%",
+          height: 60,
+          background: "linear-gradient(180deg, rgb(var(--bg-card)) 0%, transparent 100%)",
+        }}
+      />
+
       {/* Card content */}
       <div className="relative h-full flex flex-col p-7 z-[1] pointer-events-none">
+        {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <TokenIcon name={data.assetName} variant={tokenVariantFromName(data.assetName)} size={42} />
@@ -162,34 +169,31 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
 
         <div className="mt-7 text-[13px] text-fg-tertiary">Price</div>
 
+        {/* Price + percentage inline */}
         {showSkeletons ? (
-          <Skeleton className="mt-2 h-[52px] w-[260px]" />
-        ) : (
-          <div className={cn(
-            "mt-2 font-display font-medium num-tabular leading-none",
-            "text-[48px] tracking-[-0.02em]",
-            "text-gradient transition-all duration-150"
-          )}>
-            {hoverPrice !== null ? formatPrice(hoverPrice) : formatPrice(effectivePrice)}
-          </div>
-        )}
-
-        {showSkeletons ? (
-          <div className="mt-4 flex items-center gap-2">
-            <Skeleton className="w-6 h-6 rounded-full" />
-            <Skeleton className="w-[72px] h-7 rounded-md" />
+          <div className="mt-2 flex items-baseline gap-3">
+            <Skeleton className="h-[52px] w-[220px]" />
+            <Skeleton className="h-7 w-[60px] rounded-md" />
           </div>
         ) : (
-          <div className="mt-4 flex items-center gap-2">
+          <div className="mt-2 flex items-baseline gap-3 flex-wrap">
+            <div className={cn(
+              "font-display font-medium num-tabular leading-none",
+              "text-[48px] tracking-[-0.02em]",
+              "text-gradient transition-all duration-150"
+            )}>
+              {hoverPrice !== null ? formatPrice(hoverPrice) : formatPrice(effectivePrice)}
+            </div>
             <span
-              className={cn("grid place-items-center w-6 h-6 rounded-full", isUp ? "text-success" : "text-danger")}
-              style={{ backgroundColor: isUp ? "rgb(var(--success) / 0.15)" : "rgb(var(--danger) / 0.15)" }}
-            >
-              <TrendIcon className="w-3 h-3" strokeWidth={2.5} />
-            </span>
-            <span
-              className={cn("px-3 py-1 rounded-md text-[13px] font-semibold tabular-nums", isUp ? "text-success" : "text-danger")}
-              style={{ backgroundColor: isUp ? "rgb(var(--success) / 0.16)" : "rgb(var(--danger) / 0.16)" }}
+              className={cn(
+                "px-2.5 py-1 rounded-md text-[14px] font-semibold tabular-nums",
+                isUp ? "text-success" : "text-danger"
+              )}
+              style={{
+                backgroundColor: isUp
+                  ? "rgb(var(--success) / 0.16)"
+                  : "rgb(var(--danger) / 0.16)",
+              }}
             >
               {isUp ? "+" : ""}{effectiveChange.toFixed(1)}%
             </span>
