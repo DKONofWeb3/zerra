@@ -3,7 +3,7 @@ import { Search, Bell } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 interface TabConfig {
-  tabs: readonly [string, string];
+  tabs: readonly string[];
   activeTab: string;
   onTabClick: (tab: string) => void;
 }
@@ -53,21 +53,32 @@ function useTabConfig(): TabConfig {
     };
   }
 
-  return {
-    tabs: ["Overview", "Analytics"],
-    activeTab: "Overview",
-    onTabClick: () => {},
-  };
+  if (pathname.startsWith("/dashboard")) {
+    const activeTab = searchParams.get("tab") === "analytics"
+      ? "Analytics" : "Overview";
+    return {
+      tabs: ["Overview", "Analytics"],
+      activeTab,
+      onTabClick: (tab) => {
+        if (tab === "Analytics") setSearchParams({ tab: "analytics" });
+        else setSearchParams({});
+      },
+    };
+  }
+
+  // Single title pages — no second tab
+  if (pathname.startsWith("/market"))   return { tabs: ["Market"],   activeTab: "Market",   onTabClick: () => {} };
+  if (pathname.startsWith("/wallet"))   return { tabs: ["Wallet"],   activeTab: "Wallet",   onTabClick: () => {} };
+  if (pathname.startsWith("/settings")) return { tabs: ["Settings"], activeTab: "Settings", onTabClick: () => {} };
+
+  return { tabs: ["Overview"], activeTab: "Overview", onTabClick: () => {} };
 }
 
 export function TopBar() {
   const { tabs, activeTab, onTabClick } = useTabConfig();
 
-  // Real current date
   const today = new Date().toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
+    weekday: "short", month: "short", day: "numeric",
   });
 
   return (
@@ -80,9 +91,11 @@ export function TopBar() {
             onClick={() => onTabClick(tab)}
             className={cn(
               "font-display text-[30px] font-medium tracking-tight transition-colors",
-              activeTab === tab
-                ? "text-fg-primary"
-                : "text-fg-muted hover:text-fg-secondary"
+              tabs.length === 1
+                ? "text-fg-primary cursor-default"
+                : activeTab === tab
+                  ? "text-fg-primary"
+                  : "text-fg-muted hover:text-fg-secondary"
             )}
           >
             {tab}
@@ -92,7 +105,6 @@ export function TopBar() {
 
       {/* Right cluster */}
       <div className="flex items-center gap-3">
-        {/* Search */}
         <div className="relative">
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-tertiary pointer-events-none" />
           <input
@@ -106,19 +118,15 @@ export function TopBar() {
           />
         </div>
 
-        {/* Notifications */}
         <button className={cn(
-          "glass h-12 px-4 rounded-full flex items-center gap-3",
+          "glass h-12 px-4 rounded-full flex items-center",
           "transition-colors hover:border-white/[0.12]"
         )}>
           <Bell className="w-5 h-5 text-fg-secondary" />
         </button>
 
-        {/* Real date */}
         <div className="glass h-12 px-5 rounded-full flex items-center">
-          <span className="text-[13px] text-fg-primary font-medium whitespace-nowrap">
-            {today}
-          </span>
+          <span className="text-[13px] text-fg-primary font-medium whitespace-nowrap">{today}</span>
         </div>
       </div>
     </div>
