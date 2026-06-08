@@ -48,3 +48,7 @@ export const updatePrivacy = (body: { public_profile: boolean }) =>
 // ——— Password ———
 export const changePassword = (body: { new_password: string }) =>
   apiPut<{ success: boolean }>("/me/password", body);
+
+// ——— Wallet ———
+export const saveWallet = (body: { wallet_address: string; wallet_chain?: string }) =>
+  apiPut<{ user: any }>("/me/wallet", body);
