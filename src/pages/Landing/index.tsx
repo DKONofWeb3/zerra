@@ -1,8 +1,5 @@
 import { Link } from "react-router-dom";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { MobileLock } from "@/components/MobileLock";
-
- <MobileLock />
 
 const CARDS = [
   { src: "/creator-cards/card-1.png", style: { top: "8%",  left: "52%", width: 210, transform: "rotate(-1.5deg)", zIndex: 5 } },

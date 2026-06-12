@@ -2,9 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { signInWithGoogle } from "../../lib/api/auth";
 import { supabase } from "../../lib/api/supabase";
-import { MobileLock } from "@/components/MobileLock";
 
- <MobileLock />
 
 const CARDS = [
   { src: "/creator-cards/card-1.png", style: { top: "8%",  left: "52%", width: 210, transform: "rotate(-1.5deg)", zIndex: 5 } },
