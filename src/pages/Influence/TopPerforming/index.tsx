@@ -3,8 +3,7 @@ import { Star } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useAuth } from "@/contexts/AuthContext";
-import { apiGet } from "@/lib/api/client";
-
+import { apiGet, apiPost } from "@/lib/api/client";
 interface TikTokPost {
   id: string;
   post_id: string;
@@ -99,7 +98,7 @@ export default function TopPerformingPage() {
     if (!session) return;
     setSyncing(true);
     try {
-      await apiGet("/analytics/tiktok/sync");
+     await apiPost("/analytics/tiktok/sync");
       await fetchAnalytics();
     } catch (err) {
       console.error(err);
