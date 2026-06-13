@@ -147,7 +147,7 @@ function OverviewView() {
       <div className="-mx-4 px-4 md:-mx-10 md:px-10 overflow-x-auto pb-2 scroll-smooth">
         <div className="flex gap-4 md:gap-6 min-w-max">
           {priceCards.map((card) => (
-            <div key={card.id} className="w-[280px] md:w-[480px] shrink-0">
+            <div key={card.id} className="w-[320px] md:w-[480px] shrink-0">
               <PriceCard
                 data={card}
                 live={card.coinGeckoId ? prices[card.coinGeckoId] : undefined}
