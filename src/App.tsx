@@ -16,7 +16,7 @@ import LoginPage from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
 import TermsPage from "./pages/Terms";
 import PrivacyPage from "./pages/Privacy";
-import { MobileLock } from "./components/MobileLock";
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
 
@@ -35,34 +35,29 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-
 export default function App() {
   return (
-    <>
-      <MobileLock />
+    <Routes>
+      {/* Public routes */}
+      <Route path="/"              element={<LandingPage />} />
+      <Route path="/login"         element={<LoginPage />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/terms"         element={<TermsPage />} />
+      <Route path="/privacy"       element={<PrivacyPage />} />
 
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
-
-        {/* Protected routes */}
-        <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/portfolio" element={<PortfolioPage />} />
-          <Route path="/influence" element={<TopCreatorsPage />} />
-          <Route path="/influence/top-creators" element={<InfluencePage />} />
-          <Route path="/influence/top-performing" element={<TopPerformingPage />} />
-          <Route path="/explore" element={<ExplorePage />} />
-          <Route path="/market" element={<MarketPage />} />
-          <Route path="/wallet" element={<WalletPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Route>
-      </Routes>
-    </>
+      {/* Protected routes */}
+      <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+        <Route path="/dashboard"                    element={<DashboardPage />} />
+        <Route path="/portfolio"                    element={<PortfolioPage />} />
+        <Route path="/influence"                    element={<TopCreatorsPage />} />
+        <Route path="/influence/top-creators"       element={<InfluencePage />} />
+        <Route path="/influence/top-performing"     element={<TopPerformingPage />} />
+        <Route path="/explore"                      element={<ExplorePage />} />
+        <Route path="/market"                       element={<MarketPage />} />
+        <Route path="/wallet"                       element={<WalletPage />} />
+        <Route path="/settings"                     element={<SettingsPage />} />
+        <Route path="*"                             element={<NotFoundPage />} />
+      </Route>
+    </Routes>
   );
 }
