@@ -143,27 +143,19 @@ function OverviewView() {
         </h2>
       </div>
 
-      {/* Price cards — horizontal scroll on desktop, vertical stack on mobile */}
-      <div className="hidden md:block -mx-10 px-10 overflow-x-auto pb-2 scroll-smooth">
-        <div className="flex gap-6 min-w-max">
+      {/* Price cards — smaller on mobile, full size on desktop, always horizontal scroll */}
+      <div className="-mx-4 px-4 md:-mx-10 md:px-10 overflow-x-auto pb-2 scroll-smooth">
+        <div className="flex gap-4 md:gap-6 min-w-max">
           {priceCards.map((card) => (
-            <div key={card.id} className="w-[480px] shrink-0">
-              <PriceCard data={card} live={card.coinGeckoId ? prices[card.coinGeckoId] : undefined} loading={loading} />
+            <div key={card.id} className="w-[280px] md:w-[480px] shrink-0">
+              <PriceCard
+                data={card}
+                live={card.coinGeckoId ? prices[card.coinGeckoId] : undefined}
+                loading={loading}
+              />
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Mobile: vertical stack, full width */}
-      <div className="flex flex-col gap-4 md:hidden">
-        {priceCards.map((card) => (
-          <PriceCard
-            key={card.id}
-            data={card}
-            live={card.coinGeckoId ? prices[card.coinGeckoId] : undefined}
-            loading={loading}
-          />
-        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr] gap-6 md:gap-8 pt-2 md:pt-4">
