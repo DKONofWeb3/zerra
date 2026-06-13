@@ -89,7 +89,7 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
       className={cn(
         "relative overflow-hidden rounded-card",
         "border border-white/[0.025]",
-        "aspect-[1/0.85] min-h-[180px] md:min-h-[420px]",
+       "aspect-[1/0.85] min-h-[180px] md:min-h-[420px] ring-1 ring-white/[0.04]",
         "cursor-crosshair"
       )}
       style={{ background: "rgb(var(--bg-card))" }}

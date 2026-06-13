@@ -144,7 +144,7 @@ function OverviewView() {
 
       {/* Price cards — horizontal scroll always, smaller on mobile */}
       <div className="-mx-4 px-4 md:-mx-10 md:px-10 overflow-x-auto pb-2 scroll-smooth">
-       <div className="flex gap-4 md:gap-6 min-w-max">
+       <div className="flex gap-3 md:gap-6 min-w-max" style={{ paddingRight: 16 }}>
           {priceCards.map((card) => (
             <div key={card.id} className="w-[180px] md:w-[480px] shrink-0">
               <PriceCard
