@@ -14,7 +14,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 
 function EmptyBounties() {
   return (
-    <div className={cn("relative overflow-hidden rounded-card", "border border-white/[0.06] shadow-card min-h-[420px]", "flex flex-col items-center justify-center gap-4")}
+    <div className={cn("relative overflow-hidden rounded-card", "border border-white/[0.06] shadow-card min-h-[280px]", "flex flex-col items-center justify-center gap-4")}
       style={{ background: "rgb(var(--bg-card))" }}>
       <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
         style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
@@ -34,7 +34,7 @@ function EmptyBounties() {
 
 function EmptyProjectOverview() {
   return (
-    <div className={cn("relative overflow-hidden rounded-card", "border border-white/[0.06] shadow-card min-h-[420px]", "flex flex-col items-center justify-center gap-4")}
+    <div className={cn("relative overflow-hidden rounded-card", "border border-white/[0.06] shadow-card min-h-[280px]", "flex flex-col items-center justify-center gap-4")}
       style={{ background: "rgb(var(--bg-card))" }}>
       <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
         style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
@@ -62,34 +62,30 @@ function mapBounty(b: any): InfluenceBountyItem {
   };
 }
 
-// ── Analytics empty state ──────────────────────────────────────────────────
 function AnalyticsView() {
-
   const stats = [
-    { label: "Total Views",        value: "—", sub: "All time" },
-    { label: "Avg Engagement Rate",value: "—", sub: "Last 30 days" },
-    { label: "Posts This Month",   value: "—", sub: "TikTok posts" },
-    { label: "Estimated Reach",    value: "—", sub: "Unique accounts" },
+    { label: "Total Views",         value: "—", sub: "All time" },
+    { label: "Avg Engagement Rate", value: "—", sub: "Last 30 days" },
+    { label: "Posts This Month",    value: "—", sub: "TikTok posts" },
+    { label: "Estimated Reach",     value: "—", sub: "Unique accounts" },
   ];
 
   return (
-    <div className="space-y-8">
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
         {stats.map(({ label, value, sub }) => (
-          <div key={label} className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-5"
+          <div key={label} className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-4 md:p-5"
             style={{ background: "rgb(var(--bg-card))" }}>
             <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
               style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
-            <p className="text-[12px] text-fg-tertiary">{label}</p>
-            <p className="mt-2 text-[32px] font-display font-medium text-gradient leading-none">{value}</p>
-            <p className="mt-1.5 text-[11.5px] text-fg-muted">{sub}</p>
+            <p className="text-[11px] md:text-[12px] text-fg-tertiary">{label}</p>
+            <p className="mt-1.5 text-[28px] md:text-[32px] font-display font-medium text-gradient leading-none">{value}</p>
+            <p className="mt-1 text-[11px] text-fg-muted">{sub}</p>
           </div>
         ))}
       </div>
 
-      {/* Empty state */}
-      <div className="relative overflow-hidden rounded-card border border-white/[0.06] min-h-[360px] flex flex-col items-center justify-center gap-4"
+      <div className="relative overflow-hidden rounded-card border border-white/[0.06] min-h-[280px] flex flex-col items-center justify-center gap-4"
         style={{ background: "rgb(var(--bg-card))" }}>
         <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
           style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
@@ -101,7 +97,7 @@ function AnalyticsView() {
         <div className="text-center px-8">
           <p className="text-[15px] font-medium text-fg-primary mb-1">No analytics data yet</p>
           <p className="text-[13px] text-fg-tertiary leading-relaxed max-w-sm">
-            Connect your TikTok and sync your posts to see views, engagement rate and performance analytics here.
+            Connect your TikTok and sync your posts to see analytics here.
           </p>
         </div>
         <a href="/influence/top-performing"
@@ -113,7 +109,6 @@ function AnalyticsView() {
   );
 }
 
-// ── Overview ───────────────────────────────────────────────────────────────
 function OverviewView() {
   const liveIds = Array.from(
     new Set(priceCards.map((c) => c.coinGeckoId).filter((id): id is CoinGeckoId => Boolean(id)))
@@ -124,10 +119,12 @@ function OverviewView() {
   const activityItems: ActivityItem[] = [];
 
   const now = new Date();
-  const formattedNow = now.toLocaleString("en-US", { hour: "numeric", minute: "2-digit", day: "numeric", month: "short", year: "numeric" });
+  const formattedNow = now.toLocaleString("en-US", {
+    hour: "numeric", minute: "2-digit", day: "numeric", month: "short", year: "numeric",
+  });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       {activityItems.length > 0 && <UserActivityMarquee items={activityItems} />}
 
       <div className="pt-2">
@@ -136,12 +133,18 @@ function OverviewView() {
           <span className="text-[12.5px]">Last Update</span>
           <span className="text-[12.5px] text-fg-secondary ml-2 tabular-nums">{formattedNow}</span>
         </div>
-        <h2 className={cn("mt-4 font-display font-medium tracking-[-0.03em]", "text-[64px] leading-[0.95] max-w-[480px]", "bg-clip-text text-transparent", "bg-gradient-to-b from-white via-white to-[#7d8aa8]")}>
+        <h2 className={cn(
+          "mt-4 font-display font-medium tracking-[-0.03em]",
+          "text-[40px] md:text-[64px] leading-[0.95] max-w-[480px]",
+          "bg-clip-text text-transparent",
+          "bg-gradient-to-b from-white via-white to-[#7d8aa8]"
+        )}>
           All Activity<br />Update
         </h2>
       </div>
 
-      <div className="-mx-10 px-10 overflow-x-auto pb-2 scroll-smooth">
+      {/* Price cards — horizontal scroll on desktop, vertical stack on mobile */}
+      <div className="hidden md:block -mx-10 px-10 overflow-x-auto pb-2 scroll-smooth">
         <div className="flex gap-6 min-w-max">
           {priceCards.map((card) => (
             <div key={card.id} className="w-[480px] shrink-0">
@@ -151,11 +154,24 @@ function OverviewView() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr] gap-8 pt-4">
+      {/* Mobile: vertical stack, full width */}
+      <div className="flex flex-col gap-4 md:hidden">
+        {priceCards.map((card) => (
+          <PriceCard
+            key={card.id}
+            data={card}
+            live={card.coinGeckoId ? prices[card.coinGeckoId] : undefined}
+            loading={loading}
+          />
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr] gap-6 md:gap-8 pt-2 md:pt-4">
         <div>
           <SectionHeader label="Live Update" title="Influence Section" />
           {bountiesLoading ? (
-            <div className={cn("relative overflow-hidden rounded-card border border-white/[0.06] shadow-card min-h-[420px]", "flex items-center justify-center")} style={{ background: "rgb(var(--bg-card))" }}>
+            <div className={cn("relative overflow-hidden rounded-card border border-white/[0.06] shadow-card min-h-[280px]", "flex items-center justify-center")}
+              style={{ background: "rgb(var(--bg-card))" }}>
               <p className="text-[13px] text-fg-tertiary">Loading bounties...</p>
             </div>
           ) : mappedBounties.length > 0 ? (
@@ -173,7 +189,6 @@ function OverviewView() {
   );
 }
 
-// ── Page ───────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   usePageTitle("Zerra · Overview");
   const [searchParams] = useSearchParams();
