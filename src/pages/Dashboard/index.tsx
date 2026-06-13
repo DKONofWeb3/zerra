@@ -84,7 +84,6 @@ function AnalyticsView() {
           </div>
         ))}
       </div>
-
       <div className="relative overflow-hidden rounded-card border border-white/[0.06] min-h-[280px] flex flex-col items-center justify-center gap-4"
         style={{ background: "rgb(var(--bg-card))" }}>
         <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
@@ -143,11 +142,11 @@ function OverviewView() {
         </h2>
       </div>
 
-      {/* Price cards — smaller on mobile, full size on desktop, always horizontal scroll */}
+      {/* Price cards — horizontal scroll always, smaller on mobile */}
       <div className="-mx-4 px-4 md:-mx-10 md:px-10 overflow-x-auto pb-2 scroll-smooth">
-        <div className="flex gap-4 md:gap-6 min-w-max">
+        <div className="flex gap-3 md:gap-6 min-w-max">
           {priceCards.map((card) => (
-         <div key={card.id} className="w-[200px] md:w-[480px] shrink-0">
+            <div key={card.id} className="w-[180px] md:w-[480px] shrink-0">
               <PriceCard
                 data={card}
                 live={card.coinGeckoId ? prices[card.coinGeckoId] : undefined}

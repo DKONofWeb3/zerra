@@ -24,9 +24,9 @@ function liveSparklineToPoints(
   changePercent: number
 ): { x: number; y: number; label?: string }[] {
   if (prices.length === 0) return [];
-  const min   = Math.min(...prices);
-  const max   = Math.max(...prices);
-  const range = max - min || 1;
+  const min     = Math.min(...prices);
+  const max     = Math.max(...prices);
+  const range   = max - min || 1;
   const peakIdx = prices.indexOf(max);
   return prices.map((p, i) => ({
     x: i / (prices.length - 1),
@@ -91,33 +91,25 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
 
   return (
     <div
-     className={cn(
-  "relative overflow-hidden rounded-card",
-  "border border-white/[0.025]",
-  "aspect-[1/0.85] min-h-[180px] md:min-h-[420px]",
-  "cursor-crosshair"
-)}
+      className={cn(
+        "relative overflow-hidden rounded-card",
+        "border border-white/[0.025]",
+        "aspect-[1/0.85] min-h-[180px] md:min-h-[420px]",
+        "cursor-crosshair"
+      )}
       style={{ background: "rgb(var(--bg-card))" }}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => setHoverX(null)}
     >
       {/* Top rim */}
-      <div
-        className="absolute inset-x-0 top-0 h-px pointer-events-none"
-        style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.06), transparent)" }}
-      />
+      <div className="absolute inset-x-0 top-0 h-px pointer-events-none"
+        style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.06), transparent)" }} />
 
       {/* Left accent bar */}
-      <div
-        aria-hidden
-        className="absolute left-0 top-[100px] w-[3px] h-[44px] rounded-r-sm z-10"
-        style={{
-          background: "rgb(var(--brand))",
-          boxShadow: "0 0 14px 1px rgb(var(--brand-glow) / 0.7)",
-        }}
-      />
+      <div aria-hidden className="absolute left-0 top-[50px] md:top-[100px] w-[3px] h-[28px] md:h-[44px] rounded-r-sm z-10"
+        style={{ background: "rgb(var(--brand))", boxShadow: "0 0 14px 1px rgb(var(--brand-glow) / 0.7)" }} />
 
-      {/* Chart — only occupies bottom 52% of card so it doesn't bleed into text */}
+      {/* Chart — bottom 52% */}
       <div className="absolute bottom-0 left-0 right-0 pointer-events-none" style={{ height: "52%" }}>
         {!showSkeletons && (
           <SparklineChart
@@ -133,67 +125,56 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
         )}
       </div>
 
-      {/* Fade gradient — blends chart top edge into card background */}
-      <div
-        aria-hidden
-        className="absolute left-0 right-0 pointer-events-none"
-        style={{
-          bottom: "52%",
-          height: 60,
-          background: "linear-gradient(180deg, rgb(var(--bg-card)) 0%, transparent 100%)",
-        }}
-      />
+      {/* Fade */}
+      <div aria-hidden className="absolute left-0 right-0 pointer-events-none"
+        style={{ bottom: "52%", height: 60, background: "linear-gradient(180deg, rgb(var(--bg-card)) 0%, transparent 100%)" }} />
 
       {/* Card content */}
-      <div className="relative h-full flex flex-col p-7 z-[1] pointer-events-none">
+      <div className="relative h-full flex flex-col p-3 md:p-7 z-[1] pointer-events-none">
         {/* Header */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <TokenIcon name={data.assetName} variant={tokenVariantFromName(data.assetName)} size={42} />
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <TokenIcon name={data.assetName} variant={tokenVariantFromName(data.assetName)} size={28} className="md:!w-[42px] md:!h-[42px]" />
             <div className="leading-tight">
-              <div className="text-[11px] md:text-[13px] text-fg-tertiary tabular-nums">{data.pair}</div>
-              <div className="text-[13px] md:text-[16px] font-semibold text-gradient mt-0.5">{data.assetName}</div>
+              <div className="text-[10px] md:text-[13px] text-fg-tertiary tabular-nums">{data.pair}</div>
+              <div className="text-[12px] md:text-[16px] font-semibold text-gradient mt-0.5">{data.assetName}</div>
             </div>
           </div>
           <button
             aria-label="More options"
             className={cn(
-              "shrink-0 grid place-items-center w-8 h-8 rounded-lg pointer-events-auto",
+              "shrink-0 grid place-items-center w-6 h-6 md:w-8 md:h-8 rounded-lg pointer-events-auto",
               "border border-white/[0.06] bg-bg-elevated/50",
               "text-fg-tertiary hover:text-fg-primary transition-colors"
             )}
           >
-            <MoreVertical className="w-4 h-4" />
+            <MoreVertical className="w-3 h-3 md:w-4 md:h-4" />
           </button>
         </div>
 
-        <div className="mt-7 text-[13px] text-fg-tertiary">Price</div>
+        <div className="mt-3 md:mt-7 text-[10px] md:text-[13px] text-fg-tertiary">Price</div>
 
-        {/* Price + percentage inline */}
+        {/* Price + percentage */}
         {showSkeletons ? (
-          <div className="mt-2 flex items-baseline gap-3">
-            <Skeleton className="h-[52px] w-[220px]" />
-            <Skeleton className="h-7 w-[60px] rounded-md" />
+          <div className="mt-1 flex items-baseline gap-2">
+            <Skeleton className="h-8 md:h-[52px] w-[100px] md:w-[220px]" />
+            <Skeleton className="h-5 md:h-7 w-[40px] md:w-[60px] rounded-md" />
           </div>
         ) : (
-          <div className="mt-2 flex items-baseline gap-3 flex-wrap">
+          <div className="mt-1 flex items-baseline gap-2 flex-wrap">
             <div className={cn(
               "font-display font-medium num-tabular leading-none",
-            "text-[20px] md:text-[48px] tracking-[-0.02em]",
+              "text-[22px] md:text-[48px] tracking-[-0.02em]",
               "text-gradient transition-all duration-150"
             )}>
               {hoverPrice !== null ? formatPrice(hoverPrice) : formatPrice(effectivePrice)}
-            </div>className="text-[11px] md:text-[13px] text-fg-tertiary tabular-nums"
+            </div>
             <span
               className={cn(
-                "px-2.5 py-1 rounded-md text-[14px] font-semibold tabular-nums",
+                "px-1.5 md:px-2.5 py-0.5 md:py-1 rounded-md text-[10px] md:text-[14px] font-semibold tabular-nums",
                 isUp ? "text-success" : "text-danger"
               )}
-              style={{
-                backgroundColor: isUp
-                  ? "rgb(var(--success) / 0.16)"
-                  : "rgb(var(--danger) / 0.16)",
-              }}
+              style={{ backgroundColor: isUp ? "rgb(var(--success) / 0.16)" : "rgb(var(--danger) / 0.16)" }}
             >
               {isUp ? "+" : ""}{effectiveChange.toFixed(1)}%
             </span>
