@@ -94,7 +94,7 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
      className={cn(
   "relative overflow-hidden rounded-card",
   "border border-white/[0.025]",
-  "aspect-[1/0.85] min-h-[200px] md:min-h-[420px]",
+  "aspect-[1/0.85] min-h-[180px] md:min-h-[420px]",
   "cursor-crosshair"
 )}
       style={{ background: "rgb(var(--bg-card))" }}
@@ -151,8 +151,8 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
           <div className="flex items-center gap-3">
             <TokenIcon name={data.assetName} variant={tokenVariantFromName(data.assetName)} size={42} />
             <div className="leading-tight">
-              <div className="text-[13px] text-fg-tertiary tabular-nums">{data.pair}</div>
-              <div className="text-[16px] font-semibold text-gradient mt-0.5">{data.assetName}</div>
+              <div className="text-[11px] md:text-[13px] text-fg-tertiary tabular-nums">{data.pair}</div>
+              <div className="text-[13px] md:text-[16px] font-semibold text-gradient mt-0.5">{data.assetName}</div>
             </div>
           </div>
           <button
@@ -179,11 +179,11 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
           <div className="mt-2 flex items-baseline gap-3 flex-wrap">
             <div className={cn(
               "font-display font-medium num-tabular leading-none",
-            "text-[28px] md:text-[48px] tracking-[-0.02em]",
+            "text-[20px] md:text-[48px] tracking-[-0.02em]",
               "text-gradient transition-all duration-150"
             )}>
               {hoverPrice !== null ? formatPrice(hoverPrice) : formatPrice(effectivePrice)}
-            </div>
+            </div>className="text-[11px] md:text-[13px] text-fg-tertiary tabular-nums"
             <span
               className={cn(
                 "px-2.5 py-1 rounded-md text-[14px] font-semibold tabular-nums",
