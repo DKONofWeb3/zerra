@@ -147,7 +147,7 @@ function OverviewView() {
         {/* Changed min-w-max to w-max and increased gap-3 to gap-4 */}
         <div className="flex gap-4 md:gap-6 w-max" style={{ paddingRight: 16 }}>
           {priceCards.map((card) => (
-            <div key={card.id} className="w-[180px] md:w-[480px] shrink-0">
+           <div key={card.id} className="w-[220px] md:w-[500px] shrink-0">
               <PriceCard
                 data={card}
                 live={card.coinGeckoId ? prices[card.coinGeckoId] : undefined}
