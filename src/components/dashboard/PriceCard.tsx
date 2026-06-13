@@ -22,18 +22,14 @@ function formatPrice(n: number): string {
 function liveSparklineToPoints(
   prices: number[],
   changePercent: number
-): { x: number; y: number; label?: string }[] {
+): { x: number; y: number }[] {
   if (prices.length === 0) return [];
   const min     = Math.min(...prices);
   const max     = Math.max(...prices);
   const range   = max - min || 1;
-  const peakIdx = prices.indexOf(max);
   return prices.map((p, i) => ({
     x: i / (prices.length - 1),
     y: (p - min) / range,
-    label: i === peakIdx
-      ? `${changePercent >= 0 ? "+" : ""}${changePercent.toFixed(1)}%`
-      : undefined,
   }));
 }
 
@@ -67,12 +63,12 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
   const isUp            = effectiveChange >= 0;
   const showSkeletons   = loading && data.coinGeckoId !== undefined;
 
-  const sparklinePoints = live
+  // Strip labels from sparkline — we show % in the badge, not on the chart
+  const sparklinePoints = (live
     ? liveSparklineToPoints(live.sparkline, effectiveChange)
-    : data.sparkline;
+    : data.sparkline.map(p => ({ x: p.x, y: p.y }))
+  );
 
-  const labeledIdx     = sparklinePoints.findIndex((p) => p.label !== undefined);
-  const neighborIdx    = labeledIdx > 0 && labeledIdx < sparklinePoints.length - 1 ? labeledIdx - 2 : undefined;
   const effectiveTrend = isUp ? "up" : "down";
 
   const priceRange = effectivePrice * 0.05;
@@ -117,7 +113,6 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
             trend={effectiveTrend}
             width={600}
             height={220}
-            neighborDotIndex={neighborIdx}
             className="w-full h-full"
             hoverX={hoverX}
             hoverPrice={hoverPrice}
@@ -131,13 +126,18 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
 
       {/* Card content */}
       <div className="relative h-full flex flex-col p-3 md:p-7 z-[1] pointer-events-none">
-        {/* Header */}
+
+        {/* Header — icon scaled down on mobile via wrapper */}
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <TokenIcon name={data.assetName} variant={tokenVariantFromName(data.assetName)} size={28} className="md:!w-[42px] md:!h-[42px]" />
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="w-7 h-7 md:w-[42px] md:h-[42px] shrink-0 flex items-center justify-center">
+              <div className="scale-[0.65] md:scale-100 origin-center">
+                <TokenIcon name={data.assetName} variant={tokenVariantFromName(data.assetName)} size={42} />
+              </div>
+            </div>
             <div className="leading-tight">
               <div className="text-[10px] md:text-[13px] text-fg-tertiary tabular-nums">{data.pair}</div>
-              <div className="text-[12px] md:text-[16px] font-semibold text-gradient mt-0.5">{data.assetName}</div>
+              <div className="text-[11px] md:text-[16px] font-semibold text-gradient mt-0.5">{data.assetName}</div>
             </div>
           </div>
           <button
@@ -152,19 +152,18 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
           </button>
         </div>
 
-        <div className="mt-3 md:mt-7 text-[10px] md:text-[13px] text-fg-tertiary">Price</div>
+        <div className="mt-2 md:mt-7 text-[10px] md:text-[13px] text-fg-tertiary">Price</div>
 
-        {/* Price + percentage */}
         {showSkeletons ? (
           <div className="mt-1 flex items-baseline gap-2">
-            <Skeleton className="h-8 md:h-[52px] w-[100px] md:w-[220px]" />
-            <Skeleton className="h-5 md:h-7 w-[40px] md:w-[60px] rounded-md" />
+            <Skeleton className="h-7 md:h-[52px] w-[90px] md:w-[220px]" />
+            <Skeleton className="h-4 md:h-7 w-[36px] md:w-[60px] rounded-md" />
           </div>
         ) : (
           <div className="mt-1 flex items-baseline gap-2 flex-wrap">
             <div className={cn(
               "font-display font-medium num-tabular leading-none",
-              "text-[22px] md:text-[48px] tracking-[-0.02em]",
+              "text-[20px] md:text-[48px] tracking-[-0.02em]",
               "text-gradient transition-all duration-150"
             )}>
               {hoverPrice !== null ? formatPrice(hoverPrice) : formatPrice(effectivePrice)}
