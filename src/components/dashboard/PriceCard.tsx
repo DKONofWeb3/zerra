@@ -91,12 +91,12 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
 
   return (
     <div
-      className={cn(
-        "relative overflow-hidden rounded-card",
-        "border border-white/[0.025]",
-        "aspect-[1/0.85] min-h-[420px]",
-        "cursor-crosshair"
-      )}
+     className={cn(
+  "relative overflow-hidden rounded-card",
+  "border border-white/[0.025]",
+  "aspect-[1/0.85] min-h-[200px] md:min-h-[420px]",
+  "cursor-crosshair"
+)}
       style={{ background: "rgb(var(--bg-card))" }}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => setHoverX(null)}
@@ -179,7 +179,7 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
           <div className="mt-2 flex items-baseline gap-3 flex-wrap">
             <div className={cn(
               "font-display font-medium num-tabular leading-none",
-              "text-[48px] tracking-[-0.02em]",
+            "text-[28px] md:text-[48px] tracking-[-0.02em]",
               "text-gradient transition-all duration-150"
             )}>
               {hoverPrice !== null ? formatPrice(hoverPrice) : formatPrice(effectivePrice)}
