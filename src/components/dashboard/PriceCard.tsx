@@ -20,8 +20,7 @@ function formatPrice(n: number): string {
 }
 
 function liveSparklineToPoints(
-  prices: number[],
-  changePercent: number
+  prices: number[]
 ): { x: number; y: number }[] {
   if (prices.length === 0) return [];
   const min     = Math.min(...prices);
@@ -65,7 +64,7 @@ export function PriceCard({ data, live, loading }: PriceCardProps) {
 
   // Strip labels from sparkline — we show % in the badge, not on the chart
   const sparklinePoints = (live
-    ? liveSparklineToPoints(live.sparkline, effectiveChange)
+    ? liveSparklineToPoints(live.sparkline)
     : data.sparkline.map(p => ({ x: p.x, y: p.y }))
   );
 
