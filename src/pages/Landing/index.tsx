@@ -58,27 +58,27 @@ export default function LandingPage() {
       overflowX: "hidden",
     }}>
 
-      {/* ── NAV ─────────────────────────────────────────────────────── */}
+      {/* ── NAV ── */}
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 48px", height: 64,
-        background: "rgb(0 0 0 / 0.7)",
+        padding: "0 24px", height: 60,
+        background: "rgb(0 0 0 / 0.8)",
         backdropFilter: "blur(12px)",
         borderBottom: "1px solid rgb(255 255 255 / 0.05)",
       }}>
         <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "rgb(74 125 255)" }}>
           ZERRA
         </span>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <Link to="/login" style={{
-            padding: "8px 20px", borderRadius: 9999, fontSize: 13.5, fontWeight: 500,
-            color: "rgb(158 162 175)", textDecoration: "none", transition: "color 0.15s",
+            padding: "8px 16px", borderRadius: 9999, fontSize: 13, fontWeight: 500,
+            color: "rgb(158 162 175)", textDecoration: "none",
           }}>
             Sign in
           </Link>
           <Link to="/login" style={{
-            padding: "8px 20px", borderRadius: 9999, fontSize: 13.5, fontWeight: 600,
+            padding: "8px 16px", borderRadius: 9999, fontSize: 13, fontWeight: 600,
             background: "rgb(74 125 255)", color: "#fff", textDecoration: "none",
             boxShadow: "0 0 20px rgb(74 125 255 / 0.35)",
           }}>
@@ -87,61 +87,61 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* ── HERO ────────────────────────────────────────────────────── */}
-      <section style={{
-        minHeight: "100vh", display: "flex", position: "relative", overflow: "hidden",
-      }}>
-        {/* LEFT — visual */}
-        <div style={{ flex: "0 0 55%", position: "relative", overflow: "hidden" }}>
-          {/* Blue curved rect */}
+      {/* ── HERO ── */}
+      <section style={{ minHeight: "100vh", display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" }}>
+
+        {/* MOBILE: full-screen visual hero */}
+        <div style={{
+          position: "relative",
+          overflow: "hidden",
+          minHeight: "100vw",
+          maxHeight: 520,
+          flex: "none",
+        }}
+          className="md-hide"
+        >
+          <style>{`
+            @media (min-width: 768px) { .md-hide { display: none !important; } .md-show { display: flex !important; } }
+            @media (max-width: 767px) { .md-show { display: none !important; } .md-hide { display: block !important; } }
+          `}</style>
+
           <img src="/login-bg/rect-blue.png" alt="" aria-hidden draggable={false}
-            style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "fill", pointerEvents: "none", userSelect: "none" }}
-          />
-          {/* Overlay */}
+            style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "fill", pointerEvents: "none" }} />
           <img src="/login-bg/rect-overlay.png" alt="" aria-hidden draggable={false}
-            style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "fill", mixBlendMode: "overlay", opacity: 0.5, pointerEvents: "none", userSelect: "none" }}
-          />
-          {/* Bottom glow */}
+            style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "fill", mixBlendMode: "overlay", opacity: 0.5, pointerEvents: "none" }} />
           <div aria-hidden style={{ position: "absolute", bottom: 0, left: 0, width: "60%", height: "35%", background: "radial-gradient(ellipse 80% 80% at 0% 100%, rgb(40 70 160 / 0.4) 0%, transparent 70%)", pointerEvents: "none", zIndex: 1 }} />
 
-          {/* Floating cards */}
           {CARDS.map((card, i) => (
-            <img key={i} src={card.src} alt={`Creator ${i + 1}`} draggable={false}
-              style={{ position: "absolute", borderRadius: 16, boxShadow: "0 24px 64px rgb(0 0 0 / 0.55), 0 4px 12px rgb(0 0 0 / 0.4)", objectFit: "cover", userSelect: "none", ...card.style }}
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-            />
+            <img key={i} src={card.src} alt="" draggable={false}
+              style={{ position: "absolute", borderRadius: 12, boxShadow: "0 16px 40px rgb(0 0 0 / 0.55)", objectFit: "cover", userSelect: "none", ...card.style, width: card.style.width * 0.65 }}
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
           ))}
 
-          {/* Bottom text */}
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "48px", zIndex: 10 }}>
-            <h1 style={{ margin: "0 0 14px", fontSize: 48, fontWeight: 700, lineHeight: 1.1, letterSpacing: "-0.5px" }}>
+          {/* Mobile hero text overlay */}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "32px 24px", zIndex: 10, background: "linear-gradient(transparent, rgb(0 0 0 / 0.8))" }}>
+            <h1 style={{ margin: "0 0 8px", fontSize: 30, fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.5px" }}>
               Turn your content{" "}
               <span style={{ background: "linear-gradient(90deg, rgb(74 125 255), rgb(140 100 255))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
                 into a
               </span>
               {" "}financial asset
             </h1>
-            <p style={{ margin: "0 0 32px", fontSize: 15, color: "rgb(110 115 128)", lineHeight: 1.6, maxWidth: 400 }}>
-              Join thousands of creators earning more, growing faster, and building their brand with Zerra.
+            <p style={{ margin: "0 0 20px", fontSize: 13.5, color: "rgb(130 135 148)", lineHeight: 1.6 }}>
+              Join thousands of creators earning more with Zerra.
             </p>
-            <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ display: "flex", gap: 10 }}>
               <Link to="/login" style={{
-                display: "inline-flex", alignItems: "center", gap: 8,
-                padding: "12px 28px", borderRadius: 9999, fontSize: 14, fontWeight: 600,
+                flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                padding: "12px 16px", borderRadius: 9999, fontSize: 14, fontWeight: 600,
                 background: "rgb(74 125 255)", color: "#fff", textDecoration: "none",
-                boxShadow: "0 0 24px rgb(74 125 255 / 0.4)",
               }}>
-                Start earning
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
+                Start earning →
               </Link>
               <Link to="/login" style={{
-                display: "inline-flex", alignItems: "center", gap: 8,
-                padding: "12px 24px", borderRadius: 9999, fontSize: 14, fontWeight: 500,
-                background: "rgb(12 14 20 / 0.75)", border: "1px solid rgb(44 50 65)",
+                display: "inline-flex", alignItems: "center",
+                padding: "12px 20px", borderRadius: 9999, fontSize: 14, fontWeight: 500,
+                background: "rgb(12 14 20 / 0.8)", border: "1px solid rgb(44 50 65)",
                 color: "rgb(245 245 247)", textDecoration: "none",
-                backdropFilter: "blur(8px)",
               }}>
                 Sign in
               </Link>
@@ -149,81 +149,129 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* RIGHT — stats + features */}
-        <div style={{
-          flex: "0 0 45%", position: "relative", display: "flex", flexDirection: "column",
-          justifyContent: "center", padding: "120px 64px 80px",
-          background: "rgb(8 9 14)", borderLeft: "1px solid rgb(18 20 28)", overflow: "hidden",
-        }}>
-          <div aria-hidden style={{
-            position: "absolute", bottom: "-10%", left: "-10%", right: "-10%", height: "55%",
-            background: "radial-gradient(ellipse 90% 80% at 40% 100%, rgb(40 70 180 / 0.15) 0%, transparent 70%)",
-            pointerEvents: "none",
-          }} />
-
-          <div style={{ position: "relative", zIndex: 1 }}>
-            {/* Stats */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24, marginBottom: 64 }}>
-              {STATS.map(({ value, label }) => (
-                <div key={label}>
-                  <p style={{ margin: "0 0 4px", fontSize: 28, fontWeight: 700, letterSpacing: "-0.5px", color: "rgb(245 245 247)" }}>{value}</p>
-                  <p style={{ margin: 0, fontSize: 12.5, color: "rgb(100 104 116)" }}>{label}</p>
+        {/* MOBILE: stats + features below */}
+        <div className="md-hide" style={{ background: "rgb(8 9 14)", padding: "32px 24px 40px", flex: 1 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 40 }}>
+            {STATS.map(({ value, label }) => (
+              <div key={label} style={{ textAlign: "center" }}>
+                <p style={{ margin: "0 0 2px", fontSize: 20, fontWeight: 700, letterSpacing: "-0.5px", color: "rgb(245 245 247)" }}>{value}</p>
+                <p style={{ margin: 0, fontSize: 11, color: "rgb(100 104 116)" }}>{label}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 32 }}>
+            {FEATURES.map(({ icon, title, description }) => (
+              <div key={title} style={{ display: "flex", gap: 14 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0, background: "rgb(74 125 255 / 0.08)", border: "1px solid rgb(74 125 255 / 0.18)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgb(74 125 255)" }}>
+                  {icon}
                 </div>
-              ))}
-            </div>
-
-            {/* Features */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-              {FEATURES.map(({ icon, title, description }) => (
-                <div key={title} style={{ display: "flex", gap: 16 }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                    background: "rgb(74 125 255 / 0.08)", border: "1px solid rgb(74 125 255 / 0.18)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    color: "rgb(74 125 255)",
-                  }}>
-                    {icon}
-                  </div>
-                  <div>
-                    <p style={{ margin: "0 0 4px", fontSize: 14.5, fontWeight: 600, color: "rgb(245 245 247)" }}>{title}</p>
-                    <p style={{ margin: 0, fontSize: 13, color: "rgb(100 104 116)", lineHeight: 1.6 }}>{description}</p>
-                  </div>
+                <div>
+                  <p style={{ margin: "0 0 3px", fontSize: 14, fontWeight: 600, color: "rgb(245 245 247)" }}>{title}</p>
+                  <p style={{ margin: 0, fontSize: 12.5, color: "rgb(100 104 116)", lineHeight: 1.6 }}>{description}</p>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+          </div>
+          <Link to="/login" style={{
+            display: "block", width: "100%", padding: "14px",
+            background: "rgb(11 13 20)", border: "1px solid rgb(36 40 55)",
+            borderRadius: 12, fontSize: 14, fontWeight: 600,
+            color: "rgb(230 230 235)", textDecoration: "none",
+            textAlign: "center", boxSizing: "border-box",
+          }}>
+            Create your account — it's free
+          </Link>
+        </div>
 
-            {/* CTA */}
-            <div style={{ marginTop: 52 }}>
-              <Link to="/login" style={{
-                display: "block", width: "100%", padding: "14px",
-                background: "rgb(11 13 20)", border: "1px solid rgb(36 40 55)",
-                borderRadius: 12, fontSize: 14, fontWeight: 600,
-                color: "rgb(230 230 235)", textDecoration: "none",
-                textAlign: "center",
-                boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.04)",
-              }}>
-                Create your account
-              </Link>
+        {/* DESKTOP: two-column layout */}
+        <div className="md-show" style={{ flex: 1, display: "none" }}>
+          {/* LEFT */}
+          <div style={{ flex: "0 0 55%", position: "relative", overflow: "hidden" }}>
+            <img src="/login-bg/rect-blue.png" alt="" aria-hidden draggable={false}
+              style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "fill", pointerEvents: "none" }} />
+            <img src="/login-bg/rect-overlay.png" alt="" aria-hidden draggable={false}
+              style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "fill", mixBlendMode: "overlay", opacity: 0.5, pointerEvents: "none" }} />
+            <div aria-hidden style={{ position: "absolute", bottom: 0, left: 0, width: "60%", height: "35%", background: "radial-gradient(ellipse 80% 80% at 0% 100%, rgb(40 70 160 / 0.4) 0%, transparent 70%)", pointerEvents: "none", zIndex: 1 }} />
+            {CARDS.map((card, i) => (
+              <img key={i} src={card.src} alt="" draggable={false}
+                style={{ position: "absolute", borderRadius: 16, boxShadow: "0 24px 64px rgb(0 0 0 / 0.55), 0 4px 12px rgb(0 0 0 / 0.4)", objectFit: "cover", userSelect: "none", ...card.style }}
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            ))}
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "48px", zIndex: 10 }}>
+              <h1 style={{ margin: "0 0 14px", fontSize: 48, fontWeight: 700, lineHeight: 1.1, letterSpacing: "-0.5px" }}>
+                Turn your content{" "}
+                <span style={{ background: "linear-gradient(90deg, rgb(74 125 255), rgb(140 100 255))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                  into a
+                </span>
+                {" "}financial asset
+              </h1>
+              <p style={{ margin: "0 0 32px", fontSize: 15, color: "rgb(110 115 128)", lineHeight: 1.6, maxWidth: 400 }}>
+                Join thousands of creators earning more, growing faster, and building their brand with Zerra.
+              </p>
+              <div style={{ display: "flex", gap: 12 }}>
+                <Link to="/login" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 9999, fontSize: 14, fontWeight: 600, background: "rgb(74 125 255)", color: "#fff", textDecoration: "none", boxShadow: "0 0 24px rgb(74 125 255 / 0.4)" }}>
+                  Start earning
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </Link>
+                <Link to="/login" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 24px", borderRadius: 9999, fontSize: 14, fontWeight: 500, background: "rgb(12 14 20 / 0.75)", border: "1px solid rgb(44 50 65)", color: "rgb(245 245 247)", textDecoration: "none", backdropFilter: "blur(8px)" }}>
+                  Sign in
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT */}
+          <div style={{ flex: "0 0 45%", position: "relative", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 64px 80px", background: "rgb(8 9 14)", borderLeft: "1px solid rgb(18 20 28)", overflow: "hidden" }}>
+            <div aria-hidden style={{ position: "absolute", bottom: "-10%", left: "-10%", right: "-10%", height: "55%", background: "radial-gradient(ellipse 90% 80% at 40% 100%, rgb(40 70 180 / 0.15) 0%, transparent 70%)", pointerEvents: "none" }} />
+            <div style={{ position: "relative", zIndex: 1 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24, marginBottom: 64 }}>
+                {STATS.map(({ value, label }) => (
+                  <div key={label}>
+                    <p style={{ margin: "0 0 4px", fontSize: 28, fontWeight: 700, letterSpacing: "-0.5px", color: "rgb(245 245 247)" }}>{value}</p>
+                    <p style={{ margin: 0, fontSize: 12.5, color: "rgb(100 104 116)" }}>{label}</p>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+                {FEATURES.map(({ icon, title, description }) => (
+                  <div key={title} style={{ display: "flex", gap: 16 }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 12, flexShrink: 0, background: "rgb(74 125 255 / 0.08)", border: "1px solid rgb(74 125 255 / 0.18)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgb(74 125 255)" }}>
+                      {icon}
+                    </div>
+                    <div>
+                      <p style={{ margin: "0 0 4px", fontSize: 14.5, fontWeight: 600, color: "rgb(245 245 247)" }}>{title}</p>
+                      <p style={{ margin: 0, fontSize: 13, color: "rgb(100 104 116)", lineHeight: 1.6 }}>{description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 52 }}>
+                <Link to="/login" style={{ display: "block", width: "100%", padding: "14px", background: "rgb(11 13 20)", border: "1px solid rgb(36 40 55)", borderRadius: 12, fontSize: 14, fontWeight: 600, color: "rgb(230 230 235)", textDecoration: "none", textAlign: "center", boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.04)" }}>
+                  Create your account — it's free
+                </Link>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── FOOTER ──────────────────────────────────────────────────── */}
+      {/* ── FOOTER ── */}
       <footer style={{
-        padding: "32px 48px",
+        padding: "24px",
         background: "rgb(4 5 9)",
         borderTop: "1px solid rgb(18 20 28)",
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        flexWrap: "wrap", gap: 16,
+        flexWrap: "wrap", gap: 12,
       }}>
-        <span style={{ fontSize: 12.5, color: "rgb(60 64 78)" }}>
+        <span style={{ fontSize: 12, color: "rgb(60 64 78)" }}>
           © {new Date().getFullYear()} Zerra. All rights reserved.
         </span>
-        <div style={{ display: "flex", gap: 24 }}>
-          <Link to="/terms"   style={{ fontSize: 12.5, color: "rgb(100 104 116)", textDecoration: "none" }}>Terms of Service</Link>
-          <Link to="/privacy" style={{ fontSize: 12.5, color: "rgb(100 104 116)", textDecoration: "none" }}>Privacy Policy</Link>
-          <a href="mailto:support@zerra.pro" style={{ fontSize: 12.5, color: "rgb(100 104 116)", textDecoration: "none" }}>Contact</a>
+        <div style={{ display: "flex", gap: 20 }}>
+          <Link to="/terms"   style={{ fontSize: 12, color: "rgb(100 104 116)", textDecoration: "none" }}>Terms</Link>
+          <Link to="/privacy" style={{ fontSize: 12, color: "rgb(100 104 116)", textDecoration: "none" }}>Privacy</Link>
+          <a href="mailto:support@zerra.pro" style={{ fontSize: 12, color: "rgb(100 104 116)", textDecoration: "none" }}>Contact</a>
         </div>
       </footer>
     </div>
