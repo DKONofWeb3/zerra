@@ -179,7 +179,7 @@ export default function LandingPage() {
             color: "rgb(230 230 235)", textDecoration: "none",
             textAlign: "center", boxSizing: "border-box",
           }}>
-            Create your account — it's free
+            Create your account
           </Link>
         </div>
 
