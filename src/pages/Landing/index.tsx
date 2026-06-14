@@ -249,7 +249,7 @@ export default function LandingPage() {
               </div>
               <div style={{ marginTop: 52 }}>
                 <Link to="/login" style={{ display: "block", width: "100%", padding: "14px", background: "rgb(11 13 20)", border: "1px solid rgb(36 40 55)", borderRadius: 12, fontSize: 14, fontWeight: 600, color: "rgb(230 230 235)", textDecoration: "none", textAlign: "center", boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.04)" }}>
-                  Create your account — it's free
+                  Create your account
                 </Link>
               </div>
             </div>
