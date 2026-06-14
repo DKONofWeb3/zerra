@@ -15,7 +15,7 @@ export default function AuthCallback() {
     const params = new URLSearchParams(hash.replace("#", "?"));
     const accessToken  = params.get("access_token");
     const refreshToken = params.get("refresh_token");
-    const type         = params.get("type"); // "signup" | "recovery" etc.
+    // const type = params.get("type"); // unused
 
     if (accessToken && refreshToken) {
       // Exchange the tokens from the URL hash into a real session
