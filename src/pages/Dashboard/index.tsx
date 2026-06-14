@@ -7,6 +7,9 @@ import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { InfluenceSection } from "@/components/dashboard/InfluenceSection";
 import { useCryptoPrices } from "@/lib/useCryptoPrices";
 import { useBounties } from "@/hooks/useBounties";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEffect, useState } from "react";
+import { apiGet } from "@/lib/api/client";
 import type { CoinGeckoId } from "@/lib/crypto-api";
 import type { InfluenceBountyItem, ActivityItem } from "@/lib/types";
 import { priceCards } from "@/lib/mock-data";
@@ -62,16 +65,58 @@ function mapBounty(b: any): InfluenceBountyItem {
   };
 }
 
+function fmt(n: number) {
+  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
+  if (n >= 1_000_000)     return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000)         return `${(n / 1_000).toFixed(0)}K`;
+  return String(n);
+}
+
 function AnalyticsView() {
+  const { session } = useAuth();
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [loading,   setLoading]   = useState(true);
+
+  useEffect(() => {
+    if (!session) { setLoading(false); return; }
+    apiGet<{ analytics: any }>("/analytics/tiktok")
+      .then((d) => setAnalytics(d.analytics ?? null))
+      .catch(() => setAnalytics(null))
+      .finally(() => setLoading(false));
+  }, [session]);
+
+  const hasData = !loading && analytics && (
+    analytics.total_views > 0 ||
+    analytics.post_count  > 0 ||
+    analytics.total_likes > 0
+  );
+
   const stats = [
-    { label: "Total Views",         value: "—", sub: "All time" },
-    { label: "Avg Engagement Rate", value: "—", sub: "Last 30 days" },
-    { label: "Posts This Month",    value: "—", sub: "TikTok posts" },
-    { label: "Estimated Reach",     value: "—", sub: "Unique accounts" },
+    {
+      label: "Total Views",
+      value: loading ? "…" : hasData ? fmt(analytics.total_views ?? 0) : "—",
+      sub: "All time",
+    },
+    {
+      label: "Avg Engagement",
+      value: loading ? "…" : hasData ? `${(analytics.avg_engagement_rate ?? 0).toFixed(1)}%` : "—",
+      sub: "Last 30 days",
+    },
+    {
+      label: "Posts Synced",
+      value: loading ? "…" : hasData ? String(analytics.post_count ?? 0) : "—",
+      sub: "TikTok posts",
+    },
+    {
+      label: "Total Likes",
+      value: loading ? "…" : hasData ? fmt(analytics.total_likes ?? 0) : "—",
+      sub: "Across all posts",
+    },
   ];
 
   return (
     <div className="space-y-6">
+      {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
         {stats.map(({ label, value, sub }) => (
           <div key={label} className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-4 md:p-5"
@@ -79,31 +124,75 @@ function AnalyticsView() {
             <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
               style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
             <p className="text-[11px] md:text-[12px] text-fg-tertiary">{label}</p>
-            <p className="mt-1.5 text-[28px] md:text-[32px] font-display font-medium text-gradient leading-none">{value}</p>
+            <p className={cn("mt-1.5 font-display font-medium text-gradient leading-none",
+              loading ? "animate-pulse text-fg-muted text-[28px]" : "text-[28px] md:text-[32px]")}>
+              {value}
+            </p>
             <p className="mt-1 text-[11px] text-fg-muted">{sub}</p>
           </div>
         ))}
       </div>
-      <div className="relative overflow-hidden rounded-card border border-white/[0.06] min-h-[280px] flex flex-col items-center justify-center gap-4"
-        style={{ background: "rgb(var(--bg-card))" }}>
-        <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
-          style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
-        <div className="w-12 h-12 rounded-2xl border border-white/[0.06] bg-bg-elevated flex items-center justify-center">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--fg-muted))" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 20V10M12 20V4M6 20v-6" />
-          </svg>
+
+      {/* Main content area */}
+      {loading ? (
+        <div className="relative overflow-hidden rounded-card border border-white/[0.06] min-h-[200px] flex items-center justify-center"
+          style={{ background: "rgb(var(--bg-card))" }}>
+          <p className="text-[13px] text-fg-tertiary">Loading analytics...</p>
         </div>
-        <div className="text-center px-8">
-          <p className="text-[15px] font-medium text-fg-primary mb-1">No analytics data yet</p>
-          <p className="text-[13px] text-fg-tertiary leading-relaxed max-w-sm">
-            Connect your TikTok and sync your posts to see analytics here.
-          </p>
+
+      ) : hasData ? (
+        /* Show top posts if we have data */
+        <div className="relative overflow-hidden rounded-card border border-white/[0.06] p-5 md:p-6"
+          style={{ background: "rgb(var(--bg-card))" }}>
+          <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
+            style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
+          <p className="text-[15px] font-semibold text-fg-primary mb-4">Top Posts</p>
+          {analytics.posts?.length > 0 ? (
+            <div>
+              {analytics.posts.slice(0, 5).map((post: any, i: number) => (
+                <div key={post.id ?? i} className="flex items-center gap-3 py-3 border-b border-white/[0.04] last:border-0">
+                  <span className="text-[12px] text-fg-muted tabular-nums w-4 shrink-0">{i + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-medium text-fg-primary truncate">{post.description || "No caption"}</p>
+                    <p className="text-[11.5px] text-fg-tertiary mt-0.5">
+                      {fmt(post.view_count ?? 0)} views · {fmt(post.like_count ?? 0)} likes
+                    </p>
+                  </div>
+                  <span className="text-[12px] font-semibold tabular-nums shrink-0"
+                    style={{ color: (post.engagement_rate ?? 0) >= 5 ? "rgb(var(--success))" : "rgb(var(--fg-secondary))" }}>
+                    {(post.engagement_rate ?? 0).toFixed(1)}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[13px] text-fg-tertiary">No posts found in your analytics.</p>
+          )}
         </div>
-        <a href="/influence/top-performing"
-          className="px-5 py-2.5 rounded-xl text-[13px] font-medium border border-white/[0.08] bg-bg-elevated text-fg-primary hover:bg-bg-card transition-colors">
-          Sync TikTok Posts
-        </a>
-      </div>
+
+      ) : (
+        /* Only show sync prompt if genuinely no data */
+        <div className="relative overflow-hidden rounded-card border border-white/[0.06] min-h-[280px] flex flex-col items-center justify-center gap-4"
+          style={{ background: "rgb(var(--bg-card))" }}>
+          <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
+            style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
+          <div className="w-12 h-12 rounded-2xl border border-white/[0.06] bg-bg-elevated flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--fg-muted))" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 20V10M12 20V4M6 20v-6" />
+            </svg>
+          </div>
+          <div className="text-center px-8">
+            <p className="text-[15px] font-medium text-fg-primary mb-1">No analytics data yet</p>
+            <p className="text-[13px] text-fg-tertiary leading-relaxed max-w-sm">
+              Connect your TikTok and sync your posts to see analytics here.
+            </p>
+          </div>
+          <a href="/influence/top-performing"
+            className="px-5 py-2.5 rounded-xl text-[13px] font-medium border border-white/[0.08] bg-bg-elevated text-fg-primary hover:bg-bg-card transition-colors">
+            Go to Top Performing →
+          </a>
+        </div>
+      )}
     </div>
   );
 }
@@ -142,12 +231,11 @@ function OverviewView() {
         </h2>
       </div>
 
-    {/* Price cards — horizontal scroll always, smaller on mobile */}
+      {/* Price cards — horizontal scroll */}
       <div className="-mx-4 px-4 md:-mx-10 md:px-10 overflow-x-auto pb-2 scroll-smooth">
-        {/* Changed min-w-max to w-max and increased gap-3 to gap-4 */}
         <div className="flex gap-4 md:gap-6 w-max" style={{ paddingRight: 16 }}>
           {priceCards.map((card) => (
-           <div key={card.id} className="w-[220px] md:w-[500px] shrink-0">
+            <div key={card.id} className="w-[220px] md:w-[500px] shrink-0">
               <PriceCard
                 data={card}
                 live={card.coinGeckoId ? prices[card.coinGeckoId] : undefined}
