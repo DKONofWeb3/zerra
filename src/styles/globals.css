@@ -105,7 +105,7 @@ body {
   --glow-width: 90px;     /* short axis */
   --glow-height: 900px;   /* long axis — tail ends below the heading */
   --glow-rotate: -55deg;  /* angle: head upper-left, tail lower-right */
-  --glow-opacity: 0.85;
+  --glow-opacity: 0.45;
   --glow-blur: 80px;
 
   /* Base blue glow around "All Activity Update" heading */
