@@ -1,4 +1,5 @@
-import { apiGet, apiPost, apiGetPublic, apiPut } from "./client";
+import { apiGet, apiPost, apiGetPublic, apiPut, apiDelete } from "./client";
+
 
 // ——— Auth / User ———
 export const getMe = () => apiGet<{ user: any }>("/me");
@@ -48,6 +49,9 @@ export const updatePrivacy = (body: { public_profile: boolean }) =>
 // ——— Password ———
 export const changePassword = (body: { new_password: string }) =>
   apiPut<{ success: boolean }>("/me/password", body);
+
+export const clearWallet = () =>
+  apiDelete<{ user: any }>("/me/wallet");
 
 // ——— Wallet ———
 export const saveWallet = (body: { wallet_address: string; wallet_chain?: string }) =>
