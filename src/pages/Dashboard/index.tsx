@@ -80,43 +80,28 @@ function AnalyticsView() {
   useEffect(() => {
     if (!session) { setLoading(false); return; }
     apiGet<{ analytics: any }>("/analytics/tiktok")
-      .then((d) => setAnalytics(d.analytics ?? null))
+      .then((d) => {
+        // Backend returns { analytics: { summary: {...}, posts: [...] } }
+        setAnalytics(d.analytics ?? null);
+      })
       .catch(() => setAnalytics(null))
       .finally(() => setLoading(false));
   }, [session]);
 
-  const hasData = !loading && analytics && (
-    analytics.total_views > 0 ||
-    analytics.post_count  > 0 ||
-    analytics.total_likes > 0
-  );
+  // analytics.summary holds the aggregated stats
+  const summary = analytics?.summary;
+  const posts   = analytics?.posts ?? [];
+  const hasData = !loading && summary && (summary.total_posts > 0 || summary.total_views > 0);
 
   const stats = [
-    {
-      label: "Total Views",
-      value: loading ? "…" : hasData ? fmt(analytics.total_views ?? 0) : "—",
-      sub: "All time",
-    },
-    {
-      label: "Avg Engagement",
-      value: loading ? "…" : hasData ? `${(analytics.avg_engagement_rate ?? 0).toFixed(1)}%` : "—",
-      sub: "Last 30 days",
-    },
-    {
-      label: "Posts Synced",
-      value: loading ? "…" : hasData ? String(analytics.post_count ?? 0) : "—",
-      sub: "TikTok posts",
-    },
-    {
-      label: "Total Likes",
-      value: loading ? "…" : hasData ? fmt(analytics.total_likes ?? 0) : "—",
-      sub: "Across all posts",
-    },
+    { label: "Total Views",    value: loading ? "…" : hasData ? fmt(summary.total_views)    : "—", sub: "All time" },
+    { label: "Avg Engagement", value: loading ? "…" : hasData ? `${summary.avg_engagement_rate}%` : "—", sub: "Last 30 days" },
+    { label: "Posts Synced",   value: loading ? "…" : hasData ? String(summary.total_posts) : "—", sub: "TikTok posts" },
+    { label: "Total Likes",    value: loading ? "…" : hasData ? fmt(summary.total_likes)    : "—", sub: "Across all posts" },
   ];
 
   return (
     <div className="space-y-6">
-      {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
         {stats.map(({ label, value, sub }) => (
           <div key={label} className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-4 md:p-5"
@@ -124,8 +109,8 @@ function AnalyticsView() {
             <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
               style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
             <p className="text-[11px] md:text-[12px] text-fg-tertiary">{label}</p>
-            <p className={cn("mt-1.5 font-display font-medium text-gradient leading-none",
-              loading ? "animate-pulse text-fg-muted text-[28px]" : "text-[28px] md:text-[32px]")}>
+            <p className={cn("mt-1.5 font-display font-medium leading-none",
+              loading ? "animate-pulse text-fg-muted text-[28px]" : "text-[28px] md:text-[32px] text-gradient")}>
               {value}
             </p>
             <p className="mt-1 text-[11px] text-fg-muted">{sub}</p>
@@ -133,7 +118,6 @@ function AnalyticsView() {
         ))}
       </div>
 
-      {/* Main content area */}
       {loading ? (
         <div className="relative overflow-hidden rounded-card border border-white/[0.06] min-h-[200px] flex items-center justify-center"
           style={{ background: "rgb(var(--bg-card))" }}>
@@ -141,19 +125,39 @@ function AnalyticsView() {
         </div>
 
       ) : hasData ? (
-        /* Show top posts if we have data */
         <div className="relative overflow-hidden rounded-card border border-white/[0.06] p-5 md:p-6"
           style={{ background: "rgb(var(--bg-card))" }}>
           <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
             style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
           <p className="text-[15px] font-semibold text-fg-primary mb-4">Top Posts</p>
-          {analytics.posts?.length > 0 ? (
+          {posts.length > 0 ? (
             <div>
-              {analytics.posts.slice(0, 5).map((post: any, i: number) => (
-                <div key={post.id ?? i} className="flex items-center gap-3 py-3 border-b border-white/[0.04] last:border-0">
+              {posts.slice(0, 5).map((post: any, i: number) => (
+                <div key={post.post_id ?? i} className="flex items-center gap-3 py-3 border-b border-white/[0.04] last:border-0">
                   <span className="text-[12px] text-fg-muted tabular-nums w-4 shrink-0">{i + 1}</span>
+
+                  {/* Thumbnail — use cover_image_url but fallback gracefully */}
+                  <div className="w-8 h-8 rounded-lg overflow-hidden bg-bg-elevated border border-white/[0.06] shrink-0">
+                    {post.cover_image_url ? (
+                      <img
+                        src={post.cover_image_url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--fg-muted))" strokeWidth="1.6">
+                          <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-medium text-fg-primary truncate">{post.description || "No caption"}</p>
+                    <p className="text-[13px] font-medium text-fg-primary truncate">
+                      {post.title || post.description || "No caption"}
+                    </p>
                     <p className="text-[11.5px] text-fg-tertiary mt-0.5">
                       {fmt(post.view_count ?? 0)} views · {fmt(post.like_count ?? 0)} likes
                     </p>
@@ -166,12 +170,11 @@ function AnalyticsView() {
               ))}
             </div>
           ) : (
-            <p className="text-[13px] text-fg-tertiary">No posts found in your analytics.</p>
+            <p className="text-[13px] text-fg-tertiary">No posts found.</p>
           )}
         </div>
 
       ) : (
-        /* Only show sync prompt if genuinely no data */
         <div className="relative overflow-hidden rounded-card border border-white/[0.06] min-h-[280px] flex flex-col items-center justify-center gap-4"
           style={{ background: "rgb(var(--bg-card))" }}>
           <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
@@ -231,7 +234,6 @@ function OverviewView() {
         </h2>
       </div>
 
-      {/* Price cards — horizontal scroll */}
       <div className="-mx-4 px-4 md:-mx-10 md:px-10 overflow-x-auto pb-2 scroll-smooth">
         <div className="flex gap-4 md:gap-6 w-max" style={{ paddingRight: 16 }}>
           {priceCards.map((card) => (
