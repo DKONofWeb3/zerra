@@ -9,44 +9,53 @@ export default function AuthCallback() {
   const [status, setStatus] = useState<"loading" | "error">("loading");
 
   useEffect(() => {
-    // Supabase puts the token in the URL hash: #access_token=...&type=signup
-    // We need to explicitly exchange it
-    const hash = window.location.hash;
-    const params = new URLSearchParams(hash.replace("#", "?"));
-    const accessToken  = params.get("access_token");
-    const refreshToken = params.get("refresh_token");
-    // const type = params.get("type"); // unused
+    async function handleCallback() {
+      // Supabase puts tokens in the URL hash: #access_token=...&refresh_token=...
+      // This works whether we landed here directly or were redirected from landing page
+      const hash = window.location.hash;
 
-    if (accessToken && refreshToken) {
-      // Exchange the tokens from the URL hash into a real session
-      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-        .then(({ data, error }) => {
+      if (hash && hash.includes("access_token")) {
+        const params = new URLSearchParams(hash.replace("#", ""));
+        const accessToken  = params.get("access_token");
+        const refreshToken = params.get("refresh_token");
+
+        if (accessToken && refreshToken) {
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
           if (error || !data.session) {
+            console.error("Session error:", error);
             setStatus("error");
           } else {
             navigate("/dashboard", { replace: true });
           }
-        });
-      return;
-    }
-
-    // Fallback: listen for auth state change (Google OAuth, magic link etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if ((event === "SIGNED_IN" || event === "USER_UPDATED") && session) {
-        navigate("/dashboard", { replace: true });
+          return;
+        }
       }
-    });
 
-    // Also check if session already exists
-    supabase.auth.getSession().then(({ data }) => {
+      // No hash — check if session already exists (Google OAuth etc.)
+      const { data } = await supabase.auth.getSession();
       if (data.session) {
         navigate("/dashboard", { replace: true });
-      } else {
-        setTimeout(() => setStatus("error"), 4000);
+        return;
       }
-    });
 
-    return () => subscription.unsubscribe();
+      // Listen for auth state change as final fallback
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if ((event === "SIGNED_IN" || event === "USER_UPDATED") && session) {
+          navigate("/dashboard", { replace: true });
+        }
+      });
+
+      // Give it 5 seconds then show error
+      setTimeout(() => setStatus("error"), 5000);
+
+      return () => subscription.unsubscribe();
+    }
+
+    handleCallback();
   }, [navigate]);
 
   if (status === "error") {

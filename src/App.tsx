@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
 import { useAuth } from "./contexts/AuthContext";
 import LandingPage from "./pages/Landing";
@@ -16,6 +18,27 @@ import LoginPage from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
 import TermsPage from "./pages/Terms";
 import PrivacyPage from "./pages/Privacy";
+
+// Intercepts Supabase email confirmation hash tokens that land on any page
+// and redirects them to /auth/callback where they get processed
+function AuthHashRedirect() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (
+      hash &&
+      hash.includes("access_token") &&
+      location.pathname !== "/auth/callback"
+    ) {
+      // Preserve the hash and redirect to callback
+      navigate("/auth/callback" + hash, { replace: true });
+    }
+  }, [navigate, location]);
+
+  return null;
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
@@ -37,27 +60,32 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="/"              element={<LandingPage />} />
-      <Route path="/login"         element={<LoginPage />} />
-      <Route path="/auth/callback" element={<AuthCallback />} />
-      <Route path="/terms"         element={<TermsPage />} />
-      <Route path="/privacy"       element={<PrivacyPage />} />
+    <>
+      {/* Runs on every route — catches Supabase hash tokens landing anywhere */}
+      <AuthHashRedirect />
 
-      {/* Protected routes */}
-      <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-        <Route path="/dashboard"                    element={<DashboardPage />} />
-        <Route path="/portfolio"                    element={<PortfolioPage />} />
-        <Route path="/influence"                    element={<TopCreatorsPage />} />
-        <Route path="/influence/top-creators"       element={<InfluencePage />} />
-        <Route path="/influence/top-performing"     element={<TopPerformingPage />} />
-        <Route path="/explore"                      element={<ExplorePage />} />
-        <Route path="/market"                       element={<MarketPage />} />
-        <Route path="/wallet"                       element={<WalletPage />} />
-        <Route path="/settings"                     element={<SettingsPage />} />
-        <Route path="*"                             element={<NotFoundPage />} />
-      </Route>
-    </Routes>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/"              element={<LandingPage />} />
+        <Route path="/login"         element={<LoginPage />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/terms"         element={<TermsPage />} />
+        <Route path="/privacy"       element={<PrivacyPage />} />
+
+        {/* Protected routes */}
+        <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+          <Route path="/dashboard"                element={<DashboardPage />} />
+          <Route path="/portfolio"                element={<PortfolioPage />} />
+          <Route path="/influence"                element={<TopCreatorsPage />} />
+          <Route path="/influence/top-creators"   element={<InfluencePage />} />
+          <Route path="/influence/top-performing" element={<TopPerformingPage />} />
+          <Route path="/explore"                  element={<ExplorePage />} />
+          <Route path="/market"                   element={<MarketPage />} />
+          <Route path="/wallet"                   element={<WalletPage />} />
+          <Route path="/settings"                 element={<SettingsPage />} />
+          <Route path="*"                         element={<NotFoundPage />} />
+        </Route>
+      </Routes>
+    </>
   );
 }
