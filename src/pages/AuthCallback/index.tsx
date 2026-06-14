@@ -9,24 +9,39 @@ export default function AuthCallback() {
   const [status, setStatus] = useState<"loading" | "error">("loading");
 
   useEffect(() => {
-    // onAuthStateChange catches the SIGNED_IN event that fires when
-    // Supabase processes the email confirmation token in the URL hash
+    // Supabase puts the token in the URL hash: #access_token=...&type=signup
+    // We need to explicitly exchange it
+    const hash = window.location.hash;
+    const params = new URLSearchParams(hash.replace("#", "?"));
+    const accessToken  = params.get("access_token");
+    const refreshToken = params.get("refresh_token");
+    const type         = params.get("type"); // "signup" | "recovery" etc.
+
+    if (accessToken && refreshToken) {
+      // Exchange the tokens from the URL hash into a real session
+      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+        .then(({ data, error }) => {
+          if (error || !data.session) {
+            setStatus("error");
+          } else {
+            navigate("/dashboard", { replace: true });
+          }
+        });
+      return;
+    }
+
+    // Fallback: listen for auth state change (Google OAuth, magic link etc.)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session) {
-        navigate("/dashboard", { replace: true });
-      } else if (event === "USER_UPDATED" && session) {
-        // email_confirmed fires this — also send to dashboard
+      if ((event === "SIGNED_IN" || event === "USER_UPDATED") && session) {
         navigate("/dashboard", { replace: true });
       }
     });
 
-    // Also check immediately in case session already exists
-    // (user clicked the link in the same browser where they signed up)
+    // Also check if session already exists
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
         navigate("/dashboard", { replace: true });
       } else {
-        // Give onAuthStateChange 4 seconds to fire before giving up
         setTimeout(() => setStatus("error"), 4000);
       }
     });
@@ -42,11 +57,8 @@ export default function AuthCallback() {
           <p className="text-fg-tertiary text-[13px] mb-6">
             Email confirmation links expire after 24 hours. Please sign up again.
           </p>
-          <a
-            href="/login"
-            className="px-6 py-2.5 rounded-xl text-[13.5px] font-semibold text-white"
-            style={{ background: "rgb(74 125 255)" }}
-          >
+          <a href="/login" className="px-6 py-2.5 rounded-xl text-[13.5px] font-semibold text-white"
+            style={{ background: "rgb(74 125 255)" }}>
             Back to Login
           </a>
         </div>
