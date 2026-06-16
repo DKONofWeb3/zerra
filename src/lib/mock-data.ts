@@ -81,20 +81,6 @@ export const priceCards: PriceCardData[] = [
       { index: 13, label: "+1.9%" }
     ),
   },
-  {
-    id: "eth2",
-    pair: "ETH/BTC",
-    assetName: "Ethereum",
-    tokenIconUrl: "/tokens/eth.svg",
-    coinGeckoId: "ethereum",
-    price: 3485.9,
-    changePercent: -1.2,
-    trend: "down",
-    sparkline: sparkline(
-      [0.72, 0.68, 0.74, 0.65, 0.70, 0.60, 0.65, 0.55, 0.60, 0.50, 0.55, 0.45, 0.50, 0.40, 0.44, 0.38],
-      { index: 3, label: "-1.2%" }
-    ),
-  },
 ];
 
 export const influenceBounties: InfluenceBountyItem[] = [
