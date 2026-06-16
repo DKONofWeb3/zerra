@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { signInWithGoogle } from "../../lib/api/auth";
 import { supabase } from "../../lib/api/supabase";
 
@@ -12,7 +12,9 @@ const CARDS = [
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signup" | "signin">("signup");
+  const [searchParams] = useSearchParams();
+  const initialMode = searchParams.get("mode") === "signin" ? "signin" : "signup";
+  const [mode, setMode] = useState<"signup" | "signin">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

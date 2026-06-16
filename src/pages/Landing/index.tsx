@@ -45,6 +45,10 @@ const FEATURES = [
   },
 ];
 
+// Signup route with mode param so LoginPage opens in signup mode
+const SIGNUP = "/login?mode=signup";
+const SIGNIN = "/login?mode=signin";
+
 export default function LandingPage() {
   usePageTitle("Zerra · Turn your content into a financial asset");
 
@@ -71,13 +75,15 @@ export default function LandingPage() {
           ZERRA
         </span>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <Link to="/login" style={{
+          {/* Sign in → goes to login/signin mode */}
+          <Link to={SIGNIN} style={{
             padding: "8px 16px", borderRadius: 9999, fontSize: 13, fontWeight: 500,
             color: "rgb(158 162 175)", textDecoration: "none",
           }}>
             Sign in
           </Link>
-          <Link to="/login" style={{
+          {/* Get started → goes to signup */}
+          <Link to={SIGNUP} style={{
             padding: "8px 16px", borderRadius: 9999, fontSize: 13, fontWeight: 600,
             background: "rgb(74 125 255)", color: "#fff", textDecoration: "none",
             boxShadow: "0 0 20px rgb(74 125 255 / 0.35)",
@@ -90,16 +96,8 @@ export default function LandingPage() {
       {/* ── HERO ── */}
       <section style={{ minHeight: "100vh", display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" }}>
 
-        {/* MOBILE: full-screen visual hero */}
-        <div style={{
-          position: "relative",
-          overflow: "hidden",
-          minHeight: "100vw",
-          maxHeight: 520,
-          flex: "none",
-        }}
-          className="md-hide"
-        >
+        {/* MOBILE layout */}
+        <div style={{ position: "relative", overflow: "hidden", minHeight: "100vw", maxHeight: 520, flex: "none" }} className="md-hide">
           <style>{`
             @media (min-width: 768px) { .md-hide { display: none !important; } .md-show { display: flex !important; } }
             @media (max-width: 767px) { .md-show { display: none !important; } .md-hide { display: block !important; } }
@@ -117,7 +115,6 @@ export default function LandingPage() {
               onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
           ))}
 
-          {/* Mobile hero text overlay */}
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "32px 24px", zIndex: 10, background: "linear-gradient(transparent, rgb(0 0 0 / 0.8))" }}>
             <h1 style={{ margin: "0 0 8px", fontSize: 30, fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.5px" }}>
               Turn your content{" "}
@@ -130,14 +127,16 @@ export default function LandingPage() {
               Join thousands of creators earning more with Zerra.
             </p>
             <div style={{ display: "flex", gap: 10 }}>
-              <Link to="/login" style={{
+              {/* Start earning → signup */}
+              <Link to={SIGNUP} style={{
                 flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                 padding: "12px 16px", borderRadius: 9999, fontSize: 14, fontWeight: 600,
                 background: "rgb(74 125 255)", color: "#fff", textDecoration: "none",
               }}>
                 Start earning →
               </Link>
-              <Link to="/login" style={{
+              {/* Sign in → signin */}
+              <Link to={SIGNIN} style={{
                 display: "inline-flex", alignItems: "center",
                 padding: "12px 20px", borderRadius: 9999, fontSize: 14, fontWeight: 500,
                 background: "rgb(12 14 20 / 0.8)", border: "1px solid rgb(44 50 65)",
@@ -149,7 +148,7 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* MOBILE: stats + features below */}
+        {/* MOBILE: stats + features */}
         <div className="md-hide" style={{ background: "rgb(8 9 14)", padding: "32px 24px 40px", flex: 1 }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 40 }}>
             {STATS.map(({ value, label }) => (
@@ -172,7 +171,8 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
-          <Link to="/login" style={{
+          {/* Create your account → signup */}
+          <Link to={SIGNUP} style={{
             display: "block", width: "100%", padding: "14px",
             background: "rgb(11 13 20)", border: "1px solid rgb(36 40 55)",
             borderRadius: 12, fontSize: 14, fontWeight: 600,
@@ -183,7 +183,7 @@ export default function LandingPage() {
           </Link>
         </div>
 
-        {/* DESKTOP: two-column layout */}
+        {/* DESKTOP layout */}
         <div className="md-show" style={{ flex: 1, display: "none" }}>
           {/* LEFT */}
           <div style={{ flex: "0 0 55%", position: "relative", overflow: "hidden" }}>
@@ -209,13 +209,15 @@ export default function LandingPage() {
                 Join thousands of creators earning more, growing faster, and building their brand with Zerra.
               </p>
               <div style={{ display: "flex", gap: 12 }}>
-                <Link to="/login" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 9999, fontSize: 14, fontWeight: 600, background: "rgb(74 125 255)", color: "#fff", textDecoration: "none", boxShadow: "0 0 24px rgb(74 125 255 / 0.4)" }}>
+                {/* Start earning → signup */}
+                <Link to={SIGNUP} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 9999, fontSize: 14, fontWeight: 600, background: "rgb(74 125 255)", color: "#fff", textDecoration: "none", boxShadow: "0 0 24px rgb(74 125 255 / 0.4)" }}>
                   Start earning
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
                 </Link>
-                <Link to="/login" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 24px", borderRadius: 9999, fontSize: 14, fontWeight: 500, background: "rgb(12 14 20 / 0.75)", border: "1px solid rgb(44 50 65)", color: "rgb(245 245 247)", textDecoration: "none", backdropFilter: "blur(8px)" }}>
+                {/* Sign in → signin */}
+                <Link to={SIGNIN} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 24px", borderRadius: 9999, fontSize: 14, fontWeight: 500, background: "rgb(12 14 20 / 0.75)", border: "1px solid rgb(44 50 65)", color: "rgb(245 245 247)", textDecoration: "none", backdropFilter: "blur(8px)" }}>
                   Sign in
                 </Link>
               </div>
@@ -248,7 +250,8 @@ export default function LandingPage() {
                 ))}
               </div>
               <div style={{ marginTop: 52 }}>
-                <Link to="/login" style={{ display: "block", width: "100%", padding: "14px", background: "rgb(11 13 20)", border: "1px solid rgb(36 40 55)", borderRadius: 12, fontSize: 14, fontWeight: 600, color: "rgb(230 230 235)", textDecoration: "none", textAlign: "center", boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.04)" }}>
+                {/* Create your account → signup */}
+                <Link to={SIGNUP} style={{ display: "block", width: "100%", padding: "14px", background: "rgb(11 13 20)", border: "1px solid rgb(36 40 55)", borderRadius: 12, fontSize: 14, fontWeight: 600, color: "rgb(230 230 235)", textDecoration: "none", textAlign: "center", boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.04)" }}>
                   Create your account
                 </Link>
               </div>
