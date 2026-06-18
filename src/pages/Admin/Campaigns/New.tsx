@@ -59,6 +59,18 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 const inputCls = "w-full px-4 py-2.5 rounded-xl border border-white/[0.06] bg-bg-base/60 text-[13.5px] text-fg-primary placeholder:text-fg-muted focus:outline-none focus:border-white/[0.15] transition-colors";
 
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-5 space-y-4"
+      style={{ background: "rgb(var(--bg-card))" }}>
+      <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
+        style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
+      <p className="relative text-[14px] font-semibold text-fg-primary">{title}</p>
+      {children}
+    </div>
+  );
+}
+
 export default function AdminCampaignNewPage() {
   usePageTitle("Zerra Admin · New Campaign");
   const navigate = useNavigate();
@@ -158,16 +170,6 @@ export default function AdminCampaignNewPage() {
       </div>
     );
   }
-
-  const Card = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-5 space-y-4"
-      style={{ background: "rgb(var(--bg-card))" }}>
-      <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
-        style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
-      <p className="relative text-[14px] font-semibold text-fg-primary">{title}</p>
-      {children}
-    </div>
-  );
 
   return (
     <div className="pb-12 max-w-lg space-y-6">
