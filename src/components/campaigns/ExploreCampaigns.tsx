@@ -25,7 +25,6 @@ function fmt(n: number) {
   return `$${n}`;
 }
 
-// ─── TikTok not connected modal ───────────────────────────────────────────────
 function TikTokGateModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
@@ -61,16 +60,17 @@ function TikTokGateModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── Campaign detail popup ─────────────────────────────────────────────────────
 function CampaignModal({
-  campaign, hasTikTok, onClose,
+  campaign, hasTikTok, alreadyJoined, onClose, onJoined,
 }: {
-  campaign: Campaign; hasTikTok: boolean; onClose: () => void;
+  campaign: Campaign; hasTikTok: boolean; alreadyJoined: boolean;
+  onClose: () => void; onJoined: (id: string) => void;
 }) {
-  const [joining,         setJoining]         = useState(false);
-  const [joined,          setJoined]          = useState(false);
-  const [showTikTokGate,  setShowTikTokGate]  = useState(false);
-  const [imgFailed,       setImgFailed]       = useState(false);
+  const [joining,        setJoining]        = useState(false);
+  const [joined,         setJoined]         = useState(alreadyJoined);
+  const [joinError,      setJoinError]      = useState<string | null>(null);
+  const [showTikTokGate, setShowTikTokGate] = useState(false);
+  const [imgFailed,      setImgFailed]      = useState(false);
 
   const budgetPct = campaign.total_budget_usdc > 0
     ? Math.min(100, Math.round(((campaign.spent_usdc ?? 0) / campaign.total_budget_usdc) * 100))
@@ -78,12 +78,13 @@ function CampaignModal({
 
   const handleJoin = async () => {
     if (!hasTikTok) { setShowTikTokGate(true); return; }
-    setJoining(true);
+    setJoining(true); setJoinError(null);
     try {
       await apiPost(`/bounties/${campaign.id}/join`);
       setJoined(true);
-    } catch (err) {
-      console.error(err);
+      onJoined(campaign.id);
+    } catch (err: any) {
+      setJoinError(err.message ?? "Failed to join. Please try again.");
     } finally {
       setJoining(false);
     }
@@ -99,9 +100,8 @@ function CampaignModal({
           <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
             style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
 
-          {/* Cover image */}
           {campaign.cover_image_url && !imgFailed ? (
-            <div className="relative h-40 sm:h-48 overflow-hidden rounded-t-2xl sm:rounded-t-2xl">
+            <div className="relative h-40 sm:h-48 overflow-hidden rounded-t-2xl">
               <img src={campaign.cover_image_url} alt="" className="w-full h-full object-cover"
                 onError={() => setImgFailed(true)} />
               <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, rgb(var(--bg-card)))" }} />
@@ -119,7 +119,6 @@ function CampaignModal({
           )}
 
           <div className="p-5 space-y-5">
-            {/* Header */}
             <div className="flex items-start gap-3">
               <div className="w-12 h-12 rounded-xl bg-bg-elevated border border-white/[0.06] flex items-center justify-center shrink-0 overflow-hidden">
                 {campaign.token_icon ? (
@@ -134,12 +133,11 @@ function CampaignModal({
               </div>
             </div>
 
-            {/* Stats */}
             <div className="grid grid-cols-3 gap-3">
               {[
-                { icon: Wallet,  label: "Reward",       value: fmt(campaign.reward_usdc ?? 0) + " USDC" },
-                { icon: Users,   label: "Participants",  value: String(campaign.stats?.participantCount ?? 0) },
-                { icon: Wallet,  label: "Prize Pool",    value: fmt(campaign.total_budget_usdc ?? 0) },
+                { icon: Wallet, label: "Reward",      value: fmt(campaign.reward_usdc ?? 0) + " USDC" },
+                { icon: Users,  label: "Participants", value: String(campaign.stats?.participantCount ?? 0) },
+                { icon: Wallet, label: "Prize Pool",   value: fmt(campaign.total_budget_usdc ?? 0) },
               ].map(({ icon: Icon, label, value }) => (
                 <div key={label} className="rounded-xl bg-bg-elevated border border-white/[0.06] p-3">
                   <Icon className="w-3.5 h-3.5 text-fg-tertiary mb-1.5" />
@@ -149,7 +147,6 @@ function CampaignModal({
               ))}
             </div>
 
-            {/* Budget bar */}
             {campaign.total_budget_usdc > 0 && (
               <div>
                 <div className="flex justify-between text-[11.5px] text-fg-tertiary mb-1.5">
@@ -162,51 +159,52 @@ function CampaignModal({
               </div>
             )}
 
-            {/* Requirements */}
-            <div className="space-y-3">
-              {campaign.required_hashtags?.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-1.5 text-[12px] text-fg-tertiary mb-2">
-                    <Hash className="w-3.5 h-3.5" />
-                    <span>Required in caption</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {campaign.required_hashtags.map((tag) => (
-                      <span key={tag} className="px-2.5 py-1 rounded-full text-[12px] border border-brand/25 bg-brand/10 text-brand">{tag}</span>
-                    ))}
-                  </div>
+            {campaign.required_hashtags?.length > 0 && (
+              <div>
+                <div className="flex items-center gap-1.5 text-[12px] text-fg-tertiary mb-2">
+                  <Hash className="w-3.5 h-3.5" />
+                  <span>Required in caption</span>
                 </div>
-              )}
-              {campaign.required_keywords?.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-1.5 text-[12px] text-fg-tertiary mb-2">
-                    <Mic className="w-3.5 h-3.5" />
-                    <span>Must say in the video</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {campaign.required_keywords.map((kw) => (
-                      <span key={kw} className="px-2.5 py-1 rounded-full text-[12px] border border-white/[0.08] bg-bg-elevated text-fg-secondary">{kw}</span>
-                    ))}
-                  </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {campaign.required_hashtags.map((tag) => (
+                    <span key={tag} className="px-2.5 py-1 rounded-full text-[12px] border border-brand/25 bg-brand/10 text-brand">{tag}</span>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            {/* Join button */}
-            <button
-              onClick={handleJoin}
-              disabled={joining || joined}
+            {campaign.required_keywords?.length > 0 && (
+              <div>
+                <div className="flex items-center gap-1.5 text-[12px] text-fg-tertiary mb-2">
+                  <Mic className="w-3.5 h-3.5" />
+                  <span>Must say in the video</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {campaign.required_keywords.map((kw) => (
+                    <span key={kw} className="px-2.5 py-1 rounded-full text-[12px] border border-white/[0.08] bg-bg-elevated text-fg-secondary">{kw}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {joinError && (
+              <p className="text-[12.5px] text-danger text-center">{joinError}</p>
+            )}
+
+            <button onClick={handleJoin} disabled={joining || joined}
               className={cn(
                 "w-full py-3 rounded-xl text-[13.5px] font-semibold transition-all",
                 joined
-                  ? "bg-success/10 border border-success/30 text-success"
+                  ? "border border-success/30 text-success"
                   : "text-white disabled:opacity-50"
               )}
-              style={!joined ? { background: "rgb(74 125 255)" } : undefined}>
+              style={{
+                background: joined ? "rgb(var(--success)/0.1)" : "rgb(74 125 255)",
+              }}>
               {joined ? "✓ Joined Campaign" : joining ? "Joining..." : "Join Campaign"}
             </button>
 
-            {!hasTikTok && (
+            {!hasTikTok && !joined && (
               <p className="text-[12px] text-center text-warning">
                 ⚠ Connect TikTok first to participate
               </p>
@@ -220,8 +218,9 @@ function CampaignModal({
   );
 }
 
-// ─── Campaign card ─────────────────────────────────────────────────────────────
-function CampaignCard({ campaign, onClick }: { campaign: Campaign; onClick: () => void }) {
+function CampaignCard({ campaign, joined, onClick }: {
+  campaign: Campaign; joined: boolean; onClick: () => void;
+}) {
   const [imgFailed, setImgFailed] = useState(false);
   const budgetPct = campaign.total_budget_usdc > 0
     ? Math.min(100, Math.round(((campaign.spent_usdc ?? 0) / campaign.total_budget_usdc) * 100))
@@ -232,7 +231,6 @@ function CampaignCard({ campaign, onClick }: { campaign: Campaign; onClick: () =
       className="relative w-full text-left overflow-hidden rounded-2xl border border-white/[0.06] hover:border-white/[0.12] transition-all group"
       style={{ background: "rgb(var(--bg-card))" }}>
 
-      {/* Cover image */}
       <div className="relative h-[140px] overflow-hidden">
         {campaign.cover_image_url && !imgFailed ? (
           <img src={campaign.cover_image_url} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
@@ -243,10 +241,15 @@ function CampaignCard({ campaign, onClick }: { campaign: Campaign; onClick: () =
             <span className="text-[32px] font-bold text-white/20">{campaign.project_name.charAt(0)}</span>
           </div>
         )}
-        {/* Gradient overlay */}
         <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 30%, rgb(var(--bg-card)))" }} />
 
-        {/* Token icon + name over image */}
+        {/* Joined badge */}
+        {joined && (
+          <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[11px] font-semibold border border-success/30 bg-[rgb(var(--success)/0.15)] text-success backdrop-blur-sm">
+            ✓ Joined
+          </div>
+        )}
+
         <div className="absolute bottom-3 left-4 flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-black/60 border border-white/[0.15] flex items-center justify-center overflow-hidden backdrop-blur-sm">
             {campaign.token_icon ? (
@@ -259,11 +262,8 @@ function CampaignCard({ campaign, onClick }: { campaign: Campaign; onClick: () =
         </div>
       </div>
 
-      {/* Body */}
       <div className="p-4">
         <p className="text-[12.5px] text-fg-tertiary line-clamp-2 min-h-[36px]">{campaign.description || "No description provided."}</p>
-
-        {/* Stats row */}
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/[0.04]">
           <div>
             <p className="text-[15px] font-semibold text-fg-primary">{fmt(campaign.reward_usdc ?? 0)}</p>
@@ -278,8 +278,6 @@ function CampaignCard({ campaign, onClick }: { campaign: Campaign; onClick: () =
             <p className="text-[10.5px] text-fg-tertiary">Prize pool</p>
           </div>
         </div>
-
-        {/* Budget bar */}
         <div className="mt-3 h-1 rounded-full bg-white/[0.06]">
           <div className="h-full rounded-full bg-brand" style={{ width: `${budgetPct}%` }} />
         </div>
@@ -288,33 +286,49 @@ function CampaignCard({ campaign, onClick }: { campaign: Campaign; onClick: () =
   );
 }
 
-// ─── Main exported component ──────────────────────────────────────────────────
-export function ExploreCampaigns() {
+// tab prop comes from the parent Explore page (Active / Past toggle)
+export function ExploreCampaigns({ tab }: { tab: "active" | "past" }) {
   const { session } = useAuth();
-  const [campaigns,   setCampaigns]   = useState<Campaign[]>([]);
-  const [loading,     setLoading]     = useState(true);
-  const [selected,    setSelected]    = useState<Campaign | null>(null);
-  const [hasTikTok,   setHasTikTok]   = useState(false);
+  const [campaigns,    setCampaigns]    = useState<Campaign[]>([]);
+  const [joinedIds,    setJoinedIds]    = useState<Set<string>>(new Set());
+  const [loading,      setLoading]      = useState(true);
+  const [selected,     setSelected]     = useState<Campaign | null>(null);
+  const [hasTikTok,    setHasTikTok]    = useState(false);
 
   useEffect(() => {
-    // Fetch active campaigns
-    apiGet<{ campaigns: Campaign[] }>("/bounties")
+    apiGet<{ campaigns: Campaign[] }>(`/bounties?tab=${tab}`)
       .then((d) => setCampaigns(d.campaigns ?? []))
       .catch(console.error)
       .finally(() => setLoading(false));
 
-    // Check if user has TikTok connected
     if (session) {
       apiGet<{ connected: boolean }>("/me/tiktok-status")
         .then((d) => setHasTikTok(d.connected))
         .catch(() => setHasTikTok(false));
+
+      // Fetch campaigns this user has already joined
+      apiGet<{ joinedIds: string[] }>("/me/joined-campaigns")
+        .then((d) => setJoinedIds(new Set(d.joinedIds ?? [])))
+        .catch(() => {});
     }
-  }, [session]);
+  }, [session, tab]);
+
+  const handleJoined = (id: string) => {
+    setJoinedIds((prev) => new Set([...prev, id]));
+    // Update participant count optimistically
+    setCampaigns((prev) =>
+      prev.map((c) =>
+        c.id === id
+          ? { ...c, stats: { participantCount: (c.stats?.participantCount ?? 0) + 1 } }
+          : c
+      )
+    );
+  };
 
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[1,2,3,4,5,6].map((i) => (
+        {[1,2,3].map((i) => (
           <div key={i} className="h-[280px] rounded-2xl border border-white/[0.06] animate-pulse"
             style={{ background: "rgb(var(--bg-card))" }} />
         ))}
@@ -324,12 +338,16 @@ export function ExploreCampaigns() {
 
   if (campaigns.length === 0) {
     return (
-      <div className="relative overflow-hidden rounded-2xl border border-white/[0.06] min-h-[280px] flex flex-col items-center justify-center gap-4"
+      <div className="relative overflow-hidden rounded-2xl border border-white/[0.06] min-h-[200px] flex flex-col items-center justify-center gap-3"
         style={{ background: "rgb(var(--bg-card))" }}>
         <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
           style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
-        <p className="text-[15px] font-medium text-fg-primary">No active campaigns</p>
-        <p className="text-[13px] text-fg-tertiary">New campaigns will appear here when they go live.</p>
+        <p className="text-[14px] font-medium text-fg-primary">
+          {tab === "active" ? "No active campaigns" : "No past campaigns"}
+        </p>
+        <p className="text-[13px] text-fg-tertiary">
+          {tab === "active" ? "New campaigns will appear here when they go live." : "Completed campaigns will appear here."}
+        </p>
       </div>
     );
   }
@@ -338,7 +356,11 @@ export function ExploreCampaigns() {
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {campaigns.map((c) => (
-          <CampaignCard key={c.id} campaign={c} onClick={() => setSelected(c)} />
+          <CampaignCard
+            key={c.id} campaign={c}
+            joined={joinedIds.has(c.id)}
+            onClick={() => setSelected(c)}
+          />
         ))}
       </div>
 
@@ -346,7 +368,9 @@ export function ExploreCampaigns() {
         <CampaignModal
           campaign={selected}
           hasTikTok={hasTikTok}
+          alreadyJoined={joinedIds.has(selected.id)}
           onClose={() => setSelected(null)}
+          onJoined={handleJoined}
         />
       )}
     </>

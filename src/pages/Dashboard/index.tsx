@@ -6,7 +6,6 @@ import { PriceCard } from "@/components/dashboard/PriceCard";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { InfluenceSection } from "@/components/dashboard/InfluenceSection";
 import { useCryptoPrices } from "@/lib/useCryptoPrices";
-import { useBounties } from "@/hooks/useBounties";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { apiGet } from "@/lib/api/client";
@@ -17,7 +16,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 
 function EmptyBounties() {
   return (
-    <div className={cn("relative overflow-hidden rounded-card", "border border-white/[0.06] shadow-card min-h-[280px]", "flex flex-col items-center justify-center gap-4")}
+    <div className={cn("relative overflow-hidden rounded-card", "border border-white/[0.06] shadow-card min-h-[220px]", "flex flex-col items-center justify-center gap-4")}
       style={{ background: "rgb(var(--bg-card))" }}>
       <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
         style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
@@ -27,10 +26,13 @@ function EmptyBounties() {
         </svg>
       </div>
       <div className="text-center px-8">
-        <p className="text-[15px] font-medium text-fg-primary mb-1">No active bounties</p>
-        <p className="text-[13px] text-fg-tertiary leading-relaxed">Influence bounties will appear here once campaigns go live.</p>
+        <p className="text-[15px] font-medium text-fg-primary mb-1">No campaigns joined yet</p>
+        <p className="text-[13px] text-fg-tertiary leading-relaxed">Join a campaign on the Explore page to start earning.</p>
       </div>
-      <div className="px-4 py-2 rounded-full border border-white/[0.06] bg-bg-elevated text-[12px] text-fg-tertiary">Coming soon</div>
+      <a href="/explore"
+        className="px-5 py-2 rounded-xl text-[12.5px] font-medium border border-white/[0.08] bg-bg-elevated text-fg-primary hover:bg-bg-card transition-colors">
+        Browse Campaigns →
+      </a>
     </div>
   );
 }
@@ -201,12 +203,25 @@ function AnalyticsView() {
 }
 
 function OverviewView() {
+  const { session } = useAuth();
   const liveIds = Array.from(
     new Set(priceCards.map((c) => c.coinGeckoId).filter((id): id is CoinGeckoId => Boolean(id)))
   );
   const { prices, loading } = useCryptoPrices(liveIds);
-  const { bounties, loading: bountiesLoading } = useBounties();
-  const mappedBounties: InfluenceBountyItem[] = bounties.map(mapBounty);
+
+  // Load campaigns the user has actually joined instead of all bounties
+  const [joinedCampaigns, setJoinedCampaigns] = useState<any[]>([]);
+  const [campaignsLoading, setCampaignsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!session) { setCampaignsLoading(false); return; }
+    apiGet<{ campaigns: any[] }>("/me/campaigns")
+      .then((d) => setJoinedCampaigns(d.campaigns ?? []))
+      .catch(() => setJoinedCampaigns([]))
+      .finally(() => setCampaignsLoading(false));
+  }, [session]);
+
+  const mappedBounties: InfluenceBountyItem[] = joinedCampaigns.map(mapBounty);
   const activityItems: ActivityItem[] = [];
 
   const now = new Date();
@@ -251,10 +266,10 @@ function OverviewView() {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr] gap-6 md:gap-8 pt-2 md:pt-4">
         <div>
           <SectionHeader label="Live Update" title="Influence Section" />
-          {bountiesLoading ? (
-            <div className={cn("relative overflow-hidden rounded-card border border-white/[0.06] shadow-card min-h-[280px]", "flex items-center justify-center")}
+          {campaignsLoading ? (
+            <div className={cn("relative overflow-hidden rounded-card border border-white/[0.06] shadow-card min-h-[220px]", "flex items-center justify-center")}
               style={{ background: "rgb(var(--bg-card))" }}>
-              <p className="text-[13px] text-fg-tertiary">Loading bounties...</p>
+              <p className="text-[13px] text-fg-tertiary">Loading campaigns...</p>
             </div>
           ) : mappedBounties.length > 0 ? (
             <InfluenceSection bounties={mappedBounties} />
