@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/api/supabase";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { getPostLoginRedirect } from "../../lib/redirectAfterLogin";
 
 export default function AuthCallback() {
   usePageTitle("Signing in to Zerra");
@@ -10,8 +11,6 @@ export default function AuthCallback() {
 
   useEffect(() => {
     async function handleCallback() {
-      // Supabase puts tokens in the URL hash: #access_token=...&refresh_token=...
-      // This works whether we landed here directly or were redirected from landing page
       const hash = window.location.hash;
 
       if (hash && hash.includes("access_token")) {
@@ -29,7 +28,8 @@ export default function AuthCallback() {
             console.error("Session error:", error);
             setStatus("error");
           } else {
-            navigate("/dashboard", { replace: true });
+            const redirectTo = await getPostLoginRedirect(data.session.user.id);
+            navigate(redirectTo, { replace: true });
           }
           return;
         }
@@ -38,20 +38,20 @@ export default function AuthCallback() {
       // No hash — check if session already exists (Google OAuth etc.)
       const { data } = await supabase.auth.getSession();
       if (data.session) {
-        navigate("/dashboard", { replace: true });
+        const redirectTo = await getPostLoginRedirect(data.session.user.id);
+        navigate(redirectTo, { replace: true });
         return;
       }
 
       // Listen for auth state change as final fallback
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if ((event === "SIGNED_IN" || event === "USER_UPDATED") && session) {
-          navigate("/dashboard", { replace: true });
+          const redirectTo = await getPostLoginRedirect(session.user.id);
+          navigate(redirectTo, { replace: true });
         }
       });
 
-      // Give it 5 seconds then show error
       setTimeout(() => setStatus("error"), 5000);
-
       return () => subscription.unsubscribe();
     }
 
@@ -78,7 +78,7 @@ export default function AuthCallback() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-bg-base gap-3">
       <div className="w-8 h-8 rounded-full border-2 border-brand/20 border-t-brand animate-spin" />
-      <p className="text-fg-secondary text-[14px]">Confirming your email...</p>
+      <p className="text-fg-secondary text-[14px]">Signing you in...</p>
     </div>
   );
 }

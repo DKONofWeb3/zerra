@@ -27,6 +27,11 @@ import AdminUsersPage from "./pages/Admin/Users/index";
 import AdminTrendingPage from "./pages/Admin/Trending/index";
 import AdminMetricsPage from "./pages/Admin/Metrics/index";
 import AdminAuditLogPage from "./pages/Admin/AuditLog/index";
+import { ProjectLayout } from "./components/project/ProjectLayout";
+import ProjectOverviewPage from "./pages/Project/index";
+import ProjectLeaderboardPage from "./pages/Project/Leaderboard/index";
+import ProjectVideosPage from "./pages/Project/Videos/index";
+import ProjectParticipantsPage from "./pages/Project/Participants/index";
 
 function AuthHashRedirect() {
   const navigate = useNavigate();
@@ -95,6 +100,46 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Project route guard — role = 'project' or 'admin'
+function ProjectRoute({ children }: { children: React.ReactNode }) {
+  const { session, loading } = useAuth();
+  const [roleState, setRoleState] = useState<"loading" | "ok" | "denied">("loading");
+
+  useEffect(() => {
+    if (loading) return;
+    if (!session) { setRoleState("denied"); return; }
+
+    const checkRole = async () => {
+      try {
+        const { data } = await supabase
+          .from("users")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+        const role = data?.role;
+        setRoleState(role === "project" || role === "admin" ? "ok" : "denied");
+      } catch {
+        setRoleState("denied");
+      }
+    };
+    checkRole();
+  }, [session, loading]);
+
+  if (loading || roleState === "loading") {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-bg-base">
+        <p className="text-fg-secondary text-sm">Checking access...</p>
+      </div>
+    );
+  }
+
+  if (roleState === "denied") {
+    return <Navigate to={session ? "/dashboard" : "/login"} replace />;
+  }
+
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <>
@@ -130,6 +175,14 @@ export default function App() {
           <Route path="/admin/trending"      element={<AdminTrendingPage />} />
           <Route path="/admin/metrics"       element={<AdminMetricsPage />} />
           <Route path="/admin/audit-log"     element={<AdminAuditLogPage />} />
+        </Route>
+
+        {/* Project client dashboard */}
+        <Route element={<ProjectRoute><ProjectLayout /></ProjectRoute>}>
+          <Route path="/project"                element={<ProjectOverviewPage />} />
+          <Route path="/project/leaderboard"    element={<ProjectLeaderboardPage />} />
+          <Route path="/project/videos"         element={<ProjectVideosPage />} />
+          <Route path="/project/participants"   element={<ProjectParticipantsPage />} />
         </Route>
       </Routes>
     </>
