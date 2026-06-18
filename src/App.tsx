@@ -1,8 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
+import { AdminLayout } from "./components/admin/AdminLayout";
 import { useAuth } from "./contexts/AuthContext";
+import { supabase } from "./lib/api/supabase";
 import LandingPage from "./pages/Landing";
 import DashboardPage from "./pages/Dashboard";
 import PortfolioPage from "./pages/Portfolio";
@@ -18,21 +20,21 @@ import LoginPage from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
 import TermsPage from "./pages/Terms";
 import PrivacyPage from "./pages/Privacy";
+import AdminOverviewPage from "./pages/Admin/index";
+import AdminCampaignsPage from "./pages/Admin/Campaigns/index";
+import AdminCampaignNewPage from "./pages/Admin/Campaigns/New";
+import AdminUsersPage from "./pages/Admin/Users/index";
+import AdminTrendingPage from "./pages/Admin/Trending/index";
+import AdminMetricsPage from "./pages/Admin/Metrics/index";
+import AdminAuditLogPage from "./pages/Admin/AuditLog/index";
 
-// Intercepts Supabase email confirmation hash tokens that land on any page
-// and redirects them to /auth/callback where they get processed
 function AuthHashRedirect() {
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     const hash = window.location.hash;
-    if (
-      hash &&
-      hash.includes("access_token") &&
-      location.pathname !== "/auth/callback"
-    ) {
-      // Preserve the hash and redirect to callback
+    if (hash && hash.includes("access_token") && location.pathname !== "/auth/callback") {
       navigate("/auth/callback" + hash, { replace: true });
     }
   }, [navigate, location]);
@@ -51,8 +53,43 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!session) {
-    return <Navigate to="/login" replace />;
+  if (!session) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { session, loading } = useAuth();
+  const [roleState, setRoleState] = useState<"loading" | "admin" | "denied">("loading");
+
+  useEffect(() => {
+    if (loading) return;
+    if (!session) { setRoleState("denied"); return; }
+
+    const checkRole = async () => {
+      try {
+        const { data } = await supabase
+          .from("users")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+        setRoleState(data?.role === "admin" ? "admin" : "denied");
+      } catch {
+        setRoleState("denied");
+      }
+    };
+    checkRole();
+  }, [session, loading]);
+
+  if (loading || roleState === "loading") {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-bg-base">
+        <p className="text-fg-secondary text-sm">Checking access...</p>
+      </div>
+    );
+  }
+
+  if (roleState === "denied") {
+    return <Navigate to={session ? "/dashboard" : "/login"} replace />;
   }
 
   return <>{children}</>;
@@ -61,18 +98,16 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <>
-      {/* Runs on every route — catches Supabase hash tokens landing anywhere */}
       <AuthHashRedirect />
-
       <Routes>
-        {/* Public routes */}
+        {/* Public */}
         <Route path="/"              element={<LandingPage />} />
         <Route path="/login"         element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/terms"         element={<TermsPage />} />
         <Route path="/privacy"       element={<PrivacyPage />} />
 
-        {/* Protected routes */}
+        {/* Creator protected */}
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
           <Route path="/dashboard"                element={<DashboardPage />} />
           <Route path="/portfolio"                element={<PortfolioPage />} />
@@ -84,6 +119,17 @@ export default function App() {
           <Route path="/wallet"                   element={<WalletPage />} />
           <Route path="/settings"                 element={<SettingsPage />} />
           <Route path="*"                         element={<NotFoundPage />} />
+        </Route>
+
+        {/* Admin protected */}
+        <Route element={<AdminRoute><AdminLayout /></AdminRoute>}>
+          <Route path="/admin"               element={<AdminOverviewPage />} />
+          <Route path="/admin/campaigns"     element={<AdminCampaignsPage />} />
+          <Route path="/admin/campaigns/new" element={<AdminCampaignNewPage />} />
+          <Route path="/admin/users"         element={<AdminUsersPage />} />
+          <Route path="/admin/trending"      element={<AdminTrendingPage />} />
+          <Route path="/admin/metrics"       element={<AdminMetricsPage />} />
+          <Route path="/admin/audit-log"     element={<AdminAuditLogPage />} />
         </Route>
       </Routes>
     </>
