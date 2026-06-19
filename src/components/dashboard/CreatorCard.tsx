@@ -19,8 +19,8 @@ const VB_W = 680;
 const VB_H = 324;
 
 function CardSVG({
-  name, username, avatar, totalScore = 0, campaignsJoined = 0, globalRank, profileUrl, qrDataUrl,
-}: CreatorCardProps & { profileUrl: string; qrDataUrl: string | null }) {
+  name, username, avatar, totalScore = 0, campaignsJoined = 0, globalRank, qrDataUrl,
+}: CreatorCardProps & { qrDataUrl: string | null }) {
   const initials = name.charAt(0).toUpperCase();
 
   return (
@@ -244,7 +244,7 @@ export function CreatorCard(props: CreatorCardProps) {
   return (
     <div className="relative">
       <div ref={wrapperRef} className="w-full" style={{ aspectRatio: `${VB_W}/${VB_H}` }}>
-        <CardSVG {...props} profileUrl={profileUrl} qrDataUrl={qrDataUrl} />
+        <CardSVG {...props} qrDataUrl={qrDataUrl} />
       </div>
 
       <div className="flex items-center gap-2 mt-4">
