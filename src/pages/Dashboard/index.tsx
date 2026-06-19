@@ -205,8 +205,8 @@ function OverviewView() {
         </h2>
       </div>
 
-      {/* Shareable Zerra Creator Card — replaces crypto price cards */}
-      <div className="max-w-md">
+      {/* Shareable Zerra Creator Card — replaces crypto price cards, full width hero size */}
+      <div className="w-full max-w-3xl">
         <CreatorCard
           name={profile?.name ?? session?.user.email?.split("@")[0] ?? "Creator"}
           username={profile?.username}
