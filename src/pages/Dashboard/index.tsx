@@ -236,7 +236,7 @@ function OverviewView() {
           )}
         </div>
         <div>
-          <SectionHeader label="Live Update" title="Project Overview" />
+          <SectionHeader label="Live Update" title="Campaign Overview" />
           <div className="relative overflow-hidden rounded-card border border-white/[0.06] shadow-card min-h-[220px] flex flex-col items-center justify-center gap-4 p-6"
             style={{ background: "rgb(var(--bg-card))" }}>
             <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
