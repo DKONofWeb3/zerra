@@ -4,6 +4,7 @@ import { DiamondIcon } from "@/components/icons/DiamondIcon";
 import { apiGet, apiPut } from "@/lib/api/client";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { Search, MoreVertical, ShieldOff, Ban, ShieldCheck } from "lucide-react";
+import { AdminUserDetailModal } from "@/components/admin/AdminUserDetail";
 
 interface User {
   id: string;
@@ -75,7 +76,10 @@ function UserActionsMenu({ user, onAction }: { user: User; onAction: (id: string
   );
 }
 
-function UserRow({ user, onAction }: { user: User; onAction: (id: string, action: "restrict" | "ban" | "unban", reason?: string) => void }) {
+function UserRow({ user, onAction, onViewFull }: {
+  user: User; onAction: (id: string, action: "restrict" | "ban" | "unban", reason?: string) => void;
+  onViewFull: (id: string) => void;
+}) {
   return (
     <div className="flex items-center gap-3 py-3.5 border-b border-white/[0.04] last:border-0">
       <div className="w-9 h-9 rounded-full overflow-hidden bg-bg-elevated border border-white/[0.06] shrink-0">
@@ -97,6 +101,10 @@ function UserRow({ user, onAction }: { user: User; onAction: (id: string, action
       <span className={cn("px-2.5 py-0.5 rounded-full text-[11px] font-medium border capitalize shrink-0", STATUS_STYLE[user.account_status])}>
         {user.account_status}
       </span>
+      <button onClick={() => onViewFull(user.id)}
+        className="hidden sm:inline-flex shrink-0 px-2.5 py-1 rounded-lg text-[11.5px] font-medium border border-white/[0.08] bg-bg-elevated text-fg-secondary hover:text-fg-primary hover:bg-bg-card transition-colors">
+        View Full Data
+      </button>
       <UserActionsMenu user={user} onAction={onAction} />
     </div>
   );
@@ -109,6 +117,7 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [detailUserId, setDetailUserId] = useState<string | null>(null);
 
   const fetchUsers = () => {
     setLoading(true);
@@ -188,12 +197,16 @@ export default function AdminUsersPage() {
         <div className="relative overflow-hidden rounded-2xl border border-white/[0.06] px-4 md:px-5 py-1" style={{ background: "rgb(var(--bg-card))" }}>
           <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
             style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
-          {users.map((u) => <UserRow key={u.id} user={u} onAction={handleAction} />)}
+          {users.map((u) => <UserRow key={u.id} user={u} onAction={handleAction} onViewFull={setDetailUserId} />)}
         </div>
       ) : (
         <div className="rounded-2xl border border-white/[0.06] p-10 text-center" style={{ background: "rgb(var(--bg-card))" }}>
           <p className="text-[14px] text-fg-tertiary">No users found.</p>
         </div>
+      )}
+
+      {detailUserId && (
+        <AdminUserDetailModal userId={detailUserId} onClose={() => setDetailUserId(null)} />
       )}
     </div>
   );

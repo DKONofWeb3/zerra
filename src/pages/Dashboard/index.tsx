@@ -2,70 +2,14 @@ import { useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/cn";
 import { DiamondIcon } from "@/components/icons/DiamondIcon";
 import { UserActivityMarquee } from "@/components/dashboard/UserActivityMarquee";
-import { PriceCard } from "@/components/dashboard/PriceCard";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
-import { InfluenceSection } from "@/components/dashboard/InfluenceSection";
-import { useCryptoPrices } from "@/lib/useCryptoPrices";
+import { InfluenceStatsCard } from "@/components/dashboard/InfluenceStatsCard";
+import { CreatorCard } from "@/components/dashboard/CreatorCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { apiGet } from "@/lib/api/client";
-import type { CoinGeckoId } from "@/lib/crypto-api";
-import type { InfluenceBountyItem, ActivityItem } from "@/lib/types";
-import { priceCards } from "@/lib/mock-data";
+import type { ActivityItem } from "@/lib/types";
 import { usePageTitle } from "@/hooks/usePageTitle";
-
-function EmptyBounties() {
-  return (
-    <div className={cn("relative overflow-hidden rounded-card", "border border-white/[0.06] shadow-card min-h-[220px]", "flex flex-col items-center justify-center gap-4")}
-      style={{ background: "rgb(var(--bg-card))" }}>
-      <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
-        style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
-      <div className="w-12 h-12 rounded-2xl border border-white/[0.06] bg-bg-elevated flex items-center justify-center">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--fg-muted))" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-        </svg>
-      </div>
-      <div className="text-center px-8">
-        <p className="text-[15px] font-medium text-fg-primary mb-1">No campaigns joined yet</p>
-        <p className="text-[13px] text-fg-tertiary leading-relaxed">Join a campaign on the Explore page to start earning.</p>
-      </div>
-      <a href="/explore"
-        className="px-5 py-2 rounded-xl text-[12.5px] font-medium border border-white/[0.08] bg-bg-elevated text-fg-primary hover:bg-bg-card transition-colors">
-        Browse Campaigns →
-      </a>
-    </div>
-  );
-}
-
-function EmptyProjectOverview() {
-  return (
-    <div className={cn("relative overflow-hidden rounded-card", "border border-white/[0.06] shadow-card min-h-[280px]", "flex flex-col items-center justify-center gap-4")}
-      style={{ background: "rgb(var(--bg-card))" }}>
-      <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
-        style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
-      <div className="w-12 h-12 rounded-2xl border border-white/[0.06] bg-bg-elevated flex items-center justify-center">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--fg-muted))" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" />
-        </svg>
-      </div>
-      <div className="text-center px-8">
-        <p className="text-[15px] font-medium text-fg-primary mb-1">No projects yet</p>
-        <p className="text-[13px] text-fg-tertiary leading-relaxed">Projects you participate in will show up here.</p>
-      </div>
-      <div className="px-4 py-2 rounded-full border border-white/[0.06] bg-bg-elevated text-[12px] text-fg-tertiary">Coming soon</div>
-    </div>
-  );
-}
-
-function mapBounty(b: any): InfluenceBountyItem {
-  return {
-    id: b.id,
-    projectName: b.project_name,
-    tokenIconUrl: b.token_icon ?? "",
-    bountyUsdc: Number(b.reward_usdc),
-    description: b.description ?? "",
-  };
-}
 
 function fmt(n: number) {
   if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
@@ -204,24 +148,36 @@ function AnalyticsView() {
 
 function OverviewView() {
   const { session } = useAuth();
-  const liveIds = Array.from(
-    new Set(priceCards.map((c) => c.coinGeckoId).filter((id): id is CoinGeckoId => Boolean(id)))
-  );
-  const { prices, loading } = useCryptoPrices(liveIds);
 
-  // Load campaigns the user has actually joined instead of all bounties
-  const [joinedCampaigns, setJoinedCampaigns] = useState<any[]>([]);
-  const [campaignsLoading, setCampaignsLoading] = useState(true);
+  // Fetch profile + card stats for the shareable creator card
+  const [profile, setProfile] = useState<{ name: string | null; avatar: string | null; username: string | null } | null>(null);
+  const [cardStats, setCardStats] = useState({ totalScore: 0, campaignsJoined: 0 });
+
+  // Influence Section stats (Yap-style card)
+  const [influenceStats, setInfluenceStats] = useState({
+    totalScore: 0, scoreChangePercent: 0,
+    eligibleVideos: 0, eligibleChangePercent: 0,
+    campaignsJoined: 0, campaignsChangePercent: 0,
+  });
+  const [influenceLoading, setInfluenceLoading] = useState(true);
 
   useEffect(() => {
-    if (!session) { setCampaignsLoading(false); return; }
-    apiGet<{ campaigns: any[] }>("/me/campaigns")
-      .then((d) => setJoinedCampaigns(d.campaigns ?? []))
-      .catch(() => setJoinedCampaigns([]))
-      .finally(() => setCampaignsLoading(false));
+    if (!session) { setInfluenceLoading(false); return; }
+
+    apiGet<{ name: string | null; avatar: string | null; tiktok_username?: string | null }>("/me")
+      .then((d) => setProfile({ name: d.name, avatar: d.avatar, username: d.tiktok_username ?? null }))
+      .catch(() => {});
+
+    apiGet<{ totalScore: number; campaignsJoined: number }>("/me/card-stats")
+      .then((d) => setCardStats(d))
+      .catch(() => {});
+
+    apiGet<typeof influenceStats>("/me/influence-stats")
+      .then((d) => setInfluenceStats(d))
+      .catch(() => {})
+      .finally(() => setInfluenceLoading(false));
   }, [session]);
 
-  const mappedBounties: InfluenceBountyItem[] = joinedCampaigns.map(mapBounty);
   const activityItems: ActivityItem[] = [];
 
   const now = new Date();
@@ -249,37 +205,59 @@ function OverviewView() {
         </h2>
       </div>
 
-      <div className="-mx-4 px-4 md:-mx-10 md:px-10 overflow-x-auto pb-2 scroll-smooth">
-        <div className="flex gap-4 md:gap-6 w-max" style={{ paddingRight: 16 }}>
-          {priceCards.map((card) => (
-            <div key={card.id} className="w-[220px] md:w-[500px] shrink-0">
-              <PriceCard
-                data={card}
-                live={card.coinGeckoId ? prices[card.coinGeckoId] : undefined}
-                loading={loading}
-              />
-            </div>
-          ))}
-        </div>
+      {/* Shareable Zerra Creator Card — replaces crypto price cards */}
+      <div className="max-w-md">
+        <CreatorCard
+          name={profile?.name ?? session?.user.email?.split("@")[0] ?? "Creator"}
+          username={profile?.username}
+          avatar={profile?.avatar}
+          totalScore={cardStats.totalScore}
+          campaignsJoined={cardStats.campaignsJoined}
+        />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr] gap-6 md:gap-8 pt-2 md:pt-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 pt-2 md:pt-4">
         <div>
           <SectionHeader label="Live Update" title="Influence Section" />
-          {campaignsLoading ? (
+          {influenceLoading ? (
             <div className={cn("relative overflow-hidden rounded-card border border-white/[0.06] shadow-card min-h-[220px]", "flex items-center justify-center")}
               style={{ background: "rgb(var(--bg-card))" }}>
-              <p className="text-[13px] text-fg-tertiary">Loading campaigns...</p>
+              <p className="text-[13px] text-fg-tertiary">Loading stats...</p>
             </div>
-          ) : mappedBounties.length > 0 ? (
-            <InfluenceSection bounties={mappedBounties} />
           ) : (
-            <EmptyBounties />
+            <InfluenceStatsCard
+              totalScore={influenceStats.totalScore}
+              scoreChangePercent={influenceStats.scoreChangePercent}
+              eligibleVideos={influenceStats.eligibleVideos}
+              eligibleChangePercent={influenceStats.eligibleChangePercent}
+              campaignsJoined={influenceStats.campaignsJoined}
+              campaignsChangePercent={influenceStats.campaignsChangePercent}
+            />
           )}
         </div>
         <div>
-          <SectionHeader label="Live Update" title="Project overview" />
-          <EmptyProjectOverview />
+          <SectionHeader label="Live Update" title="Project Overview" />
+          <div className="relative overflow-hidden rounded-card border border-white/[0.06] shadow-card min-h-[220px] flex flex-col items-center justify-center gap-4 p-6"
+            style={{ background: "rgb(var(--bg-card))" }}>
+            <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
+              style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
+            <div className="w-12 h-12 rounded-2xl border border-white/[0.06] bg-bg-elevated flex items-center justify-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--fg-muted))" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+              </svg>
+            </div>
+            <div className="text-center px-4">
+              <p className="text-[15px] font-medium text-fg-primary mb-1">Discover new campaigns</p>
+              <p className="text-[13px] text-fg-tertiary leading-relaxed">
+                Browse live opportunities from top crypto projects and start earning.
+              </p>
+            </div>
+            <a href="/explore"
+              className="px-5 py-2.5 rounded-xl text-[13px] font-semibold text-white text-center"
+              style={{ background: "rgb(74 125 255)" }}>
+              Browse Campaigns →
+            </a>
+          </div>
         </div>
       </div>
     </div>
