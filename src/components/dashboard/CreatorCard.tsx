@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Share2, Download, Copy, Check } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import QRCode from "qrcode";
 
 interface CreatorCardProps {
   name: string;
@@ -11,46 +11,67 @@ interface CreatorCardProps {
   globalRank?: number | null;
 }
 
-// The visual card itself — used both for the dashboard hero size and the
-// compact shareable export. Size is controlled entirely by the parent's width.
-function CardFace({
-  name, username, avatar, totalScore, campaignsJoined, globalRank, profileUrl,
-}: CreatorCardProps & { profileUrl: string }) {
+// Fixed internal coordinate system — the whole card is one SVG with a
+// 680x324 viewBox. The SVG scales to whatever width the parent gives it
+// via width="100%", so layout never breaks regardless of container size.
+// This avoids the fragile %/clamp() mixing that caused the broken render.
+const VB_W = 680;
+const VB_H = 324;
+
+function CardSVG({
+  name, username, avatar, totalScore = 0, campaignsJoined = 0, globalRank, profileUrl, qrDataUrl,
+}: CreatorCardProps & { profileUrl: string; qrDataUrl: string | null }) {
+  const initials = name.charAt(0).toUpperCase();
+
   return (
-    <div
-      className="relative overflow-hidden rounded-3xl w-full"
-      style={{
-        aspectRatio: "2.1/1",
-        background: "linear-gradient(155deg, #060a14 0%, #0a1020 45%, #050810 100%)",
-        boxShadow: "0 0 0 1px rgb(80 110 190 / 0.18)",
-      }}
+    <svg
+      viewBox={`0 0 ${VB_W} ${VB_H}`}
+      width="100%"
+      height="100%"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ display: "block", borderRadius: 24, overflow: "hidden", boxShadow: "0 0 0 1px rgb(80 110 190 / 0.18)" }}
     >
-      {/* Abstract topographic pattern */}
-      <svg width="100%" height="100%" className="absolute inset-0" viewBox="0 0 680 324" preserveAspectRatio="none">
-        <defs>
-          <radialGradient id="zc-glowA" cx="80%" cy="10%" r="65%">
-            <stop offset="0%" stopColor="#2a4a8a" stopOpacity="0.45" />
-            <stop offset="100%" stopColor="#000" stopOpacity="0" />
-          </radialGradient>
-          <radialGradient id="zc-glowB" cx="10%" cy="90%" r="55%">
-            <stop offset="0%" stopColor="#1a3060" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#000" stopOpacity="0" />
-          </radialGradient>
-          <linearGradient id="zc-strokeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#6a8fd0" stopOpacity="0" />
-            <stop offset="50%" stopColor="#7a9fe0" stopOpacity="0.5" />
-            <stop offset="100%" stopColor="#6a8fd0" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <rect width="680" height="324" fill="url(#zc-glowA)" />
-        <rect width="680" height="324" fill="url(#zc-glowB)" />
+      <defs>
+        <linearGradient id="zc-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#060a14" />
+          <stop offset="45%" stopColor="#0a1020" />
+          <stop offset="100%" stopColor="#050810" />
+        </linearGradient>
+        <radialGradient id="zc-glowA" cx="80%" cy="10%" r="65%">
+          <stop offset="0%" stopColor="#2a4a8a" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="#000" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="zc-glowB" cx="10%" cy="90%" r="55%">
+          <stop offset="0%" stopColor="#1a3060" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#000" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="zc-stroke" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#6a8fd0" stopOpacity="0" />
+          <stop offset="50%" stopColor="#7a9fe0" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="#6a8fd0" stopOpacity="0" />
+        </linearGradient>
+        <clipPath id="zc-rounded">
+          <rect width={VB_W} height={VB_H} rx="24" />
+        </clipPath>
+        <clipPath id="zc-avatar-clip">
+          <rect x="44" y="36" width="76" height="76" rx="18" />
+        </clipPath>
+      </defs>
+
+      <g clipPath="url(#zc-rounded)">
+        {/* Background */}
+        <rect width={VB_W} height={VB_H} fill="url(#zc-bg)" />
+        <rect width={VB_W} height={VB_H} fill="url(#zc-glowA)" />
+        <rect width={VB_W} height={VB_H} fill="url(#zc-glowB)" />
+
+        {/* Abstract pattern */}
         <g opacity="0.6">
           <circle cx="540" cy="60" r="120" fill="none" stroke="#4a6aa8" strokeWidth="0.6" opacity="0.4" />
           <circle cx="540" cy="60" r="170" fill="none" stroke="#4a6aa8" strokeWidth="0.5" opacity="0.25" />
           <circle cx="540" cy="60" r="220" fill="none" stroke="#4a6aa8" strokeWidth="0.4" opacity="0.15" />
         </g>
-        <path d="M 0 280 C 120 230, 200 310, 340 250 S 560 180, 680 220" stroke="url(#zc-strokeGrad)" strokeWidth="1.2" fill="none" />
-        <path d="M 0 310 C 150 270, 260 330, 400 280 S 600 230, 680 260" stroke="url(#zc-strokeGrad)" strokeWidth="0.8" fill="none" opacity="0.7" />
+        <path d="M 0 280 C 120 230, 200 310, 340 250 S 560 180, 680 220" stroke="url(#zc-stroke)" strokeWidth="1.2" fill="none" />
+        <path d="M 0 310 C 150 270, 260 330, 400 280 S 600 230, 680 260" stroke="url(#zc-stroke)" strokeWidth="0.8" fill="none" opacity="0.7" />
         <path d="M 0 100 C 100 60, 180 130, 300 90" stroke="#4a6aa8" strokeWidth="0.6" fill="none" opacity="0.3" />
         <g fill="#6a8fd0">
           <circle cx="100" cy="50" r="1.4" opacity="0.7" />
@@ -60,133 +81,129 @@ function CardFace({
           <circle cx="80" cy="270" r="1" opacity="0.4" />
           <circle cx="620" cy="260" r="1.2" opacity="0.5" />
         </g>
-      </svg>
 
-      {/* Diagonal sheen */}
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: "linear-gradient(115deg, transparent 38%, rgb(100 130 210 / 0.05) 50%, rgb(140 165 235 / 0.09) 52%, rgb(100 130 210 / 0.05) 54%, transparent 64%)",
-        }}
-      />
+        {/* Diagonal sheen */}
+        <polygon points="240,0 320,0 440,324 360,324" fill="rgb(140,165,235)" opacity="0.06" />
 
-      {/* Content */}
-      <div className="relative z-10 h-full flex flex-col items-stretch justify-between p-[5%]">
-        {/* Top row */}
-        <div className="flex items-start justify-between w-full">
-          <div className="flex items-center gap-[2.5%]">
-            <div
-              className="rounded-[18%] overflow-hidden shrink-0 flex items-center justify-center"
-              style={{
-                width: "11.5%", height: "11.5%", minWidth: 40, minHeight: 40,
-                background: "linear-gradient(135deg, #1e2e4e, #0e1830)",
-                border: "1px solid rgb(130 160 230 / 0.3)",
-              }}
-            >
-              {avatar ? (
-                <img src={avatar} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <span style={{ fontSize: "clamp(14px, 4vw, 30px)", fontWeight: 600, color: "rgb(170 190 235)", fontFamily: "Georgia, serif" }}>
-                  {name.charAt(0).toUpperCase()}
-                </span>
-              )}
-            </div>
-            <div>
-              <p style={{ fontSize: "clamp(13px, 3.6vw, 25px)", fontWeight: 600, color: "rgb(232 238 252)", margin: 0, fontFamily: "Georgia, serif" }}>
-                {name}
-              </p>
-              {username && (
-                <p style={{ fontSize: "clamp(8px, 2vw, 13.5px)", color: "rgb(120 135 170)", margin: "2px 0 0", fontFamily: "sans-serif" }}>
-                  @{username}
-                </p>
-              )}
-            </div>
-          </div>
-          <div
-            className="shrink-0"
-            style={{
-              padding: "clamp(2px,0.8%,5px) clamp(6px,1.8%,12px)", borderRadius: 7,
-              border: "1px solid rgb(110 140 210 / 0.3)",
-              fontSize: "clamp(7px, 1.6vw, 11px)", fontWeight: 600, letterSpacing: "1px",
-              color: "rgb(140 160 210)", fontFamily: "sans-serif", textTransform: "uppercase",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Verified Creator
-          </div>
-        </div>
+        {/* ── Top row: avatar + name + verified badge ── */}
+        {avatar ? (
+          <image href={avatar} x="44" y="36" width="76" height="76" clipPath="url(#zc-avatar-clip)" preserveAspectRatio="xMidYMid slice" />
+        ) : (
+          <>
+            <rect x="44" y="36" width="76" height="76" rx="18" fill="#1e2e4e" stroke="rgba(130,160,230,0.3)" />
+            <text x="82" y="86" fontSize="30" fontWeight="600" fill="rgb(170,190,235)" fontFamily="Georgia, serif" textAnchor="middle">
+              {initials}
+            </text>
+          </>
+        )}
 
-        {/* Middle-left — QR code, under the name, above the score/campaigns row */}
-        <div className="flex flex-col items-start w-full" style={{ gap: 4 }}>
-          <div
-            className="bg-white rounded-[14%] flex items-center justify-center"
-            style={{ width: "11%", height: "11%", minWidth: 42, minHeight: 42, padding: "8%" }}
-          >
-            <QRCodeSVG value={profileUrl} size={256} style={{ width: "100%", height: "100%" }} fgColor="#000000" bgColor="#ffffff" />
-          </div>
-          <span style={{ fontSize: "clamp(6px, 1.3vw, 9px)", color: "rgb(95 108 140)", fontFamily: "sans-serif", letterSpacing: "0.5px", textTransform: "uppercase" }}>
-            Scan to view profile
-          </span>
-        </div>
+        <text x="136" y="68" fontSize="25" fontWeight="600" fill="rgb(232,238,252)" fontFamily="Georgia, serif">
+          {name}
+        </text>
+        {username && (
+          <text x="136" y="92" fontSize="13.5" fill="rgb(120,135,170)" fontFamily="sans-serif">
+            @{username}
+          </text>
+        )}
 
-        {/* Bottom row */}
-        <div className="flex items-end justify-between w-full">
-          <div className="flex" style={{ gap: "6%" }}>
-            <div>
-              <p style={{ fontSize: "clamp(13px, 5vw, 34px)", fontWeight: 600, color: "rgb(232 238 252)", margin: 0, fontFamily: "Georgia, serif" }}>
-                {(totalScore ?? 0).toLocaleString()}
-              </p>
-              <p style={{ fontSize: "clamp(6px, 1.7vw, 12px)", color: "rgb(105 118 150)", margin: "3px 0 0", fontFamily: "sans-serif", letterSpacing: "0.6px", textTransform: "uppercase" }}>
-                Total Score
-              </p>
-            </div>
-            <div>
-              <p style={{ fontSize: "clamp(13px, 5vw, 34px)", fontWeight: 600, color: "rgb(232 238 252)", margin: 0, fontFamily: "Georgia, serif" }}>
-                {String(campaignsJoined ?? 0).padStart(2, "0")}
-              </p>
-              <p style={{ fontSize: "clamp(6px, 1.7vw, 12px)", color: "rgb(105 118 150)", margin: "3px 0 0", fontFamily: "sans-serif", letterSpacing: "0.6px", textTransform: "uppercase" }}>
-                Campaigns
-              </p>
-            </div>
-            {globalRank != null && (
-              <div>
-                <p style={{ fontSize: "clamp(13px, 5vw, 34px)", fontWeight: 600, color: "rgb(232 238 252)", margin: 0, fontFamily: "Georgia, serif" }}>
-                  #{globalRank}
-                </p>
-                <p style={{ fontSize: "clamp(6px, 1.7vw, 12px)", color: "rgb(105 118 150)", margin: "3px 0 0", fontFamily: "sans-serif", letterSpacing: "0.6px", textTransform: "uppercase" }}>
-                  Global Rank
-                </p>
-              </div>
-            )}
-          </div>
-          <span style={{ fontSize: "clamp(11px, 3.2vw, 22px)", fontWeight: 700, letterSpacing: "1.2px", color: "rgb(190 205 240)", fontFamily: "Georgia, serif" }}>
-            Zerra
-          </span>
-        </div>
-      </div>
-    </div>
+        <rect x="540" y="36" width="96" height="26" rx="7" fill="none" stroke="rgba(110,140,210,0.3)" />
+        <text x="588" y="53" fontSize="9.5" fontWeight="600" fill="rgb(140,160,210)" fontFamily="sans-serif" letterSpacing="0.8" textAnchor="middle">
+          VERIFIED
+        </text>
+
+        {/* ── Middle-left: QR code ── */}
+        {qrDataUrl && (
+          <>
+            <rect x="44" y="140" width="76" height="76" rx="11" fill="white" />
+            <image href={qrDataUrl} x="50" y="146" width="64" height="64" />
+            <text x="44" y="234" fontSize="9" fill="rgb(95,108,140)" fontFamily="sans-serif" letterSpacing="0.5" style={{ textTransform: "uppercase" }}>
+              SCAN TO VIEW PROFILE
+            </text>
+          </>
+        )}
+
+        {/* ── Bottom row: stats + Zerra wordmark ── */}
+        <text x="44" y="290" fontSize="32" fontWeight="600" fill="rgb(232,238,252)" fontFamily="Georgia, serif">
+          {totalScore.toLocaleString()}
+        </text>
+        <text x="44" y="308" fontSize="11" fill="rgb(105,118,150)" fontFamily="sans-serif" letterSpacing="0.6" style={{ textTransform: "uppercase" }}>
+          TOTAL SCORE
+        </text>
+
+        <text x="220" y="290" fontSize="32" fontWeight="600" fill="rgb(232,238,252)" fontFamily="Georgia, serif">
+          {String(campaignsJoined).padStart(2, "0")}
+        </text>
+        <text x="220" y="308" fontSize="11" fill="rgb(105,118,150)" fontFamily="sans-serif" letterSpacing="0.6" style={{ textTransform: "uppercase" }}>
+          CAMPAIGNS
+        </text>
+
+        {globalRank != null && (
+          <>
+            <text x="370" y="290" fontSize="32" fontWeight="600" fill="rgb(232,238,252)" fontFamily="Georgia, serif">
+              #{globalRank}
+            </text>
+            <text x="370" y="308" fontSize="11" fill="rgb(105,118,150)" fontFamily="sans-serif" letterSpacing="0.6" style={{ textTransform: "uppercase" }}>
+              GLOBAL RANK
+            </text>
+          </>
+        )}
+
+        <text x="636" y="296" fontSize="22" fontWeight="700" fill="rgb(190,205,240)" fontFamily="Georgia, serif" letterSpacing="1.2" textAnchor="end">
+          Zerra
+        </text>
+      </g>
+    </svg>
   );
 }
 
 export function CreatorCard(props: CreatorCardProps) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [copied,  setCopied]  = useState(false);
-  const [sharing, setSharing] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [copied,    setCopied]    = useState(false);
+  const [sharing,   setSharing]   = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
   const profileUrl = `https://zerra.pro/${props.username ?? "creator"}`;
 
-  const generateImage = async (): Promise<Blob | null> => {
-    if (!cardRef.current) return null;
-    const html2canvas = (await import("html2canvas")).default;
-    const canvas = await html2canvas(cardRef.current, { backgroundColor: null, scale: 3 });
-    return new Promise((resolve) => canvas.toBlob((b: Blob | null) => resolve(b), "image/png"));
+  useEffect(() => {
+    QRCode.toDataURL(profileUrl, { margin: 0, width: 256, color: { dark: "#000000", light: "#ffffff" } })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(null));
+  }, [profileUrl]);
+
+  // Export the SVG directly to a PNG via an offscreen canvas — no html2canvas
+  // dependency needed since the entire card IS an SVG already.
+  const generatePng = async (): Promise<Blob | null> => {
+    if (!wrapperRef.current) return null;
+    const svgEl = wrapperRef.current.querySelector("svg");
+    if (!svgEl) return null;
+
+    const svgString = new XMLSerializer().serializeToString(svgEl);
+    const svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(svgBlob);
+
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = 3; // high-res export
+        const canvas = document.createElement("canvas");
+        canvas.width = VB_W * scale;
+        canvas.height = VB_H * scale;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { resolve(null); return; }
+        ctx.scale(scale, scale);
+        ctx.drawImage(img, 0, 0, VB_W, VB_H);
+        URL.revokeObjectURL(url);
+        canvas.toBlob((blob: Blob | null) => resolve(blob), "image/png");
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+      img.src = url;
+    });
   };
 
   const handleDownload = async () => {
     setSharing(true);
     try {
-      const blob = await generateImage();
+      const blob = await generatePng();
       if (!blob) return;
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -202,7 +219,7 @@ export function CreatorCard(props: CreatorCardProps) {
   const handleNativeShare = async () => {
     setSharing(true);
     try {
-      const blob = await generateImage();
+      const blob = await generatePng();
       if (!blob) return;
       const file = new File([blob], "zerra-creator-card.png", { type: "image/png" });
 
@@ -226,14 +243,9 @@ export function CreatorCard(props: CreatorCardProps) {
 
   return (
     <div className="relative">
-      {/* Hidden compact version used purely for export — fixed width so the
-          exported image is always consistent regardless of dashboard layout */}
-      <div ref={cardRef} style={{ position: "absolute", left: -9999, top: 0, width: 760 }}>
-        <CardFace {...props} profileUrl={profileUrl} />
+      <div ref={wrapperRef} className="w-full" style={{ aspectRatio: `${VB_W}/${VB_H}` }}>
+        <CardSVG {...props} profileUrl={profileUrl} qrDataUrl={qrDataUrl} />
       </div>
-
-      {/* Visible hero card — scales to parent container width */}
-      <CardFace {...props} profileUrl={profileUrl} />
 
       <div className="flex items-center gap-2 mt-4">
         <button onClick={handleNativeShare} disabled={sharing}
