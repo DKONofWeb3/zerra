@@ -12,6 +12,7 @@ import TopCreatorsPage from "./pages/Influence/TopCreators";
 import InfluencePage from "./pages/Influence";
 import TopPerformingPage from "./pages/Influence/TopPerforming";
 import ExplorePage from "./pages/Explore";
+import CampaignLeaderboardPage from "./pages/Explore/Leaderboard";
 import MarketPage from "./pages/Market";
 import WalletPage from "./pages/Wallet";
 import SettingsPage from "./pages/Settings";
@@ -160,6 +161,7 @@ export default function App() {
           <Route path="/influence/top-creators"   element={<InfluencePage />} />
           <Route path="/influence/top-performing" element={<TopPerformingPage />} />
           <Route path="/explore"                  element={<ExplorePage />} />
+          <Route path="/explore/leaderboard"      element={<CampaignLeaderboardPage />} />
           <Route path="/market"                   element={<MarketPage />} />
           <Route path="/wallet"                   element={<WalletPage />} />
           <Route path="/settings"                 element={<SettingsPage />} />

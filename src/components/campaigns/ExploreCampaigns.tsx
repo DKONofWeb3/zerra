@@ -204,6 +204,11 @@ function CampaignModal({
               {joined ? "✓ Joined Campaign" : joining ? "Joining..." : "Join Campaign"}
             </button>
 
+            <a href={`/explore/leaderboard?campaignId=${campaign.id}`}
+              className="block w-full py-2.5 rounded-xl text-[13px] font-medium text-center border border-white/[0.08] bg-bg-elevated text-fg-secondary hover:bg-bg-card transition-colors">
+              View Campaign Leaderboard →
+            </a>
+
             {!hasTikTok && !joined && (
               <p className="text-[12px] text-center text-warning">
                 ⚠ Connect TikTok first to participate
