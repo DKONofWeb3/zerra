@@ -108,9 +108,9 @@ export default function AdminMetricsPage() {
 
       <Section title="Verification volume">
         <StatRow label="Total videos analyzed" value={metrics.totalVideosAnalyzed} note="All-time across all campaigns" />
-        <StatRow label="Leaderboard eligible" value={metrics.eligibleVideos} note="Passed all checks — keyword + authenticity" color="success" />
+        <StatRow label="Leaderboard eligible" value={metrics.eligibleVideos} note="Passed all checks. Keyword + authenticity" color="success" />
         <StatRow label="Ineligible" value={ineligibleVideos > 0 ? ineligibleVideos : 0} note="Failed keyword or authenticity threshold" />
-        <StatRow label="Quarantined" value={metrics.quarantinedVideos} note="Suspicious engagement ratios — held for review" color={metrics.quarantinedVideos > 0 ? "warning" : undefined} />
+        <StatRow label="Quarantined" value={metrics.quarantinedVideos} note="Suspicious engagement ratios. Held for review" color={metrics.quarantinedVideos > 0 ? "warning" : undefined} />
         <StatRow label="Failed (system error)" value={metrics.failedVerifications} note="AI analysis errors after retry" color={metrics.failedVerifications > 0 ? "danger" : undefined} />
       </Section>
 
