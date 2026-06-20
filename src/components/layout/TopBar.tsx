@@ -24,11 +24,12 @@ function useTabConfig(): TabConfig {
     };
   }
   if (pathname.startsWith("/explore")) {
-    const activeTab = searchParams.get("tab") === "past" ? "Past Campaigns" : "Active Campaigns";
+    // Matches Explore page's actual scheme: ?tab=leaderboard, default = Active Campaigns
+    const activeTab = searchParams.get("tab") === "leaderboard" ? "Leaderboard" : "Active Campaigns";
     return {
-      tabs: ["Active Campaigns", "Past Campaigns"],
+      tabs: ["Active Campaigns", "Leaderboard"],
       activeTab,
-      onTabClick: (tab) => tab === "Past Campaigns" ? setSearchParams({ tab: "past" }) : setSearchParams({}),
+      onTabClick: (tab) => tab === "Leaderboard" ? setSearchParams({ tab: "leaderboard" }) : setSearchParams({}),
     };
   }
   if (pathname.startsWith("/portfolio")) {
@@ -101,7 +102,6 @@ export function TopBar() {
           ))}
         </div>
         <div className="flex items-center gap-3">
-          {/* Search — only shown on searchable pages */}
           {isSearchable && (
             <div className="relative">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-tertiary pointer-events-none" />

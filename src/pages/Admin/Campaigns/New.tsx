@@ -165,7 +165,7 @@ export default function AdminCampaignNewPage() {
         <button onClick={() => navigate("/admin/campaigns")}
           className="mt-6 w-full py-3 rounded-xl text-[13.5px] font-semibold text-white"
           style={{ background: "rgb(74 125 255)" }}>
-          Done — Go to Campaigns
+          Done. Go to Campaigns
         </button>
       </div>
     );
