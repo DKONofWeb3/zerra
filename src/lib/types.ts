@@ -212,3 +212,66 @@ export interface DonutSegment {
   value: number;
   color: string;
 }
+
+/* ============================================================
+   TIKTOK ANALYTICS — matches the real backend response shape
+   from GET /analytics/tiktok (routes/analytics.ts). Nothing here
+   is invented; fields not present in the backend (demographics,
+   per-platform breakdown, traffic sources) are intentionally
+   absent — those render as locked "Coming soon" cards instead.
+   ============================================================ */
+
+export interface TikTokPost {
+  post_id: string;
+  title: string | null;
+  cover_image_url: string | null;
+  view_count: number;
+  like_count: number;
+  comment_count: number;
+  share_count: number;
+  engagement_rate: number;
+  fetched_at: string;
+  /** Present only if this post matched an active campaign and was queued for AI verification. */
+  verification: { final_score?: number; status?: string } | null;
+}
+
+export interface TikTokAnalyticsSummary {
+  total_posts: number;
+  total_views: number;
+  total_likes: number;
+  total_comments: number;
+  total_shares: number;
+  avg_engagement_rate: number;
+}
+
+export interface TikTokAnalytics {
+  summary: TikTokAnalyticsSummary;
+  posts: TikTokPost[];
+}
+
+/* ============================================================
+   BADGES — "Early Creators" + "Influencer Badge" claim flow.
+   Backend contract (expected, not yet implemented):
+     GET  /me/badges            -> { badges: BadgeState[] }
+     POST /me/badges/:id/claim  -> { badge: BadgeState }
+   Until that endpoint exists, the dashboard derives eligibility
+   client-side (see BadgesCard) and persists "claimed" locally.
+   ============================================================ */
+
+export type BadgeId = "early-creator" | "verified-influencer";
+
+export interface BadgeDef {
+  id: BadgeId;
+  name: string;            // "Early creator badge" / "Influencer Badge"
+  shortLabel: string;      // pill label: "Early Adopter" / "Verified Influencer"
+  description: string;     // "This badge is only for the Day1 Creators" / "You have obtained 1.6M+ Views"
+  theme: "ember" | "violet"; // red/orange glow vs blue/violet glow
+  claimHeadline: string;   // modal headline: "Congratulation" / "You're Now an Influencer"
+  claimSubtext: string;
+}
+
+export interface BadgeState extends BadgeDef {
+  eligible: boolean;  // can the user claim this right now
+  attained: boolean;  // already claimed
+  attainedAt?: string;
+}
