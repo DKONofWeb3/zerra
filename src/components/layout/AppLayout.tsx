@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { BottomNav } from "./BottomNav";
+import { MobileIdentityHeader } from "./MobileIdentityHeader";
 
 export function AppLayout() {
   return (
@@ -17,6 +18,7 @@ export function AppLayout() {
 
         <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
           <TopBar />
+          <MobileIdentityHeader />
           <div
             className="flex-1 min-w-0 overflow-y-auto"
             style={{ padding: "24px 16px 80px", }}

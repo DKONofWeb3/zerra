@@ -7,6 +7,7 @@ import { cn } from "@/lib/cn";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useSocialAccounts } from "@/hooks/useSocialAccounts";
 import { useAuth } from "@/contexts/AuthContext";
+import { UserAvatar } from "./UserAvatar";
 
 interface NavItem {
   to: string;
@@ -29,20 +30,6 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="px-3 mb-3 text-[11px] uppercase tracking-[0.12em] font-medium text-fg-muted">
       {children}
-    </div>
-  );
-}
-
-function UserAvatar({ name, avatar }: { name: string | null; avatar: string | null }) {
-  if (avatar) {
-    return <img src={avatar} alt={name ?? "User"} className="w-full h-full object-cover" />;
-  }
-  const initials = name
-    ? name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
-    : "?";
-  return (
-    <div className="w-full h-full flex items-center justify-center bg-bg-elevated text-fg-secondary text-[15px] font-semibold">
-      {initials}
     </div>
   );
 }

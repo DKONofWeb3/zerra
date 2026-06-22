@@ -175,26 +175,31 @@ export function ActivityHeroCard({
             </p>
           )}
 
-          <div className="mt-5">
+          <div
+            className="mt-5 rounded-2xl border border-white/[0.06] p-4 md:p-5"
+            style={{ background: "rgb(0 0 0 / 0.35)" }}
+          >
             <p className="text-[12px] text-fg-tertiary mb-1">Total Views</p>
-            <p className="font-display font-medium text-[32px] md:text-[40px] text-fg-primary tabular-nums leading-none">
-              {loading ? "—" : hasData ? fmt(totalReach) : "0"}
-            </p>
-          </div>
+            <div className="flex items-center gap-2.5 mb-4">
+              <span className="font-display font-medium text-[28px] md:text-[34px] text-fg-primary tabular-nums leading-none">
+                {loading ? "—" : hasData ? fmt(totalReach) : "0"}
+              </span>
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5">
-            <SparkStatCard
-              label="Avg Engagement Rate"
-              value={loading ? "—" : hasData ? `${engagementRate}%` : "0%"}
-              trendData={engagementTrend}
-              link
-            />
-            <SparkStatCard
-              label="Total Likes"
-              value={loading ? "—" : hasData ? fmt(totalLikes) : "0"}
-              trendData={viewsTrend}
-              link
-            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <SparkStatCard
+                label="Avg Engagement Rate"
+                value={loading ? "—" : hasData ? `${engagementRate}%` : "0%"}
+                trendData={engagementTrend}
+                link
+              />
+              <SparkStatCard
+                label="Total Likes"
+                value={loading ? "—" : hasData ? fmt(totalLikes) : "0"}
+                trendData={viewsTrend}
+                link
+              />
+            </div>
           </div>
         </div>
 

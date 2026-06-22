@@ -23,14 +23,22 @@ function writeLocalClaim(id: string) {
 /**
  * Badge eligibility/attained state.
  *
- * Tries GET /me/badges first. That endpoint doesn't exist on the
- * backend yet — when it 404s/errors we fall back to a client-side
- * derivation (eligible = true for both, attained = read from
- * localStorage) so the claim flow is fully usable in the meantime.
+ * Both badges are membership-based by design — eligible is always
+ * true for a signed-in user; there's no view-count or signup-date
+ * threshold to check (confirmed: being part of Zerra is what
+ * qualifies someone, not hitting a metric). Don't reintroduce a
+ * fabricated threshold here.
  *
- * Once the backend ships /me/badges + POST /me/badges/:id/claim,
- * delete the fallback branch and this just becomes a thin wrapper.
+ * NOTE: GET /me/badges and POST /me/badges/:id/claim don't exist on
+ * the backend yet (confirmed 404). Rather than call a known-missing
+ * route on every load — which just adds console noise without any
+ * behavior change, since the catch always falls back to localStorage
+ * anyway — we go straight to the local derivation. When the backend
+ * ships these routes, swap BACKEND_BADGES_LIVE to true to restore the
+ * network path below.
  */
+const BACKEND_BADGES_LIVE = false;
+
 export function useBadges() {
   const { session } = useAuth();
   const [badges, setBadges] = useState<BadgeState[]>(
@@ -52,7 +60,7 @@ export function useBadges() {
   }, []);
 
   useEffect(() => {
-    if (!session) { setLoading(false); loadFallback(); return; }
+    if (!session || !BACKEND_BADGES_LIVE) { loadFallback(); setLoading(false); return; }
 
     apiGet<{ badges: BadgeState[] }>("/me/badges")
       .then((d) => {
@@ -65,6 +73,14 @@ export function useBadges() {
 
   const claim = useCallback(async (id: string) => {
     setClaimingId(id);
+    if (!BACKEND_BADGES_LIVE) {
+      writeLocalClaim(id);
+      setBadges((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, attained: true, attainedAt: new Date().toISOString() } : b))
+      );
+      setClaimingId(null);
+      return;
+    }
     try {
       const res = await apiPost<{ badge: BadgeState }>(`/me/badges/${id}/claim`);
       setBadges((prev) => prev.map((b) => (b.id === id ? res.badge : b)));
