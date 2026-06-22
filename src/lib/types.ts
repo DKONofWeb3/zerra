@@ -264,7 +264,9 @@ export interface BadgeDef {
   id: BadgeId;
   name: string;            // "Early creator badge" / "Influencer Badge"
   shortLabel: string;      // pill label: "Early Adopter" / "Verified Influencer"
-  description: string;     // "This badge is only for the Day1 Creators" / "You have obtained 1.6M+ Views"
+  description: string;     // shown before claiming — explains what's required
+  /** Shown instead of `description` once attained — e.g. "Reach 10,000+ followers" reads oddly after the fact. Falls back to `description` if omitted. */
+  attainedDescription?: string;
   theme: "ember" | "violet"; // red/orange glow vs blue/violet glow
   claimHeadline: string;   // modal headline: "Congratulation" / "You're Now an Influencer"
   claimSubtext: string;

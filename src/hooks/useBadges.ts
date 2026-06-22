@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiGet, apiPost } from "@/lib/api/client";
-import { BADGE_DEFS } from "@/lib/badges";
+import { BADGE_DEFS, FOLLOWER_THRESHOLD } from "@/lib/badges";
 import type { BadgeState } from "@/lib/types";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -20,14 +20,23 @@ function writeLocalClaim(id: string) {
   localStorage.setItem(LOCAL_KEY, JSON.stringify(claims));
 }
 
+/** "early-creator" is always eligible (membership-based). "verified-influencer" requires real follower data ≥ FOLLOWER_THRESHOLD. */
+function computeEligible(badgeId: string, followerCount: number | null): boolean {
+  if (badgeId !== "verified-influencer") return true;
+  return followerCount != null && followerCount >= FOLLOWER_THRESHOLD;
+}
+
 /**
  * Badge eligibility/attained state.
  *
- * Both badges are membership-based by design — eligible is always
- * true for a signed-in user; there's no view-count or signup-date
- * threshold to check (confirmed: being part of Zerra is what
- * qualifies someone, not hitting a metric). Don't reintroduce a
- * fabricated threshold here.
+ * "Early creator badge" stays membership-based — always eligible, no
+ * metric to check.
+ *
+ * "Influencer Badge" is gated on followerCount, which the CALLER must
+ * pass in (sourced from useSocialAccounts — see the NOTE there for
+ * what the backend needs to add). Until that field is populated,
+ * followerCount will be null/undefined for everyone and this badge
+ * stays locked for everyone — which is the honest state, not a bug.
  *
  * NOTE: GET /me/badges and POST /me/badges/:id/claim don't exist on
  * the backend yet (confirmed 404). Rather than call a known-missing
@@ -39,10 +48,10 @@ function writeLocalClaim(id: string) {
  */
 const BACKEND_BADGES_LIVE = false;
 
-export function useBadges() {
+export function useBadges(followerCount: number | null = null) {
   const { session } = useAuth();
   const [badges, setBadges] = useState<BadgeState[]>(
-    BADGE_DEFS.map((b) => ({ ...b, eligible: true, attained: false }))
+    BADGE_DEFS.map((b) => ({ ...b, eligible: computeEligible(b.id, followerCount), attained: false }))
   );
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<string | null>(null);
@@ -52,12 +61,12 @@ export function useBadges() {
     setBadges(
       BADGE_DEFS.map((b) => ({
         ...b,
-        eligible: true,
+        eligible: computeEligible(b.id, followerCount),
         attained: Boolean(claims[b.id]),
         attainedAt: claims[b.id],
       }))
     );
-  }, []);
+  }, [followerCount]);
 
   useEffect(() => {
     if (!session || !BACKEND_BADGES_LIVE) { loadFallback(); setLoading(false); return; }

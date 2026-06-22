@@ -1,4 +1,3 @@
-import { cn } from "@/lib/cn";
 import { BadgeGlyph } from "@/components/icons/BadgeIcon";
 import type { BadgeState } from "@/lib/types";
 
@@ -29,24 +28,27 @@ function BadgeTile({ badge, claiming, onClaim }: BadgeTileProps) {
 
       <div className="flex-1 min-w-0">
         <p className="text-[14px] font-medium text-fg-primary truncate">{badge.name}</p>
-        <p className="text-[11.5px] text-fg-tertiary mt-0.5 leading-snug line-clamp-2">{badge.description}</p>
+        <p className="text-[11.5px] text-fg-tertiary mt-0.5 leading-snug line-clamp-2">
+          {badge.attained ? (badge.attainedDescription ?? badge.description) : badge.description}
+        </p>
 
         <div className="mt-2.5">
           {badge.attained ? (
             <span className="inline-flex items-center px-3 py-1 rounded-lg text-[11.5px] font-medium bg-white/[0.06] text-fg-secondary">
               Attained
             </span>
-          ) : (
+          ) : badge.eligible ? (
             <button
               onClick={() => onClaim(badge.id)}
-              disabled={!badge.eligible || claiming}
-              className={cn(
-                "inline-flex items-center px-3 py-1.5 rounded-lg text-[11.5px] font-semibold transition-opacity",
-                "bg-white text-[#0a0c12] disabled:opacity-40"
-              )}
+              disabled={claiming}
+              className="inline-flex items-center px-3 py-1.5 rounded-lg text-[11.5px] font-semibold bg-white text-[#0a0c12] disabled:opacity-40 transition-opacity"
             >
               {claiming ? "Claiming..." : "Claim Badge"}
             </button>
+          ) : (
+            <span className="inline-flex items-center px-3 py-1 rounded-lg text-[11.5px] font-medium bg-white/[0.04] text-fg-muted">
+              Locked
+            </span>
           )}
         </div>
       </div>

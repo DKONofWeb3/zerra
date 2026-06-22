@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown, TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { BadgesPanel } from "@/components/dashboard/BadgesCard";
 import { AttainedBadgePills } from "@/components/dashboard/AttainedBadgePills";
-import type { BadgeState } from "@/lib/types";
+import { SparklineChart } from "@/components/dashboard/SparklineChart";
+import type { BadgeState, TikTokPost } from "@/lib/types";
 
 function fmt(n: number) {
   if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
@@ -63,8 +64,8 @@ function ChangePill({ percent }: { percent: number }) {
   );
 }
 
-/** Plain label/value/percent-pill sub-stat — no charts. Matches "Verified Engagements" / "Profile views" in the reference exactly. */
-function SubStat({ label, value, changePercent, link }: { label: string; value: string; changePercent: number | null; link?: boolean }) {
+/** Mobile/attained pattern — plain label/value/percent-pill, no chart, no individual border. Matches 441995.jpg / mobile.jpg. */
+function SubStatRow({ label, value, link }: { label: string; value: string; link?: boolean }) {
   return (
     <div>
       <div className="flex items-center gap-1.5 text-fg-tertiary">
@@ -74,9 +75,41 @@ function SubStat({ label, value, changePercent, link }: { label: string; value: 
       <p className="mt-1.5 font-display font-medium text-[20px] md:text-[24px] text-fg-primary tabular-nums">
         {value}
       </p>
-      {changePercent != null && <div className="mt-1.5"><ChangePill percent={changePercent} /></div>}
     </div>
   );
+}
+
+/** Desktop pattern — its own bordered rounded card with a real sparkline underneath. Matches dashboard.jpg. */
+function SubStatChartCard({
+  label, value, changePercent, trendPoints, link,
+}: { label: string; value: string; changePercent: number | null; trendPoints: { x: number; y: number }[]; link?: boolean }) {
+  const trend: "up" | "down" | "flat" =
+    trendPoints.length < 2 ? "flat" : trendPoints[trendPoints.length - 1].y >= trendPoints[0].y ? "up" : "down";
+
+  return (
+    <div className="rounded-xl border border-white/[0.06] p-3.5" style={{ background: "rgb(10 13 22 / 0.7)" }}>
+      <div className="flex items-center gap-1.5 text-fg-tertiary">
+        <span className="text-[12px]">{label}</span>
+        {link && <span className="text-fg-muted text-[12px]">›</span>}
+      </div>
+      <div className="flex items-center gap-2 mt-1.5">
+        <span className="font-display font-medium text-[20px] text-fg-primary tabular-nums">{value}</span>
+        {changePercent != null && <ChangePill percent={changePercent} />}
+      </div>
+      {trendPoints.length >= 2 && (
+        <div className="h-10 mt-2 -mx-1 -mb-1">
+          <SparklineChart data={trendPoints} trend={trend} width={260} height={64} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Builds real per-post chart points from chronological posts. Returns [] if fewer than 2 posts — nothing honest to plot. */
+function buildTrendPoints(posts: TikTokPost[], pick: (p: TikTokPost) => number): { x: number; y: number }[] {
+  const chronological = [...posts].sort((a, b) => new Date(a.fetched_at).getTime() - new Date(b.fetched_at).getTime());
+  if (chronological.length < 2) return [];
+  return chronological.map((p, i) => ({ x: i, y: pick(p) }));
 }
 
 interface ActivityHeroCardProps {
@@ -92,30 +125,38 @@ interface ActivityHeroCardProps {
   totalLikes: number;
   /** Real field: summary.total_posts from /analytics/tiktok */
   postsSynced: number;
+  /** Real per-post records, used ONLY to draw the desktop sub-stat charts. Empty/short arrays simply render no chart. */
+  posts: TikTokPost[];
   badges: BadgeState[];
   claimingId: string | null;
   onClaim: (id: string) => void;
 }
 
 /**
- * The hero card. Structure matches the reference exactly:
- * - Header row: "TikTok account: Linked" + Wallet/Linked Socials dropdowns
- * - "All Activity Update" heading
- * - Attained-badge pills row (only shown once at least one badge is claimed)
- * - Nested dark card: "Total Reach" big number, then a 2-col row of plain
- *   label/value/percent-pill sub-stats — NO charts, NO sparklines
- * - If no badge is attained yet: the "Verified Badge for Creators" panel
- *   renders as a second column INSIDE this card (two-column layout).
- *   Once at least one badge is attained, that panel disappears from here
- *   — the parent (Dashboard) renders bare badge tiles in a separate row
- *   below the whole card instead. See dashboard.jpg (unclaimed) vs
- *   441995.jpg (attained) — the wrapper genuinely differs between states.
+ * The hero card.
+ *
+ * Desktop (dashboard.jpg): each sub-stat is its OWN bordered rounded
+ * card with a real sparkline chart underneath, built from chronological
+ * posts[] — engagement_rate for the first card, like_count for the
+ * second. Both series are real, just min/max-scaled for chart display.
+ *
+ * Mobile (441995.jpg / mobile.jpg): plain label/value/percent-pill
+ * rows, no individual card border, no chart — that's a genuinely
+ * different layout at that breakpoint in the actual designs, not an
+ * oversight.
+ *
+ * Badge panel: lives inside this card (two-column) only while nothing
+ * is attained yet. Once a badge is attained, the parent (Dashboard)
+ * renders bare tiles in a separate row below instead.
  */
 export function ActivityHeroCard({
   tiktokLinked, loading, hasData, totalReach, engagementRate, totalLikes, postsSynced,
-  badges, claimingId, onClaim,
+  posts, badges, claimingId, onClaim,
 }: ActivityHeroCardProps) {
   const anyAttained = badges.some((b) => b.attained);
+
+  const engagementTrend = useMemo(() => buildTrendPoints(posts, (p) => Number(p.engagement_rate) || 0), [posts]);
+  const likesTrend = useMemo(() => buildTrendPoints(posts, (p) => Number(p.like_count) || 0), [posts]);
 
   return (
     <div
@@ -185,21 +226,40 @@ export function ActivityHeroCard({
             style={{ background: "rgb(0 0 0 / 0.35)" }}
           >
             <p className="text-[12px] text-fg-tertiary mb-1">Total Reach</p>
-            <p className="font-display font-medium text-[28px] md:text-[34px] text-fg-primary tabular-nums leading-none mb-4">
-              {loading ? "—" : hasData ? fmt(totalReach) : "0"}
-            </p>
+            <div className="flex items-center gap-2.5 mb-4">
+              <p className="font-display font-medium text-[28px] md:text-[34px] text-fg-primary tabular-nums leading-none">
+                {loading ? "—" : hasData ? fmt(totalReach) : "0"}
+              </p>
+            </div>
 
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/[0.05]">
-              <SubStat
+            {/* Mobile: plain rows, shared bottom border */}
+            <div className="md:hidden grid grid-cols-2 gap-4 pt-4 border-t border-white/[0.05]">
+              <SubStatRow
+                label="Engagement Rate"
+                value={loading ? "—" : hasData ? `${engagementRate}%` : "0%"}
+                link
+              />
+              <SubStatRow
+                label="Total Likes"
+                value={loading ? "—" : hasData ? fmt(totalLikes) : "0"}
+                link
+              />
+            </div>
+
+            {/* Desktop: individually-bordered cards with charts */}
+            <div className="hidden md:grid grid-cols-2 gap-4">
+              <SubStatChartCard
                 label="Engagement Rate"
                 value={loading ? "—" : hasData ? `${engagementRate}%` : "0%"}
                 changePercent={null}
+                trendPoints={engagementTrend}
                 link
               />
-              <SubStat
+              <SubStatChartCard
                 label="Total Likes"
                 value={loading ? "—" : hasData ? fmt(totalLikes) : "0"}
                 changePercent={null}
+                trendPoints={likesTrend}
                 link
               />
             </div>

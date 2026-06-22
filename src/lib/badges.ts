@@ -1,9 +1,18 @@
 import type { BadgeDef } from "@/lib/types";
 
 /**
- * Static badge definitions. Eligibility/attained status comes from
- * the backend (or local fallback) — see useBadges().
+ * Static badge definitions.
+ *
+ * "Early creator badge" is membership-based — no metric to check, no
+ * signup-date field exists, eligible is always true by design.
+ *
+ * "Influencer Badge" is gated on TikTok follower count ≥ 10,000 (see
+ * useBadges.ts for the actual check). That field doesn't exist on the
+ * backend yet — see the NOTE in useSocialAccounts.ts for exactly what
+ * needs to change there.
  */
+export const FOLLOWER_THRESHOLD = 10_000;
+
 export const BADGE_DEFS: BadgeDef[] = [
   {
     id: "early-creator",
@@ -18,9 +27,10 @@ export const BADGE_DEFS: BadgeDef[] = [
     id: "verified-influencer",
     name: "Influencer Badge",
     shortLabel: "Verified Influencer",
-    description: "You have obtained 1.6M+ Views",
+    description: "Reach 10,000+ TikTok followers to unlock this badge",
+    attainedDescription: "You've crossed 10,000 followers on TikTok",
     theme: "violet",
     claimHeadline: "You're Now an Influencer",
-    claimSubtext: "You have obtained 1.6M+ Views",
+    claimSubtext: "You've crossed 10,000 followers on TikTok.",
   },
 ];

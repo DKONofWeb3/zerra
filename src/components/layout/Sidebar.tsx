@@ -6,8 +6,10 @@ import {
 import { cn } from "@/lib/cn";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useSocialAccounts } from "@/hooks/useSocialAccounts";
+import { useBadges } from "@/hooks/useBadges";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserAvatar } from "./UserAvatar";
+import { BadgeGlyph } from "@/components/icons/BadgeIcon";
 
 interface NavItem {
   to: string;
@@ -116,6 +118,9 @@ export function Sidebar() {
   const { accounts } = useSocialAccounts();
 
   const tiktokAccount = accounts.find((a) => a.platform === "tiktok");
+  const tiktokFollowerCount = tiktokAccount?.follower_count ?? null;
+  const { badges } = useBadges(tiktokFollowerCount);
+  const attainedBadges = badges.filter((b) => b.attained);
   const firstName = user?.name?.split(" ")[0] ?? "Creator";
 
   const loginTime = session?.user?.last_sign_in_at
@@ -135,8 +140,17 @@ export function Sidebar() {
         </Link>
 
         <div className="flex-1 min-w-0 pt-0.5">
-          <div className="text-[15px] font-semibold text-fg-primary truncate leading-tight">
-            {user?.name ?? "—"}
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-[15px] font-semibold text-fg-primary truncate leading-tight">
+              {user?.name ?? "—"}
+            </span>
+            {attainedBadges.length > 0 && (
+              <span className="flex items-center gap-1 shrink-0" aria-label="Attained badges">
+                {attainedBadges.map((b) => (
+                  <BadgeGlyph key={b.id} theme={b.theme} size={16} glow={false} />
+                ))}
+              </span>
+            )}
           </div>
           <div className="text-[12px] text-fg-tertiary mt-1 truncate">
             TikTok:{" "}

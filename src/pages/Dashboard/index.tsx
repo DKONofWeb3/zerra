@@ -12,12 +12,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { apiGet } from "@/lib/api/client";
 import { useBadges } from "@/hooks/useBadges";
+import { useSocialAccounts } from "@/hooks/useSocialAccounts";
 import type { ActivityItem, TikTokAnalytics } from "@/lib/types";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
 function OverviewView() {
   const { session } = useAuth();
-  const { badges, claim, claimingId } = useBadges();
+  const { accounts } = useSocialAccounts();
+  // Real TikTok follower count — null until the backend adds follower_count
+  // to getTikTokUser()'s fields and to whatever this account row stores.
+  // See the NOTE in useSocialAccounts.ts for the exact change needed.
+  const tiktokFollowerCount = accounts.find((a) => a.platform === "tiktok")?.follower_count ?? null;
+  const { badges, claim, claimingId } = useBadges(tiktokFollowerCount);
   const [claimModalId, setClaimModalId] = useState<string | null>(null);
 
   // TikTok analytics summary — powers the hero card's reach/engagement stats
@@ -84,6 +90,7 @@ function OverviewView() {
         engagementRate={summary?.avg_engagement_rate ?? 0}
         totalLikes={summary?.total_likes ?? 0}
         postsSynced={summary?.total_posts ?? 0}
+        posts={analytics?.posts ?? []}
         badges={badges}
         claimingId={claimingId}
         onClaim={handleClaim}
