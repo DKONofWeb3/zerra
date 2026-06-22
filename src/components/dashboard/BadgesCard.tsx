@@ -13,6 +13,7 @@ const THEME_RING: Record<BadgeState["theme"], string> = {
   violet: "rgb(110 124 255 / 0.18)",
 };
 
+/** A single badge tile — icon, name, description, Claim/Attained state. Reused by both layout wrappers below. */
 function BadgeTile({ badge, claiming, onClaim }: BadgeTileProps) {
   return (
     <div
@@ -53,20 +54,18 @@ function BadgeTile({ badge, claiming, onClaim }: BadgeTileProps) {
   );
 }
 
-interface BadgesCardProps {
+interface BadgesPanelProps {
   badges: BadgeState[];
   claimingId: string | null;
   onClaim: (id: string) => void;
 }
 
 /**
- * "Verified Badge for Creators" panel — sits in the same slot the old
- * static badge cards occupied. Reference: IMG_0085 (desktop, unclaimed)
- * and IMG_3069 (mobile, attained state).
+ * Wrapped "Verified Badge for Creators" panel — used ONLY while no badge
+ * has been attained yet, rendered as the second column inside the hero
+ * card. Reference: IMG_0085 (unclaimed state).
  */
-export function BadgesCard({ badges, claimingId, onClaim }: BadgesCardProps) {
-  const anyAttained = badges.some((b) => b.attained);
-
+export function BadgesPanel({ badges, claimingId, onClaim }: BadgesPanelProps) {
   return (
     <div
       className="relative overflow-hidden rounded-card border border-white/[0.06] p-5 md:p-6 h-full flex flex-col"
@@ -75,9 +74,7 @@ export function BadgesCard({ badges, claimingId, onClaim }: BadgesCardProps) {
       <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
         style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
 
-      <p className="text-[12.5px] text-fg-tertiary">
-        {anyAttained ? "Claim your creator badge." : "Claim your creator badge."}
-      </p>
+      <p className="text-[12.5px] text-fg-tertiary">Claim your creator badge.</p>
       <h3 className="mt-1 font-display font-medium text-[20px] md:text-[22px] text-fg-primary tracking-[-0.01em]">
         Verified Badge for Creators
       </h3>
@@ -87,6 +84,27 @@ export function BadgesCard({ badges, claimingId, onClaim }: BadgesCardProps) {
           <BadgeTile key={badge.id} badge={badge} claiming={claimingId === badge.id} onClaim={onClaim} />
         ))}
       </div>
+    </div>
+  );
+}
+
+interface BadgeTilesRowProps {
+  badges: BadgeState[];
+  claimingId: string | null;
+  onClaim: (id: string) => void;
+}
+
+/**
+ * Bare side-by-side badge tiles, no wrapper panel — used once at least
+ * one badge is attained, rendered as its own row BELOW the hero card.
+ * Reference: 441995.jpg / mobile.jpg (attained state).
+ */
+export function BadgeTilesRow({ badges, claimingId, onClaim }: BadgeTilesRowProps) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+      {badges.map((badge) => (
+        <BadgeTile key={badge.id} badge={badge} claiming={claimingId === badge.id} onClaim={onClaim} />
+      ))}
     </div>
   );
 }

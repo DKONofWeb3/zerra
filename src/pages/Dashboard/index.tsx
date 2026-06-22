@@ -5,24 +5,15 @@ import { UserActivityMarquee } from "@/components/dashboard/UserActivityMarquee"
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { InfluenceStatsCard } from "@/components/dashboard/InfluenceStatsCard";
 import { ActivityHeroCard } from "@/components/dashboard/ActivityHeroCard";
+import { BadgeTilesRow } from "@/components/dashboard/BadgesCard";
 import { BadgeClaimModal } from "@/components/dashboard/BadgeClaimModal";
-import { AttainedBadgePills } from "@/components/dashboard/AttainedBadgePills";
 import { AnalyticsOverview } from "@/components/dashboard/AnalyticsOverview";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { apiGet } from "@/lib/api/client";
 import { useBadges } from "@/hooks/useBadges";
 import type { ActivityItem, TikTokAnalytics } from "@/lib/types";
 import { usePageTitle } from "@/hooks/usePageTitle";
-
-/** Normalize a numeric series to 0–1 for sparkline rendering. Returns [] if fewer than 2 points (nothing to plot a trend with). */
-function normalizeTrend(values: number[]): number[] {
-  if (values.length < 2) return [];
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  if (max === min) return values.map(() => 0.5);
-  return values.map((v) => (v - min) / (max - min));
-}
 
 function OverviewView() {
   const { session } = useAuth();
@@ -63,21 +54,10 @@ function OverviewView() {
   const summary = analytics?.summary;
   const hasAnalyticsData = !analyticsLoading && Boolean(summary && summary.total_posts > 0);
 
-  // Real chronological trends from the synced posts — empty array if fewer than 2 posts to plot.
-  const { viewsTrend, engagementTrend } = useMemo(() => {
-    const posts = analytics?.posts ?? [];
-    const chronological = [...posts].sort(
-      (a, b) => new Date(a.fetched_at).getTime() - new Date(b.fetched_at).getTime()
-    );
-    return {
-      viewsTrend: normalizeTrend(chronological.map((p) => Number(p.view_count) || 0)),
-      engagementTrend: normalizeTrend(chronological.map((p) => Number(p.engagement_rate) || 0)),
-    };
-  }, [analytics]);
-
   const activityItems: ActivityItem[] = [];
 
   const claimedBadge = badges.find((b) => b.id === claimModalId) ?? null;
+  const anyAttained = badges.some((b) => b.attained);
 
   const handleClaim = async (id: string) => {
     await claim(id);
@@ -96,8 +76,6 @@ function OverviewView() {
         </span>
       </div>
 
-      <AttainedBadgePills badges={badges} />
-
       <ActivityHeroCard
         tiktokLinked={tiktokLinked}
         loading={analyticsLoading}
@@ -106,12 +84,15 @@ function OverviewView() {
         engagementRate={summary?.avg_engagement_rate ?? 0}
         totalLikes={summary?.total_likes ?? 0}
         postsSynced={summary?.total_posts ?? 0}
-        viewsTrend={viewsTrend}
-        engagementTrend={engagementTrend}
         badges={badges}
         claimingId={claimingId}
         onClaim={handleClaim}
       />
+
+      {/* Once at least one badge is attained, tiles move out of the hero card into their own row */}
+      {anyAttained && (
+        <BadgeTilesRow badges={badges} claimingId={claimingId} onClaim={handleClaim} />
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 pt-2 md:pt-4">
         <div>

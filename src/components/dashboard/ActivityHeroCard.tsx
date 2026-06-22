@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
-import { BadgesCard } from "@/components/dashboard/BadgesCard";
-import { SparklineChart } from "@/components/dashboard/SparklineChart";
+import { ChevronDown, TrendingUp, TrendingDown } from "lucide-react";
+import { cn } from "@/lib/cn";
+import { BadgesPanel } from "@/components/dashboard/BadgesCard";
+import { AttainedBadgePills } from "@/components/dashboard/AttainedBadgePills";
 import type { BadgeState } from "@/lib/types";
 
 function fmt(n: number) {
@@ -49,31 +50,31 @@ function DropdownPill({ label, options }: DropdownPillProps) {
   );
 }
 
-/** A sparkline-backed sub-stat card — "Verified Engagements" / "Profile View" pattern from the design. */
-function SparkStatCard({
-  label, value, trendData, link,
-}: { label: string; value: string; trendData: number[]; link?: boolean }) {
-  const points = trendData.map((y, i) => ({ x: i, y }));
-  const trend: "up" | "down" | "flat" =
-    trendData.length < 2 ? "flat" : trendData[trendData.length - 1] >= trendData[0] ? "up" : "down";
-
+function ChangePill({ percent }: { percent: number }) {
+  const positive = percent >= 0;
   return (
-    <div
-      className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-4"
-      style={{ background: "rgb(10 13 22 / 0.7)" }}
-    >
+    <span className={cn(
+      "inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-medium",
+      positive ? "text-success bg-[rgb(var(--success)/0.12)]" : "text-danger bg-[rgb(var(--danger)/0.12)]"
+    )}>
+      {positive ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
+      {Math.abs(percent).toFixed(1)}%
+    </span>
+  );
+}
+
+/** Plain label/value/percent-pill sub-stat — no charts. Matches "Verified Engagements" / "Profile views" in the reference exactly. */
+function SubStat({ label, value, changePercent, link }: { label: string; value: string; changePercent: number | null; link?: boolean }) {
+  return (
+    <div>
       <div className="flex items-center gap-1.5 text-fg-tertiary">
         <span className="text-[12px]">{label}</span>
         {link && <span className="text-fg-muted text-[12px]">›</span>}
       </div>
-      <p className="mt-1.5 font-display font-medium text-[22px] md:text-[26px] text-fg-primary tabular-nums">
+      <p className="mt-1.5 font-display font-medium text-[20px] md:text-[24px] text-fg-primary tabular-nums">
         {value}
       </p>
-      {trendData.length >= 2 && (
-        <div className="h-12 mt-1 -mx-1 -mb-1">
-          <SparklineChart data={points} trend={trend} width={260} height={70} />
-        </div>
-      )}
+      {changePercent != null && <div className="mt-1.5"><ChangePill percent={changePercent} /></div>}
     </div>
   );
 }
@@ -86,41 +87,36 @@ interface ActivityHeroCardProps {
   totalReach: number;
   /** Real field: summary.avg_engagement_rate from /analytics/tiktok */
   engagementRate: number;
-  /** Real field: summary.total_likes from /analytics/tiktok */
+  /** Real field: summary.total_likes from /analytics/tiktok. Stands in for the design's "Profile views" slot —
+   *  there's no real profile-view metric in our data model, so we use a real field instead of fabricating one. */
   totalLikes: number;
   /** Real field: summary.total_posts from /analytics/tiktok */
   postsSynced: number;
-  /** Real per-post view counts (chronological), used to draw the sparkline trends. Empty array renders no chart. */
-  viewsTrend: number[];
-  /** Real per-post engagement rates (chronological), used to draw the sparkline trend. Empty array renders no chart. */
-  engagementTrend: number[];
   badges: BadgeState[];
   claimingId: string | null;
   onClaim: (id: string) => void;
 }
 
 /**
- * The merged hero card: "All Activity Update" heading + TikTok reach
- * stats on the left, "Verified Badge for Creators" claim panel on the
- * right. One outer card, matching dashboard.jpg.
- *
- * Visual notes from pixel-sampling the reference:
- * - The card has a blue glow anchored to the BOTTOM edge, fading to
- *   near-black at the top — not a top-down wash. Brightness ramps
- *   smoothly from ~rgb(1,1,3) at the top to ~rgb(58,72,119) at the
- *   bottom on both left and right edges.
- * - The two sub-stat cards (Verified Engagements / Profile View in
- *   the mock) are a distinct, slightly-lighter near-black surface
- *   with a small sparkline chart inside.
- *
- * Every number is real, from GET /analytics/tiktok's `summary` —
- * no fabricated change percentages, no metrics the backend doesn't
- * actually collect.
+ * The hero card. Structure matches the reference exactly:
+ * - Header row: "TikTok account: Linked" + Wallet/Linked Socials dropdowns
+ * - "All Activity Update" heading
+ * - Attained-badge pills row (only shown once at least one badge is claimed)
+ * - Nested dark card: "Total Reach" big number, then a 2-col row of plain
+ *   label/value/percent-pill sub-stats — NO charts, NO sparklines
+ * - If no badge is attained yet: the "Verified Badge for Creators" panel
+ *   renders as a second column INSIDE this card (two-column layout).
+ *   Once at least one badge is attained, that panel disappears from here
+ *   — the parent (Dashboard) renders bare badge tiles in a separate row
+ *   below the whole card instead. See dashboard.jpg (unclaimed) vs
+ *   441995.jpg (attained) — the wrapper genuinely differs between states.
  */
 export function ActivityHeroCard({
   tiktokLinked, loading, hasData, totalReach, engagementRate, totalLikes, postsSynced,
-  viewsTrend, engagementTrend, badges, claimingId, onClaim,
+  badges, claimingId, onClaim,
 }: ActivityHeroCardProps) {
+  const anyAttained = badges.some((b) => b.attained);
+
   return (
     <div
       className="relative overflow-hidden rounded-card border border-white/[0.06] p-5 md:p-8"
@@ -143,73 +139,76 @@ export function ActivityHeroCard({
       <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
         style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
 
-      <div className="relative grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-6 lg:gap-8">
-        {/* Left: heading + stats */}
-        <div className="min-w-0">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[12.5px] text-fg-tertiary">
-                {tiktokLinked ? "TikTok account: Linked" : "Link your TikTok account."}
-              </p>
-              <h2 className="mt-2 font-display font-medium text-[28px] md:text-[36px] text-fg-primary tracking-[-0.02em] leading-tight">
-                All Activity Update
-              </h2>
-            </div>
-            {/* Dropdowns — desktop only, top-right of the whole card */}
-            <div className="hidden lg:flex gap-2.5 shrink-0">
-              <DropdownPill label="Wallet Balance" options={["Wallet Balance", "USDC", "Points"]} />
-              <DropdownPill label="Linked Socials" options={["Linked Socials", "TikTok", "Instagram", "X"]} />
-            </div>
-          </div>
-
-          {!tiktokLinked ? (
-            <a
-              href="/settings"
-              className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12.5px] font-medium text-fg-secondary border border-white/[0.08] bg-bg-elevated hover:bg-white/[0.06] transition-colors"
-            >
-              Link TikTok <span className="text-fg-muted">›</span>
-            </a>
-          ) : (
-            <p className="mt-3 text-[12px] text-fg-tertiary">
-              {loading ? "…" : hasData ? `${postsSynced} posts synced` : "No posts synced yet"}
-            </p>
-          )}
-
-          <div
-            className="mt-5 rounded-2xl border border-white/[0.06] p-4 md:p-5"
-            style={{ background: "rgb(0 0 0 / 0.35)" }}
-          >
-            <p className="text-[12px] text-fg-tertiary mb-1">Total Views</p>
-            <div className="flex items-center gap-2.5 mb-4">
-              <span className="font-display font-medium text-[28px] md:text-[34px] text-fg-primary tabular-nums leading-none">
-                {loading ? "—" : hasData ? fmt(totalReach) : "0"}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <SparkStatCard
-                label="Avg Engagement Rate"
-                value={loading ? "—" : hasData ? `${engagementRate}%` : "0%"}
-                trendData={engagementTrend}
-                link
-              />
-              <SparkStatCard
-                label="Total Likes"
-                value={loading ? "—" : hasData ? fmt(totalLikes) : "0"}
-                trendData={viewsTrend}
-                link
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Right: badge claim panel (dropdowns moved up top on desktop; shown here on mobile) */}
-        <div className="flex flex-col gap-4 min-w-0">
-          <div className="flex lg:hidden justify-end gap-2.5">
+      <div className="relative">
+        {/* Top row: status label + dropdowns */}
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-[12.5px] text-fg-tertiary">
+            {tiktokLinked ? "TikTok account: Linked" : "Link your TikTok account."}
+          </p>
+          <div className="hidden md:flex gap-2.5 shrink-0">
             <DropdownPill label="Wallet Balance" options={["Wallet Balance", "USDC", "Points"]} />
             <DropdownPill label="Linked Socials" options={["Linked Socials", "TikTok", "Instagram", "X"]} />
           </div>
-          <BadgesCard badges={badges} claimingId={claimingId} onClaim={onClaim} />
+        </div>
+
+        <h2 className="mt-2 font-display font-medium text-[28px] md:text-[36px] text-fg-primary tracking-[-0.02em] leading-tight">
+          All Activity Update
+        </h2>
+
+        <div className="flex md:hidden gap-2.5 mt-3">
+          <DropdownPill label="Wallet Balance" options={["Wallet Balance", "USDC", "Points"]} />
+          <DropdownPill label="Linked Socials" options={["Linked Socials", "TikTok", "Instagram", "X"]} />
+        </div>
+
+        {!tiktokLinked ? (
+          <a
+            href="/settings"
+            className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12.5px] font-medium text-fg-secondary border border-white/[0.08] bg-bg-elevated hover:bg-white/[0.06] transition-colors"
+          >
+            Link TikTok <span className="text-fg-muted">›</span>
+          </a>
+        ) : (
+          <div className="mt-3">
+            <AttainedBadgePills badges={badges} />
+            {!anyAttained && (
+              <p className="text-[12px] text-fg-tertiary">
+                {loading ? "…" : hasData ? `${postsSynced} posts synced` : "No posts synced yet"}
+              </p>
+            )}
+          </div>
+        )}
+
+        <div className={cn("mt-5 grid gap-5", !anyAttained && "lg:grid-cols-[1.2fr_1fr] lg:items-start")}>
+          {/* Nested stats card */}
+          <div
+            className="rounded-2xl border border-white/[0.06] p-4 md:p-5"
+            style={{ background: "rgb(0 0 0 / 0.35)" }}
+          >
+            <p className="text-[12px] text-fg-tertiary mb-1">Total Reach</p>
+            <p className="font-display font-medium text-[28px] md:text-[34px] text-fg-primary tabular-nums leading-none mb-4">
+              {loading ? "—" : hasData ? fmt(totalReach) : "0"}
+            </p>
+
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/[0.05]">
+              <SubStat
+                label="Engagement Rate"
+                value={loading ? "—" : hasData ? `${engagementRate}%` : "0%"}
+                changePercent={null}
+                link
+              />
+              <SubStat
+                label="Total Likes"
+                value={loading ? "—" : hasData ? fmt(totalLikes) : "0"}
+                changePercent={null}
+                link
+              />
+            </div>
+          </div>
+
+          {/* Badge panel — only rendered here, inside the card, while nothing is attained yet */}
+          {!anyAttained && (
+            <BadgesPanel badges={badges} claimingId={claimingId} onClaim={onClaim} />
+          )}
         </div>
       </div>
     </div>
