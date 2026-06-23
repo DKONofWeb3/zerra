@@ -31,7 +31,7 @@ export default function PrivacyPage() {
         <div style={{ fontSize: 15, lineHeight: 1.8, color: "rgb(180 184 196)" }}>
 
           <Section title="1. Introduction">
-            Zerra ("we", "us", or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform at demo.zerra.pro.
+            Zerra ("we", "us", or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform at zerra.pro.
           </Section>
 
           <Section title="2. Information We Collect">
