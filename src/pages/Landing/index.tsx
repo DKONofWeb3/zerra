@@ -9,9 +9,9 @@ const CARDS = [
 ];
 
 const STATS = [
-  { value: "12,000+", label: "Creators" },
-  { value: "$2.4M",   label: "USDC Paid Out" },
-  { value: "340+",    label: "Campaigns" },
+  { value: "250+", label: "Creators" },
+  { value: "$10k",   label: "USDC Paid Out" },
+  { value: "15M",    label: "In Impressions" },
 ];
 
 const FEATURES = [
