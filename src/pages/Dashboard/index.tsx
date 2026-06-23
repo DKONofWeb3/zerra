@@ -19,23 +19,18 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 function OverviewView() {
   const { session } = useAuth();
   const { accounts } = useSocialAccounts();
-  // Real TikTok follower count — null until the backend adds follower_count
-  // to getTikTokUser()'s fields and to whatever this account row stores.
-  // See the NOTE in useSocialAccounts.ts for the exact change needed.
   const tiktokFollowerCount = accounts.find((a) => a.platform === "tiktok")?.follower_count ?? null;
   const { badges, claim, claimingId } = useBadges(tiktokFollowerCount);
   const [claimModalId, setClaimModalId] = useState<string | null>(null);
 
-  // TikTok analytics summary — powers the hero card's reach/engagement stats
   const [analytics, setAnalytics] = useState<TikTokAnalytics | null>(null);
   const [tiktokLinked, setTiktokLinked] = useState(false);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
 
-  // Influence Section stats (Zerra platform score — unrelated to TikTok analytics)
   const [influenceStats, setInfluenceStats] = useState({
     totalScore: 0, scoreChangePercent: 0,
-    eligibleVideos: 0, eligibleChangePercent: 0,
-    campaignsJoined: 0, campaignsChangePercent: 0,
+    earnedPoints: 0, earnedChangePercent: 0,
+    referralPoints: 0, referralChangePercent: 0,
   });
   const [influenceLoading, setInfluenceLoading] = useState(true);
 
@@ -51,8 +46,13 @@ function OverviewView() {
       .catch(() => setAnalytics(null))
       .finally(() => setAnalyticsLoading(false));
 
-    apiGet<typeof influenceStats>("/me/influence-stats")
-      .then((d) => setInfluenceStats(d))
+    apiGet<{ totalScore: number; scoreChangePercent: number }>("/me/influence-stats")
+      .then((d) => setInfluenceStats((prev) => ({
+        ...prev,
+        totalScore: d.totalScore,
+        scoreChangePercent: d.scoreChangePercent,
+        // earnedPoints / referralPoints stay 0 until the referral system exists
+      })))
       .catch(() => {})
       .finally(() => setInfluenceLoading(false));
   }, [session]);
@@ -67,7 +67,7 @@ function OverviewView() {
 
   const handleClaim = async (id: string) => {
     await claim(id);
-    setClaimModalId(id); // open the reveal modal regardless of network outcome — claim() always settles attained locally
+    setClaimModalId(id);
   };
 
   return (
@@ -96,9 +96,13 @@ function OverviewView() {
         onClaim={handleClaim}
       />
 
-      {/* Once at least one badge is attained, tiles move out of the hero card into their own row */}
+      {/* Mobile-only: once a badge is attained, mobile moves tiles below the hero card.
+          Desktop now ALWAYS keeps badges inside the hero card's right column (fixed
+          this round), so this row must not render on desktop or badges would show twice. */}
       {anyAttained && (
-        <BadgeTilesRow badges={badges} claimingId={claimingId} onClaim={handleClaim} />
+        <div className="md:hidden">
+          <BadgeTilesRow badges={badges} claimingId={claimingId} onClaim={handleClaim} />
+        </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 pt-2 md:pt-4">
@@ -113,10 +117,10 @@ function OverviewView() {
             <InfluenceStatsCard
               totalScore={influenceStats.totalScore}
               scoreChangePercent={influenceStats.scoreChangePercent}
-              eligibleVideos={influenceStats.eligibleVideos}
-              eligibleChangePercent={influenceStats.eligibleChangePercent}
-              campaignsJoined={influenceStats.campaignsJoined}
-              campaignsChangePercent={influenceStats.campaignsChangePercent}
+              earnedPoints={influenceStats.earnedPoints}
+              earnedChangePercent={influenceStats.earnedChangePercent}
+              referralPoints={influenceStats.referralPoints}
+              referralChangePercent={influenceStats.referralChangePercent}
             />
           )}
         </div>

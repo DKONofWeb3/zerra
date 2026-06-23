@@ -56,7 +56,8 @@ function DropdownPill({ label, options }: DropdownPillProps) {
   );
 }
 
-/** Mobile/attained pattern — plain label/value/percent-pill, no chart, no individual border. Matches 441995.jpg / mobile.jpg. UNTOUCHED this round. */
+/** Mobile/attained pattern — plain label/value/percent-pill, no chart, no individual border.
+ *  UNTOUCHED — mobile layout is out of scope for this fix. */
 function SubStatRow({ label, value, link }: { label: string; value: string; link?: boolean }) {
   return (
     <div>
@@ -106,16 +107,10 @@ interface ActivityHeroCardProps {
   tiktokLinked: boolean;
   loading: boolean;
   hasData: boolean;
-  /** Real field: summary.total_views from /analytics/tiktok */
   totalReach: number;
-  /** Real field: summary.avg_engagement_rate from /analytics/tiktok */
   engagementRate: number;
-  /** Real field: summary.total_likes from /analytics/tiktok. Stands in for the design's "Profile views" slot —
-   *  there's no real profile-view metric in our data model, so we use a real field instead of fabricating one. */
   totalLikes: number;
-  /** Real field: summary.total_posts from /analytics/tiktok */
   postsSynced: number;
-  /** Real per-post records, used ONLY to draw the desktop sub-stat charts. Empty/short arrays simply render no chart. */
   posts: TikTokPost[];
   badges: BadgeState[];
   claimingId: string | null;
@@ -123,21 +118,20 @@ interface ActivityHeroCardProps {
 }
 
 /**
- * The hero card. Structure (desktop, fic.jpg):
+ * The hero card. Desktop structure (fic.jpg) — FIXED this round:
  *
  * Outer card (dark, blue glow at bottom edge)
  *  └─ Header row, heading, attained-badge pills, followers line
- *  └─ Two MEDIUM containers side by side, both on the same dark-blue
- *     gradient surface (MEDIUM_CONTAINER_BG):
+ *  └─ ONE row, two MEDIUM containers side by side, ALWAYS — regardless
+ *     of whether any badge is attained. Badges never move below the
+ *     hero card on desktop; they live permanently in the right column:
  *       - Left: "Total Reach" + big number, then two SMALL matte-black
- *         cards (MATTE_CARD_BG) side by side, each with its own
- *         always-green sparkline chart underneath
- *       - Right: "Verified Badge for Creators" heading, then two SMALL
- *         matte-black badge tiles side by side
+ *         cards side by side, each with its own green sparkline
+ *       - Right: "Verified Badge for Creators" + two SMALL matte-black
+ *         badge tiles side by side (compact layout)
  *
- * This only renders on desktop (md:+). Mobile keeps the separate,
- * already-correct plain-row layout untouched — see SubStatRow and the
- * `md:hidden` branch below.
+ * Mobile (md:hidden branch) is completely untouched — same conditional
+ * stacking behavior as before.
  */
 export function ActivityHeroCard({
   tiktokLinked, loading, hasData, totalReach, engagementRate, totalLikes, postsSynced,
@@ -153,7 +147,6 @@ export function ActivityHeroCard({
       className="relative overflow-hidden rounded-card border border-white/[0.06] p-5 md:p-8"
       style={{ background: "rgb(2 3 6)" }}
     >
-      {/* Bottom-anchored blue glow — matches the reference's brightness ramp */}
       <div
         aria-hidden
         className="absolute inset-x-0 bottom-0 pointer-events-none"
@@ -171,7 +164,6 @@ export function ActivityHeroCard({
         style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
 
       <div className="relative">
-        {/* Top row: status label + dropdowns */}
         <div className="flex items-start justify-between gap-3">
           <p className="text-[12.5px] text-fg-tertiary">
             {tiktokLinked ? "TikTok account: Linked" : "Link your TikTok account."}
@@ -209,7 +201,7 @@ export function ActivityHeroCard({
           </div>
         )}
 
-        {/* ============ MOBILE (unchanged this round) ============ */}
+        {/* ============ MOBILE — UNCHANGED, badges still move below once attained ============ */}
         <div className="md:hidden mt-5">
           <div className={cn("grid gap-5", !anyAttained && "lg:grid-cols-[1.2fr_1fr] lg:items-start")}>
             <div
@@ -239,8 +231,12 @@ export function ActivityHeroCard({
           </div>
         </div>
 
-        {/* ============ DESKTOP (fixed this round) ============ */}
-        <div className={cn("hidden md:grid gap-5 mt-5", !anyAttained && "grid-cols-[1.2fr_1fr] items-start")}>
+        {/* ============ DESKTOP — FIXED this round ============
+            Always two columns, stats left / badges right. Badges
+            NEVER leave this row regardless of attained state — that
+            was the bug. The `!anyAttained` gate that used to hide the
+            right column entirely has been removed. */}
+        <div className="hidden md:grid grid-cols-[1.2fr_1fr] items-start gap-5 mt-5">
           {/* Medium container: stats */}
           <div className="rounded-2xl p-4 md:p-5" style={{ background: MEDIUM_CONTAINER_BG }}>
             <p className="text-[12px] text-fg-tertiary mb-1">Total Reach</p>
@@ -263,10 +259,8 @@ export function ActivityHeroCard({
             </div>
           </div>
 
-          {/* Medium container: badges — only while nothing is attained yet */}
-          {!anyAttained && (
-            <BadgesPanel badges={badges} claimingId={claimingId} onClaim={onClaim} variant="desktop-paired" />
-          )}
+          {/* Medium container: badges — always rendered, regardless of attained state */}
+          <BadgesPanel badges={badges} claimingId={claimingId} onClaim={onClaim} variant="desktop-paired" />
         </div>
       </div>
     </div>

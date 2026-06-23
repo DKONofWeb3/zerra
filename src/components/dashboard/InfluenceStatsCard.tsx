@@ -1,23 +1,31 @@
+// src/components/dashboard/InfluenceStatsCard.tsx
+//
+// Matches the reference (dashboard.jpg / image 4): "Total Score" big
+// number up top with a 24h-change pill, then TWO sub-cards below —
+// "Earned Point" and "Referral Point" — each with its own value and
+// change pill, on the same dark-blue/matte-black card pattern used by
+// the hero card's sub-stat cards.
+//
+// All numbers are real fields, currently 0 until campaigns go live and
+// AI scoring starts producing real totals — nothing here is mocked.
 import { cn } from "@/lib/cn";
 import { TrendingUp, TrendingDown } from "lucide-react";
 
 interface InfluenceStatsCardProps {
   totalScore: number;
-  scoreChangePercent: number;     // 24h change, can be negative
-  eligibleVideos: number;
-  eligibleChangePercent: number;
-  campaignsJoined: number;
-  campaignsChangePercent: number;
+  scoreChangePercent: number;
+  earnedPoints: number;
+  earnedChangePercent: number;
+  referralPoints: number;
+  referralChangePercent: number;
 }
 
-function ChangeBadge({ percent, onDark }: { percent: number; onDark?: boolean }) {
+function ChangeBadge({ percent }: { percent: number }) {
   const positive = percent >= 0;
   return (
     <div className={cn(
-      "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11.5px] font-medium",
-      onDark
-        ? "text-white bg-black/20"
-        : positive ? "text-success bg-[rgb(var(--success)/0.1)]" : "text-danger bg-[rgb(var(--danger)/0.1)]"
+      "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12.5px] font-medium",
+      positive ? "text-success bg-[rgb(var(--success)/0.1)]" : "text-danger bg-[rgb(var(--danger)/0.1)]"
     )}>
       {positive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
       {Math.abs(percent).toFixed(2)}%
@@ -25,28 +33,16 @@ function ChangeBadge({ percent, onDark }: { percent: number; onDark?: boolean })
   );
 }
 
-/**
- * "Influence Section" panel. Reference (dashboard.jpg) shows the first
- * sub-stat as a bright glowing solid-blue tile and the second as a
- * plain dark tile — same shape, deliberately different surface
- * treatment to draw the eye to the primary metric. Pixel-sampled blue:
- * roughly rgb(15,150,255) at top easing to rgb(20,175,255) at bottom.
- *
- * Field choice: the design's mock labels are "Earned Point" / "Referral
- * Point", which aren't real fields our backend tracks. We keep the
- * actual data — Eligible Videos / Campaigns Joined — and apply the
- * same visual pattern (one glowing highlight tile, one plain tile) so
- * the page still reads as intentional design rather than reusing it
- * to fabricate "points" that don't exist.
- */
 export function InfluenceStatsCard({
   totalScore, scoreChangePercent,
-  eligibleVideos, eligibleChangePercent,
-  campaignsJoined, campaignsChangePercent,
+  earnedPoints, earnedChangePercent,
+  referralPoints, referralChangePercent,
 }: InfluenceStatsCardProps) {
   return (
-    <div className="relative overflow-hidden rounded-card border border-white/[0.06] shadow-card p-5 md:p-6"
-      style={{ background: "rgb(var(--bg-card))" }}>
+    <div
+      className="relative overflow-hidden rounded-card p-5 md:p-6"
+      style={{ background: "linear-gradient(165deg, rgb(15 21 46) 0%, rgb(8 12 28) 100%)" }}
+    >
       <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
         style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
 
@@ -62,26 +58,27 @@ export function InfluenceStatsCard({
         <ChangeBadge percent={scoreChangePercent} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        {/* Highlight tile — bright glowing blue, matches the design's "Earned Point" treatment */}
-        <div
-          className="relative overflow-hidden rounded-2xl p-4"
-          style={{
-            background: "linear-gradient(165deg, rgb(15 150 255) 0%, rgb(20 175 255) 100%)",
-          }}
-        >
-          <div aria-hidden className="absolute inset-0 pointer-events-none"
-            style={{ background: "radial-gradient(120% 100% at 0% 0%, rgb(255 255 255 / 0.18), transparent 60%)" }} />
-          <p className="relative text-[12px] text-white/75">Eligible Videos</p>
-          <p className="relative text-[22px] font-display font-medium text-white tabular-nums mt-2">{eligibleVideos}</p>
-          <div className="relative mt-1.5"><ChangeBadge percent={eligibleChangePercent} onDark /></div>
+      <div className="grid grid-cols-2 gap-3.5">
+        <div className="rounded-xl p-3.5" style={{ background: "rgb(15 16 20)" }}>
+          <div className="flex items-center gap-1.5 text-fg-tertiary">
+            <span className="text-[12px]">Earned Point</span>
+            <span className="text-fg-muted text-[12px]">›</span>
+          </div>
+          <p className="mt-1.5 font-display font-medium text-[18px] text-fg-primary tabular-nums">
+            {earnedPoints.toLocaleString()}
+          </p>
+          <div className="mt-2"><ChangeBadge percent={earnedChangePercent} /></div>
         </div>
 
-        {/* Plain tile — flat dark, matches the design's "Referral Point" treatment */}
-        <div className="rounded-2xl p-4" style={{ background: "rgb(var(--bg-elevated))" }}>
-          <p className="text-[12px] text-fg-tertiary">Campaigns Joined</p>
-          <p className="text-[22px] font-display font-medium text-fg-primary tabular-nums mt-2">{campaignsJoined}</p>
-          <div className="mt-1.5"><ChangeBadge percent={campaignsChangePercent} /></div>
+        <div className="rounded-xl p-3.5" style={{ background: "rgb(15 16 20)" }}>
+          <div className="flex items-center gap-1.5 text-fg-tertiary">
+            <span className="text-[12px]">Referral Point</span>
+            <span className="text-fg-muted text-[12px]">›</span>
+          </div>
+          <p className="mt-1.5 font-display font-medium text-[18px] text-fg-primary tabular-nums">
+            {referralPoints.toLocaleString()}
+          </p>
+          <div className="mt-2"><ChangeBadge percent={referralChangePercent} /></div>
         </div>
       </div>
     </div>
