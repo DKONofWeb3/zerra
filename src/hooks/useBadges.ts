@@ -4,50 +4,29 @@ import { BADGE_DEFS, FOLLOWER_THRESHOLD } from "@/lib/badges";
 import type { BadgeState } from "@/lib/types";
 import { useAuth } from "@/contexts/AuthContext";
 
-const LOCAL_KEY = "zerra:claimed-badges";
-
-function readLocalClaims(): Record<string, string> {
-  try {
-    return JSON.parse(localStorage.getItem(LOCAL_KEY) ?? "{}");
-  } catch {
-    return {};
-  }
-}
-
-function writeLocalClaim(id: string) {
-  const claims = readLocalClaims();
-  claims[id] = new Date().toISOString();
-  localStorage.setItem(LOCAL_KEY, JSON.stringify(claims));
-}
-
-/** "early-creator" is always eligible (membership-based). "verified-influencer" requires real follower data ≥ FOLLOWER_THRESHOLD. */
+/** "early-creator" is always eligible (membership-based). "verified-influencer" requires real follower data >= FOLLOWER_THRESHOLD. */
 function computeEligible(badgeId: string, followerCount: number | null): boolean {
   if (badgeId !== "verified-influencer") return true;
   return followerCount != null && followerCount >= FOLLOWER_THRESHOLD;
 }
 
 /**
- * Badge eligibility/attained state.
+ * Badge eligibility/attained state — now backed by the real
+ * GET /me/badges and POST /me/badges/:id/claim endpoints, which read
+ * and write to the badge_claims table in Supabase.
  *
- * "Early creator badge" stays membership-based — always eligible, no
- * metric to check.
+ * The backend is live (BADGE_DEFS + FOLLOWER_THRESHOLD now exist on
+ * the backend, and it independently re-checks follower-count
+ * eligibility server-side). The old localStorage fallback is removed
+ * — it was masking the missing backend by storing claims only in the
+ * browser, which is why claims never survived a different browser or
+ * a hard refresh after cache clear: nothing was ever saved server-side.
  *
- * "Influencer Badge" is gated on followerCount, which the CALLER must
- * pass in (sourced from useSocialAccounts — see the NOTE there for
- * what the backend needs to add). Until that field is populated,
- * followerCount will be null/undefined for everyone and this badge
- * stays locked for everyone — which is the honest state, not a bug.
- *
- * NOTE: GET /me/badges and POST /me/badges/:id/claim don't exist on
- * the backend yet (confirmed 404). Rather than call a known-missing
- * route on every load — which just adds console noise without any
- * behavior change, since the catch always falls back to localStorage
- * anyway — we go straight to the local derivation. When the backend
- * ships these routes, swap BACKEND_BADGES_LIVE to true to restore the
- * network path below.
+ * followerCount is still passed in from the caller (sourced from
+ * useSocialAccounts) purely so the UI can show correct eligibility
+ * optimistically before the network response lands — the backend's
+ * response is always the source of truth once it arrives.
  */
-const BACKEND_BADGES_LIVE = false;
-
 export function useBadges(followerCount: number | null = null) {
   const { session } = useAuth();
   const [badges, setBadges] = useState<BadgeState[]>(
@@ -56,49 +35,29 @@ export function useBadges(followerCount: number | null = null) {
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<string | null>(null);
 
-  const loadFallback = useCallback(() => {
-    const claims = readLocalClaims();
-    setBadges(
-      BADGE_DEFS.map((b) => ({
-        ...b,
-        eligible: computeEligible(b.id, followerCount),
-        attained: Boolean(claims[b.id]),
-        attainedAt: claims[b.id],
-      }))
-    );
-  }, [followerCount]);
-
   useEffect(() => {
-    if (!session || !BACKEND_BADGES_LIVE) { loadFallback(); setLoading(false); return; }
+    if (!session) { setLoading(false); return; }
 
     apiGet<{ badges: BadgeState[] }>("/me/badges")
       .then((d) => {
         if (Array.isArray(d?.badges) && d.badges.length) setBadges(d.badges);
-        else loadFallback();
       })
-      .catch(() => loadFallback())
+      .catch((err) => {
+        console.error("Failed to load badges:", err);
+      })
       .finally(() => setLoading(false));
-  }, [session, loadFallback]);
+  }, [session]);
 
   const claim = useCallback(async (id: string) => {
     setClaimingId(id);
-    if (!BACKEND_BADGES_LIVE) {
-      writeLocalClaim(id);
-      setBadges((prev) =>
-        prev.map((b) => (b.id === id ? { ...b, attained: true, attainedAt: new Date().toISOString() } : b))
-      );
-      setClaimingId(null);
-      return;
-    }
     try {
       const res = await apiPost<{ badge: BadgeState }>(`/me/badges/${id}/claim`);
       setBadges((prev) => prev.map((b) => (b.id === id ? res.badge : b)));
-    } catch {
-      // Backend route not live yet — persist locally so the UI still reflects the claim.
-      writeLocalClaim(id);
-      setBadges((prev) =>
-        prev.map((b) => (b.id === id ? { ...b, attained: true, attainedAt: new Date().toISOString() } : b))
-      );
+    } catch (err) {
+      console.error("Failed to claim badge:", err);
+      // Don't fake success locally anymore — if the save (or the
+      // backend's eligibility re-check) failed, the UI should reflect
+      // that rather than showing a claim that didn't actually persist.
     } finally {
       setClaimingId(null);
     }
