@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   User, IdCard, Bell, Mail, Shield, Lock, CreditCard, Link2,
   Users, Receipt, HelpCircle, Palette, Camera, LogOut,
-  Eye, EyeOff, ChevronDown, ChevronUp,
+  Eye, EyeOff, ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { DiamondIcon } from "@/components/icons/DiamondIcon";
@@ -33,6 +33,7 @@ const SETTINGS_ITEMS: SettingsItem[] = [
   { id: "appearance",    label: "Appearance",         icon: Palette },
 ];
 
+// Desktop menu row — unchanged behavior, just renders the row itself
 function SettingsMenuRow({ item, active, onClick }: { item: SettingsItem; active: boolean; onClick: () => void }) {
   const Icon = item.icon;
   return (
@@ -47,6 +48,22 @@ function SettingsMenuRow({ item, active, onClick }: { item: SettingsItem; active
       <span className={cn("flex-1 text-[14px]", active ? "text-fg-primary font-medium" : "text-fg-secondary")}>
         {item.label}
       </span>
+    </button>
+  );
+}
+
+// Mobile menu row — drill-down list item, chevron-right instead of active-state styling
+// since on mobile every tap navigates away rather than swapping content in place
+function MobileMenuRow({ item, onClick }: { item: SettingsItem; onClick: () => void }) {
+  const Icon = item.icon;
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-colors text-left hover:bg-white/[0.03] active:bg-white/[0.05]"
+    >
+      <Icon className="w-4 h-4 shrink-0 text-fg-tertiary" />
+      <span className="flex-1 text-[14.5px] text-fg-secondary">{item.label}</span>
+      <ChevronRight className="w-4 h-4 text-fg-muted shrink-0" />
     </button>
   );
 }
@@ -97,7 +114,7 @@ function AccountSection() {
     <CardSection>
       <div className="text-[15px] font-semibold text-fg-primary">Account Information</div>
       <div className="text-[12.5px] text-fg-tertiary mt-1">Your account details.</div>
-      <div className="mt-6 flex items-center gap-6">
+      <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-6">
         <div className="relative shrink-0">
           <div className="w-16 h-16 rounded-2xl bg-bg-elevated border border-white/10 grid place-items-center overflow-hidden">
             {avatar
@@ -109,7 +126,7 @@ function AccountSection() {
             <Camera className="w-3.5 h-3.5 text-fg-secondary" />
           </button>
         </div>
-        <div className="grid grid-cols-3 gap-6 flex-1">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 flex-1">
           <div>
             <div className="text-[11.5px] text-fg-tertiary">Full Name</div>
             <div className="text-[13.5px] text-fg-primary mt-1">{name}</div>
@@ -651,16 +668,27 @@ export default function SettingsPage() {
   const initial   = connected ? "connected" : tabParam ?? "account";
   const [activeTab, setActiveTab] = useState(initial);
 
+  // Mobile drill-down state: null = showing the menu list, a string =
+  // showing that section full-screen with a back button. Desktop is
+  // unaffected by this — it always shows menu + content side by side
+  // regardless of this value.
+  const [mobileView, setMobileView] = useState<string | null>(
+    connected ? "connected" : null
+  );
+
   return (
     <div className="pb-12">
-      <div className="pt-2">
+      {/* Header — hidden on mobile while drilled into a section, so the
+          back button + section title (below) takes its place instead
+          of stacking on top of it */}
+      <div className={cn("pt-2", mobileView && "hidden md:block")}>
         <div className="flex items-center gap-2.5 text-fg-tertiary">
           <DiamondIcon size={14} />
           <span className="text-[12.5px]">Manage your account, preferences and payment method</span>
         </div>
         <h2 className={cn(
           "mt-4 font-display font-medium tracking-[-0.03em]",
-          "text-[64px] leading-[0.95]",
+          "text-[40px] md:text-[64px] leading-[0.95]",
           "bg-clip-text text-transparent",
           "bg-gradient-to-b from-white via-white to-[#7d8aa8]"
         )}>
@@ -668,20 +696,56 @@ export default function SettingsPage() {
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6 mt-8">
-        <div className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-3 self-start"
+      {/* Mobile drill-down header — back button + section name, only
+          shown once a section has been tapped into */}
+      {mobileView && (
+        <div className="md:hidden flex items-center gap-3 pt-2 pb-2">
+          <button
+            onClick={() => setMobileView(null)}
+            className="flex items-center justify-center w-9 h-9 rounded-full border border-white/[0.08] bg-bg-elevated text-fg-secondary hover:text-fg-primary transition-colors shrink-0"
+            aria-label="Back to settings"
+          >
+            <ChevronLeft className="w-4.5 h-4.5" />
+          </button>
+          <h2 className="text-[20px] font-display font-medium text-fg-primary">
+            {SETTINGS_ITEMS.find((i) => i.id === mobileView)?.label ?? "Settings"}
+          </h2>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6 mt-8 md:mt-8">
+        {/* Menu — on mobile only rendered while mobileView is null (i.e.
+            user hasn't drilled in yet). On desktop always rendered. */}
+        <div className={cn(
+          "relative overflow-hidden rounded-2xl border border-white/[0.06] p-3 self-start",
+          mobileView ? "hidden md:block" : "block"
+        )}
           style={{ background: "rgb(8 10 16 / 0.7)" }}>
           <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
             style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
           <div className="relative space-y-1">
             {SETTINGS_ITEMS.map((item) => (
-              <SettingsMenuRow key={item.id} item={item} active={activeTab === item.id} onClick={() => setActiveTab(item.id)} />
+              <div key={item.id}>
+                {/* Desktop row — swaps content in place, no navigation */}
+                <div className="hidden md:block">
+                  <SettingsMenuRow item={item} active={activeTab === item.id} onClick={() => setActiveTab(item.id)} />
+                </div>
+                {/* Mobile row — drills into a full-screen section */}
+                <div className="md:hidden">
+                  <MobileMenuRow item={item} onClick={() => { setActiveTab(item.id); setMobileView(item.id); }} />
+                </div>
+              </div>
             ))}
           </div>
         </div>
 
-        <div className="space-y-4">
-          <SettingsContent active={activeTab} />
+        {/* Content — on mobile only rendered while drilled into a
+            section; on desktop always rendered beside the menu */}
+        <div className={cn(
+          "space-y-4",
+          mobileView ? "block" : "hidden md:block"
+        )}>
+          <SettingsContent active={mobileView ?? activeTab} />
         </div>
       </div>
     </div>
