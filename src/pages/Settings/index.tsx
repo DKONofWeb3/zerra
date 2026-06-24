@@ -11,6 +11,7 @@ import { useSocialAccounts } from "@/hooks/useSocialAccounts";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { updateProfile, updateNotifications, updatePrivacy, changePassword } from "@/lib/api";
+import { apiDelete } from "@/lib/api/client";
 
 interface SettingsItem {
   id: string;
@@ -605,7 +606,81 @@ function SignOutSection() {
   );
 }
 
+// Account deletion — now with a real confirmation flow and a real
+// backend call instead of doing nothing. Requires typing "delete"
+// before the actual delete action becomes clickable.
 function DangerZone() {
+  const { signOut } = useAuth();
+  const [confirming, setConfirming] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const canConfirm = confirmText.trim().toLowerCase() === "delete";
+
+  const handleDelete = async () => {
+    if (!canConfirm) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      await apiDelete("/me");
+      await signOut();
+    } catch (err: any) {
+      setError(err.message ?? "Failed to delete account. Please try again or contact support.");
+      setDeleting(false);
+    }
+  };
+
+  if (confirming) {
+    return (
+      <CardSection>
+        <div className="text-[15px] font-semibold text-fg-primary">Confirm account deletion</div>
+        <div className="text-[12.5px] text-fg-tertiary mt-1 leading-relaxed">
+          This permanently deletes your account, TikTok connection, campaign history, badges,
+          and all associated data. This cannot be undone.
+        </div>
+
+        {error && (
+          <div className="mt-4 p-3 rounded-xl text-[13px] bg-[rgb(var(--danger)/0.08)] border border-[rgb(var(--danger)/0.2)] text-[rgb(var(--danger))]">
+            {error}
+          </div>
+        )}
+
+        <div className="mt-5">
+          <label className="block text-[12.5px] text-fg-tertiary mb-2">
+            Type <span className="font-semibold text-fg-secondary">delete</span> to confirm
+          </label>
+          <input
+            type="text"
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="delete"
+            autoFocus
+            className="w-full px-4 py-3 rounded-xl border border-[rgb(var(--danger)/0.3)] bg-bg-base/60 text-[14px] text-fg-primary placeholder:text-fg-muted focus:outline-none focus:border-[rgb(var(--danger)/0.5)] transition-colors"
+          />
+        </div>
+
+        <div className="mt-6 flex items-center gap-3">
+          <button
+            onClick={() => { setConfirming(false); setConfirmText(""); setError(null); }}
+            disabled={deleting}
+            className="px-5 py-2.5 rounded-xl text-[13.5px] font-medium border border-white/[0.08] bg-bg-elevated text-fg-primary hover:bg-bg-card transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={!canConfirm || deleting}
+            className="px-5 py-2.5 rounded-xl text-[13.5px] font-semibold text-white transition-opacity disabled:opacity-40"
+            style={{ background: "rgb(var(--danger))" }}
+          >
+            {deleting ? "Deleting account..." : "Permanently delete my account"}
+          </button>
+        </div>
+      </CardSection>
+    );
+  }
+
   return (
     <CardSection>
       <div className="flex items-start justify-between gap-4">
@@ -613,7 +688,12 @@ function DangerZone() {
           <div className="text-[15px] font-semibold text-fg-primary">Account Deletion</div>
           <div className="text-[12.5px] text-fg-tertiary mt-1">Permanently delete your account and all associated data.</div>
         </div>
-        <button className="text-[13px] text-danger hover:opacity-90 transition-opacity">Delete Account</button>
+        <button
+          onClick={() => setConfirming(true)}
+          className="text-[13px] text-danger hover:opacity-90 transition-opacity shrink-0"
+        >
+          Delete Account
+        </button>
       </div>
     </CardSection>
   );

@@ -12,11 +12,9 @@ interface BadgeClaimModalProps {
 }
 
 const THEME_BG: Record<BadgeState["theme"], string> = {
-  // Warm ember radial, matches IMG_6523 "Congratulation" panel
   ember:
     "radial-gradient(ellipse 900px 700px at 50% 28%, rgb(232 80 64 / 0.55), transparent 62%), " +
     "linear-gradient(180deg, rgb(10 6 8) 0%, rgb(58 16 14) 55%, rgb(94 24 20) 100%)",
-  // Cool violet radial, matches IMG_6522 "You're Now an Influencer" panel
   violet:
     "radial-gradient(ellipse 900px 700px at 50% 26%, rgb(110 124 255 / 0.55), transparent 62%), " +
     "linear-gradient(180deg, rgb(7 8 14) 0%, rgb(28 24 70) 55%, rgb(45 38 130) 100%)",
@@ -45,19 +43,47 @@ export function BadgeClaimModal({ badge, onClose }: BadgeClaimModalProps) {
     };
   }, [badge, onClose]);
 
+  // Opens TikTok directly instead of the OS share sheet — TikTok is the
+  // primary/intended destination here, not one option among many.
+  // Priority: TikTok app (mobile deep link) -> TikTok web upload page ->
+  // generic navigator.share() only as a last-resort fallback if TikTok
+  // genuinely can't be reached (e.g. desktop browser with no app installed
+  // and popup blocked).
   const handleShare = async () => {
     const text = badge ? `I just unlocked the "${badge.name}" badge on Zerra 🎉` : "Check out Zerra";
     const shareUrl = "https://zerra.pro";
-    const tiktokShare = `https://www.tiktok.com/upload?lang=en&caption=${encodeURIComponent(`${text} ${shareUrl}`)}`;
-    if (navigator.share) {
+    const caption = encodeURIComponent(`${text} ${shareUrl}`);
+
+    const tiktokAppUrl = `tiktok://upload?caption=${caption}`;
+    const tiktokWebUrl = `https://www.tiktok.com/upload?lang=en&caption=${caption}`;
+
+    const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      // Try the native app first. If the app isn't installed, the OS
+      // simply does nothing with this navigation (no error thrown), so
+      // we fall back to the web upload page shortly after as a safety net.
+      const fallbackTimer = setTimeout(() => {
+        window.open(tiktokWebUrl, "_blank", "noopener,noreferrer");
+      }, 600);
+
+      window.addEventListener("blur", () => clearTimeout(fallbackTimer), { once: true });
+      window.location.href = tiktokAppUrl;
+      return;
+    }
+
+    // Desktop — go straight to TikTok's web upload page, no app deep link.
+    const opened = window.open(tiktokWebUrl, "_blank", "noopener,noreferrer");
+
+    // Only reach for the generic share sheet if the popup was blocked
+    // and the platform actually supports navigator.share at all.
+    if (!opened && navigator.share) {
       try {
         await navigator.share({ title: "Zerra", text, url: shareUrl });
-        return;
       } catch {
-        /* user cancelled — fall through to TikTok link */
+        /* user cancelled — nothing further to do */
       }
     }
-    window.open(tiktokShare, "_blank", "noopener,noreferrer");
   };
 
   return createPortal(
@@ -97,12 +123,10 @@ export function BadgeClaimModal({ badge, onClose }: BadgeClaimModalProps) {
             exit={{ opacity: 0, scale: 0.96, y: 12 }}
             transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
           >
-            {/* Top inner rim highlight, consistent with .card-base sheen elsewhere */}
             <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
               style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.16), transparent)" }} />
 
             <div className="flex-1 flex flex-col items-center justify-center min-h-0">
-              {/* Badge glyph, glowing, floating */}
               <motion.div
                 className="relative flex items-center justify-center mb-7 md:mb-9"
                 initial={{ scale: 0.6, opacity: 0 }}
