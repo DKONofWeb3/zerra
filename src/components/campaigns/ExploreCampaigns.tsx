@@ -3,6 +3,7 @@ import { cn } from "@/lib/cn";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiGet, apiPost } from "@/lib/api/client";
 import { X, Users, Wallet, Hash, Mic } from "lucide-react";
+import { ValidatedImage, useDominantAccent } from "@/components/campaigns/CampaignVisuals";
 
 interface Campaign {
   id: string;
@@ -24,6 +25,15 @@ function fmt(n: number) {
   if (n >= 1_000)     return `$${(n / 1_000).toFixed(0)}K`;
   return `$${n}`;
 }
+
+const STATUS_TEXT: Record<string, string> = {
+  active:    "text-success",
+  ongoing:   "text-success",
+  paused:    "text-warning",
+  completed: "text-brand",
+  draft:     "text-fg-tertiary",
+  deleted:   "text-danger",
+};
 
 function TikTokGateModal({ onClose }: { onClose: () => void }) {
   return (
@@ -70,7 +80,6 @@ function CampaignModal({
   const [joined,         setJoined]         = useState(alreadyJoined);
   const [joinError,      setJoinError]      = useState<string | null>(null);
   const [showTikTokGate, setShowTikTokGate] = useState(false);
-  const [imgFailed,      setImgFailed]      = useState(false);
 
   const budgetPct = campaign.total_budget_usdc > 0
     ? Math.min(100, Math.round(((campaign.spent_usdc ?? 0) / campaign.total_budget_usdc) * 100))
@@ -100,32 +109,29 @@ function CampaignModal({
           <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
             style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
 
-          {campaign.cover_image_url && !imgFailed ? (
-            <div className="relative h-40 sm:h-48 overflow-hidden rounded-t-2xl">
-              <img src={campaign.cover_image_url} alt="" className="w-full h-full object-cover"
-                onError={() => setImgFailed(true)} />
-              <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, rgb(var(--bg-card)))" }} />
-              <button onClick={onClose}
-                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex justify-end p-4">
-              <button onClick={onClose} className="w-8 h-8 rounded-full border border-white/[0.08] bg-bg-elevated flex items-center justify-center text-fg-tertiary hover:text-fg-primary transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
+          <div className="relative h-40 sm:h-48 overflow-hidden rounded-t-2xl">
+            <ValidatedImage
+              src={campaign.cover_image_url}
+              className="w-full h-full object-cover"
+              fallback={
+                <div className="w-full h-full" style={{ background: "linear-gradient(135deg, rgb(74 125 255 / 0.15), rgb(140 100 255 / 0.1))" }} />
+              }
+            />
+            <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, rgb(var(--bg-card)))" }} />
+            <button onClick={onClose}
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
 
           <div className="p-5 space-y-5">
             <div className="flex items-start gap-3">
               <div className="w-12 h-12 rounded-xl bg-bg-elevated border border-white/[0.06] flex items-center justify-center shrink-0 overflow-hidden">
-                {campaign.token_icon ? (
-                  <img src={campaign.token_icon} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-[16px] font-bold text-fg-secondary">{campaign.project_name.charAt(0)}</span>
-                )}
+                <ValidatedImage
+                  src={campaign.token_icon}
+                  className="w-full h-full object-cover"
+                  fallback={<span className="text-[16px] font-bold text-fg-secondary">{campaign.project_name.charAt(0)}</span>}
+                />
               </div>
               <div className="min-w-0">
                 <h3 className="text-[17px] font-semibold text-fg-primary">{campaign.project_name}</h3>
@@ -223,69 +229,82 @@ function CampaignModal({
   );
 }
 
+/**
+ * CampaignCard — Explore grid
+ * -------------------------------------------------
+ * Redesigned to match the campaign-card reference:
+ *  - gradient wash sampled from the project's own token icon
+ *  - logo badge + name, top
+ *  - description
+ *  - stats trimmed to ONLY Prize Pool + Status (no per-creator, no participants)
+ *  - cover image as a large banner panel filling the lower portion
+ *  - floating pill, top-right (shows join state, or "View details")
+ * All images go through ValidatedImage — a broken URL never renders
+ * a broken-image icon, it falls back to the accent gradient + initial.
+ */
 function CampaignCard({ campaign, joined, onClick }: {
   campaign: Campaign; joined: boolean; onClick: () => void;
 }) {
-  const [imgFailed, setImgFailed] = useState(false);
-  const budgetPct = campaign.total_budget_usdc > 0
-    ? Math.min(100, Math.round(((campaign.spent_usdc ?? 0) / campaign.total_budget_usdc) * 100))
-    : 0;
+  const accent = useDominantAccent(campaign.token_icon ?? campaign.cover_image_url, campaign.project_name);
 
   return (
     <button onClick={onClick}
-      className="relative w-full text-left overflow-hidden rounded-2xl border border-white/[0.06] hover:border-white/[0.12] transition-all group"
-      style={{ background: "rgb(var(--bg-card))" }}>
+      className="relative w-full text-left overflow-hidden rounded-3xl border border-white/[0.08] hover:border-white/[0.16] transition-colors group flex flex-col p-5"
+      style={{
+        background: `radial-gradient(120% 100% at 0% 0%, ${accent.light} 0%, ${accent.deep} 55%, rgb(5 5 8) 100%)`,
+      }}>
 
-      <div className="relative h-[140px] overflow-hidden">
-        {campaign.cover_image_url && !imgFailed ? (
-          <img src={campaign.cover_image_url} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
-            onError={() => setImgFailed(true)} />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, rgb(74 125 255 / 0.15), rgb(140 100 255 / 0.1))" }}>
-            <span className="text-[32px] font-bold text-white/20">{campaign.project_name.charAt(0)}</span>
-          </div>
-        )}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 30%, rgb(var(--bg-card)))" }} />
+      {/* Floating pill — reflects join state, otherwise a "View details" hint */}
+      <span className={cn(
+        "absolute top-4 right-4 z-10 rounded-full backdrop-blur px-3.5 py-1 text-[11px] font-semibold",
+        joined ? "bg-[rgb(var(--success)/0.18)] border border-success/30 text-success" : "bg-black/70 text-white"
+      )}>
+        {joined ? "✓ Joined" : "View details"}
+      </span>
 
-        {/* Joined badge */}
-        {joined && (
-          <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[11px] font-semibold border border-success/30 bg-[rgb(var(--success)/0.15)] text-success backdrop-blur-sm">
-            ✓ Joined
-          </div>
-        )}
+      {/* Logo + name */}
+      <div className="flex items-center gap-3 mb-3.5">
+        <div className="w-12 h-12 shrink-0 rounded-2xl bg-black/40 border border-white/[0.08] flex items-center justify-center overflow-hidden">
+          <ValidatedImage
+            src={campaign.token_icon}
+            className="w-full h-full object-cover"
+            fallback={<span className="text-[16px] font-bold text-white/70">{campaign.project_name.charAt(0)}</span>}
+          />
+        </div>
+        <h3 className="text-[19px] font-bold text-white leading-none truncate">{campaign.project_name}</h3>
+      </div>
 
-        <div className="absolute bottom-3 left-4 flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-black/60 border border-white/[0.15] flex items-center justify-center overflow-hidden backdrop-blur-sm">
-            {campaign.token_icon ? (
-              <img src={campaign.token_icon} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-[12px] font-bold text-white">{campaign.project_name.charAt(0)}</span>
-            )}
-          </div>
-          <span className="text-[13px] font-semibold text-white drop-shadow">{campaign.project_name}</span>
+      {/* Description */}
+      <p className="text-[13px] text-white/65 leading-snug line-clamp-2 min-h-[36px] mb-4 max-w-[92%]">
+        {campaign.description || "No description provided."}
+      </p>
+
+      {/* Stats — Prize Pool + Status ONLY (per creator / participants intentionally removed) */}
+      <div className="flex items-center gap-8 mb-4">
+        <div>
+          <p className="text-[11px] text-white/50 mb-1">Prize Pool</p>
+          <p className="text-[15px] font-semibold text-white">{fmt(campaign.total_budget_usdc ?? 0)}</p>
+        </div>
+        <div>
+          <p className="text-[11px] text-white/50 mb-1">Status</p>
+          <p className={cn("text-[15px] font-semibold capitalize", STATUS_TEXT[campaign.status?.toLowerCase()] ?? "text-white")}>
+            {campaign.status}
+          </p>
         </div>
       </div>
 
-      <div className="p-4">
-        <p className="text-[12.5px] text-fg-tertiary line-clamp-2 min-h-[36px]">{campaign.description || "No description provided."}</p>
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/[0.04]">
-          <div>
-            <p className="text-[15px] font-semibold text-fg-primary">{fmt(campaign.reward_usdc ?? 0)}</p>
-            <p className="text-[10.5px] text-fg-tertiary">Per creator</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[15px] font-semibold text-fg-primary">{campaign.stats?.participantCount ?? 0}</p>
-            <p className="text-[10.5px] text-fg-tertiary">Participants</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[15px] font-semibold text-gradient">{fmt(campaign.total_budget_usdc ?? 0)}</p>
-            <p className="text-[10.5px] text-fg-tertiary">Prize pool</p>
-          </div>
-        </div>
-        <div className="mt-3 h-1 rounded-full bg-white/[0.06]">
-          <div className="h-full rounded-full bg-brand" style={{ width: `${budgetPct}%` }} />
-        </div>
+      {/* Banner panel */}
+      <div className="relative flex-1 min-h-[160px] rounded-2xl overflow-hidden bg-black/40">
+        <ValidatedImage
+          src={campaign.cover_image_url}
+          className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+          fallback={
+            <div className="w-full h-full flex items-center justify-center"
+              style={{ background: `linear-gradient(135deg, ${accent.light}, ${accent.deep})` }}>
+              <span className="text-[32px] font-bold text-white/25">{campaign.project_name.charAt(0)}</span>
+            </div>
+          }
+        />
       </div>
     </button>
   );
@@ -334,7 +353,7 @@ export function ExploreCampaigns({ tab }: { tab: "active" | "past" }) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[1,2,3].map((i) => (
-          <div key={i} className="h-[280px] rounded-2xl border border-white/[0.06] animate-pulse"
+          <div key={i} className="h-[380px] rounded-3xl border border-white/[0.06] animate-pulse"
             style={{ background: "rgb(var(--bg-card))" }} />
         ))}
       </div>

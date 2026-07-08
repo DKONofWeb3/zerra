@@ -5,6 +5,7 @@ import { apiGet, apiPut } from "@/lib/api/client";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { Link } from "react-router-dom";
 import { MoreVertical, Pause, Play, Trash2, CheckCircle } from "lucide-react";
+import { ValidatedImage } from "@/components/campaigns/CampaignVisuals";
 
 interface Campaign {
   id: string;
@@ -83,11 +84,11 @@ function CampaignCard({ campaign, onAction }: { campaign: Campaign; onAction: (i
       <div className="relative flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 rounded-xl bg-bg-elevated border border-white/[0.06] flex items-center justify-center shrink-0 overflow-hidden">
-            {campaign.projects?.logo_url ? (
-              <img src={campaign.projects.logo_url} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-[14px] font-bold text-fg-secondary">{campaign.project_name?.charAt(0)}</span>
-            )}
+            <ValidatedImage
+              src={campaign.projects?.logo_url}
+              className="w-full h-full object-cover"
+              fallback={<span className="text-[14px] font-bold text-fg-secondary">{campaign.project_name?.charAt(0)}</span>}
+            />
           </div>
           <div className="min-w-0">
             <p className="text-[14px] font-semibold text-fg-primary truncate">{campaign.project_name}</p>

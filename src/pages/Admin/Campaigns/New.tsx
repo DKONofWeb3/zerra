@@ -3,7 +3,8 @@ import { DiamondIcon } from "@/components/icons/DiamondIcon";
 import { apiPost } from "@/lib/api/client";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useNavigate } from "react-router-dom";
-import { X, Copy, Check } from "lucide-react";
+import { X, Copy, Check, CheckCircle2, AlertCircle } from "lucide-react";
+import { useImageCheck } from "@/components/campaigns/CampaignVisuals";
 
 function TagInput({ label, placeholder, values, onChange, prefix }: {
   label: string; placeholder: string; values: string[];
@@ -71,6 +72,52 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   );
 }
 
+/**
+ * ImageUrlField
+ * -------------------------------------------------
+ * Wraps a URL input with a live preview AND explicit pass/fail
+ * feedback — instead of the old behavior where a bad URL just made
+ * the preview silently vanish. This is where a broken image should
+ * get caught, before it ever reaches a live campaign card.
+ */
+function ImageUrlField({
+  label, value, onChange, placeholder, previewClassName,
+}: {
+  label: string; value: string; onChange: (v: string) => void;
+  placeholder: string; previewClassName: string;
+}) {
+  const status = useImageCheck(value);
+
+  return (
+    <Field label={label}>
+      <input type="url" value={value} onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder} className={inputCls} />
+
+      {status === "checking" && (
+        <p className="mt-1.5 text-[11.5px] text-fg-tertiary">Checking image…</p>
+      )}
+      {status === "error" && (
+        <p className="mt-1.5 flex items-center gap-1.5 text-[11.5px] text-danger">
+          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+          Couldn't load this image — double-check the URL before saving.
+        </p>
+      )}
+      {status === "ok" && (
+        <p className="mt-1.5 flex items-center gap-1.5 text-[11.5px] text-success">
+          <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+          Image loads fine.
+        </p>
+      )}
+
+      {status === "ok" && (
+        <div className={`mt-2 overflow-hidden border border-white/[0.06] ${previewClassName}`}>
+          <img src={value} alt="preview" className="w-full h-full object-cover" />
+        </div>
+      )}
+    </Field>
+  );
+}
+
 export default function AdminCampaignNewPage() {
   usePageTitle("Zerra Admin · New Campaign");
   const navigate = useNavigate();
@@ -90,9 +137,20 @@ export default function AdminCampaignNewPage() {
   const [credentials,   setCredentials]   = useState<{ email: string; tempPassword: string } | null>(null);
   const [copied,        setCopied]        = useState<string | null>(null);
 
+  const coverStatus = useImageCheck(coverImageUrl);
+  const iconStatus  = useImageCheck(tokenIconUrl);
+
   const handleCreate = async () => {
     if (!projectName || !contactEmail || !campaignTitle || hashtags.length === 0) {
       setError("Project name, contact email, campaign title, and at least one hashtag are required.");
+      return;
+    }
+    if (coverImageUrl && coverStatus === "error") {
+      setError("The campaign cover image URL doesn't load — fix or clear it before saving.");
+      return;
+    }
+    if (tokenIconUrl && iconStatus === "error") {
+      setError("The token/project icon URL doesn't load — fix or clear it before saving.");
       return;
     }
     setSaving(true); setError(null);
@@ -198,20 +256,22 @@ export default function AdminCampaignNewPage() {
           <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)}
             placeholder="team@project.com" className={inputCls} />
         </Field>
-        <Field label="Campaign Cover Image URL (shown on the campaign card)">
-          <input type="url" value={coverImageUrl} onChange={(e) => setCoverImageUrl(e.target.value)}
-            placeholder="https://..." className={inputCls} />
-          {coverImageUrl && (
-            <div className="mt-2 h-24 rounded-xl overflow-hidden border border-white/[0.06]">
-              <img src={coverImageUrl} alt="preview" className="w-full h-full object-cover"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-            </div>
-          )}
-        </Field>
-        <Field label="Token / Project Icon URL (small logo shown on card)">
-          <input type="url" value={tokenIconUrl} onChange={(e) => setTokenIconUrl(e.target.value)}
-            placeholder="https://..." className={inputCls} />
-        </Field>
+
+        <ImageUrlField
+          label="Campaign Cover Image URL (shown on the campaign card)"
+          value={coverImageUrl}
+          onChange={setCoverImageUrl}
+          placeholder="https://..."
+          previewClassName="h-24 rounded-xl"
+        />
+
+        <ImageUrlField
+          label="Token / Project Icon URL (small logo shown on card)"
+          value={tokenIconUrl}
+          onChange={setTokenIconUrl}
+          placeholder="https://..."
+          previewClassName="h-16 w-16 rounded-xl"
+        />
       </Card>
 
       <Card title="Campaign Details">
