@@ -49,6 +49,10 @@ const FEATURES = [
 const SIGNUP = "/login?mode=signup";
 const SIGNIN = "/login?mode=signin";
 
+// Founder-approved hero subheading — used for both the mobile and desktop hero blocks below
+const HERO_SUBHEADING =
+  "Discover verified campaigns, connect your social accounts, track performance, and receive payouts in USDC. All from one dashboard.";
+
 export default function LandingPage() {
   usePageTitle("Zerra · Turn your content into a financial asset");
 
@@ -124,7 +128,7 @@ export default function LandingPage() {
               {" "}financial asset
             </h1>
             <p style={{ margin: "0 0 20px", fontSize: 13.5, color: "rgb(130 135 148)", lineHeight: 1.6 }}>
-              Join thousands of creators earning more with Zerra.
+              {HERO_SUBHEADING}
             </p>
             <div style={{ display: "flex", gap: 10 }}>
               {/* Start earning → signup */}
@@ -206,7 +210,7 @@ export default function LandingPage() {
                 {" "}financial asset
               </h1>
               <p style={{ margin: "0 0 32px", fontSize: 15, color: "rgb(110 115 128)", lineHeight: 1.6, maxWidth: 400 }}>
-                Join thousands of creators earning more, growing faster, and building their brand with Zerra.
+                {HERO_SUBHEADING}
               </p>
               <div style={{ display: "flex", gap: 12 }}>
                 {/* Start earning → signup */}
