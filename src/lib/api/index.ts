@@ -1,5 +1,5 @@
 import { apiGet, apiPost, apiGetPublic, apiPut, apiDelete } from "./client";
-
+import { supabase } from "./supabase";
 
 // ——— Auth / User ———
 export const getMe = () => apiGet<{ user: any }>("/me");
@@ -33,6 +33,29 @@ export const getTikTokAnalytics = () =>
 
 export const getTopCreators = () =>
   apiGetPublic<{ creators: any[] }>("/analytics/top-creators");
+
+// ——— Instagram ———
+// Redirects the user to Meta's OAuth flow. The backend callback handles
+// the token exchange and saves the connection to social_accounts.
+export async function connectInstagram() {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Not authenticated");
+  window.location.href = `${import.meta.env.VITE_API_URL}/auth/instagram?token=${token}`;
+}
+
+export const getInstagramMedia = () =>
+  apiGet<{ media: any[] }>("/auth/instagram/media");
+
+export const getInstagramInsights = () =>
+  apiGet<{ insights: any }>("/auth/instagram/insights");
+
+export const publishToInstagram = (body: {
+  image_url?: string;
+  video_url?: string;
+  caption?: string;
+  media_type?: "IMAGE" | "VIDEO" | "REELS";
+}) => apiPost<{ success: boolean; mediaId: string }>("/auth/instagram/publish", body);
 
 // ——— Profile ———
 export const updateProfile = (body: { name?: string; username?: string }) =>

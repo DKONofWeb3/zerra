@@ -10,7 +10,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useSocialAccounts } from "@/hooks/useSocialAccounts";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { updateProfile, updateNotifications, updatePrivacy, changePassword } from "@/lib/api";
+import { updateProfile, updateNotifications, updatePrivacy, changePassword, connectInstagram } from "@/lib/api";
 import { apiDelete } from "@/lib/api/client";
 
 interface SettingsItem {
@@ -448,6 +448,18 @@ function PrivacySection() {
 function ConnectedAccountsSection() {
   const { accounts, connectTikTok, disconnect } = useSocialAccounts();
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [igError, setIgError] = useState<string | null>(null);
+
+  // Check for Instagram-specific error from OAuth redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get("error");
+    if (error === "instagram_no_business_account") {
+      setIgError("No Instagram Business or Creator account found linked to your Facebook Page. Convert your Instagram account to a Professional account first, then try again.");
+    } else if (error === "instagram_failed") {
+      setIgError("Instagram connection failed. Please try again.");
+    }
+  }, []);
 
   const tiktok    = accounts.find((a) => a.platform === "tiktok");
   const instagram = accounts.find((a) => a.platform === "instagram");
@@ -456,6 +468,15 @@ function ConnectedAccountsSection() {
     setDisconnecting(id);
     await disconnect(id);
     setDisconnecting(null);
+  };
+
+  const handleConnectInstagram = async () => {
+    setIgError(null);
+    try {
+      await connectInstagram();
+    } catch (err: any) {
+      setIgError(err.message ?? "Failed to connect Instagram");
+    }
   };
 
   const platforms = [
@@ -469,10 +490,11 @@ function ConnectedAccountsSection() {
         </svg>
       ),
       onConnect: connectTikTok,
+      error: null,
     },
     {
       key: "instagram", label: "Instagram",
-      description: "Connect Instagram to track reels and engagement.",
+      description: "Connect Instagram to track reels and engagement. Requires a Professional account.",
       account: instagram,
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -481,7 +503,8 @@ function ConnectedAccountsSection() {
           <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
         </svg>
       ),
-      onConnect: null,
+      onConnect: handleConnectInstagram,
+      error: igError,
     },
   ];
 
@@ -490,37 +513,38 @@ function ConnectedAccountsSection() {
       <div className="text-[15px] font-semibold text-fg-primary">Connected Accounts</div>
       <div className="text-[12.5px] text-fg-tertiary mt-1">Connect your social accounts to enable post tracking and analytics.</div>
       <div className="mt-6 space-y-4">
-        {platforms.map(({ key, label, description, account, icon, onConnect }) => (
-          <div key={key} className="flex items-center gap-4 p-4 rounded-xl border border-white/[0.05] bg-bg-base/40">
-            <div className="grid place-items-center w-10 h-10 rounded-xl bg-bg-elevated border border-white/[0.06] text-fg-secondary shrink-0">{icon}</div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-[14px] font-medium text-fg-primary">{label}</span>
-                {account && (
-                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-medium border"
-                    style={{ backgroundColor: "rgb(var(--success) / 0.15)", borderColor: "rgb(var(--success) / 0.25)", color: "rgb(var(--success))" }}>
-                    Connected
-                  </span>
-                )}
+        {platforms.map(({ key, label, description, account, icon, onConnect, error }) => (
+          <div key={key}>
+            <div className="flex items-center gap-4 p-4 rounded-xl border border-white/[0.05] bg-bg-base/40">
+              <div className="grid place-items-center w-10 h-10 rounded-xl bg-bg-elevated border border-white/[0.06] text-fg-secondary shrink-0">{icon}</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[14px] font-medium text-fg-primary">{label}</span>
+                  {account && (
+                    <span className="px-2 py-0.5 rounded-full text-[10.5px] font-medium border"
+                      style={{ backgroundColor: "rgb(var(--success) / 0.15)", borderColor: "rgb(var(--success) / 0.25)", color: "rgb(var(--success))" }}>
+                      Connected
+                    </span>
+                  )}
+                </div>
+                <div className="text-[12px] text-fg-tertiary mt-0.5">
+                  {account ? `@${account.username ?? "connected"}` : description}
+                </div>
               </div>
-              <div className="text-[12px] text-fg-tertiary mt-0.5">
-                {account ? `@${account.username ?? "connected"}` : description}
-              </div>
+              {account ? (
+                <button onClick={() => handleDisconnect(account.id)} disabled={disconnecting === account.id}
+                  className="text-[12.5px] text-danger hover:opacity-80 transition-opacity disabled:opacity-40 shrink-0">
+                  {disconnecting === account.id ? "Disconnecting..." : "Disconnect"}
+                </button>
+              ) : (
+                <button onClick={onConnect}
+                  className="px-4 py-2 rounded-xl text-[12.5px] font-medium border border-white/[0.08] bg-bg-elevated text-fg-primary hover:bg-bg-card transition-colors shrink-0">
+                  Connect
+                </button>
+              )}
             </div>
-            {account ? (
-              <button onClick={() => handleDisconnect(account.id)} disabled={disconnecting === account.id}
-                className="text-[12.5px] text-danger hover:opacity-80 transition-opacity disabled:opacity-40 shrink-0">
-                {disconnecting === account.id ? "Disconnecting..." : "Disconnect"}
-              </button>
-            ) : onConnect ? (
-              <button onClick={onConnect}
-                className="px-4 py-2 rounded-xl text-[12.5px] font-medium border border-white/[0.08] bg-bg-elevated text-fg-primary hover:bg-bg-card transition-colors shrink-0">
-                Connect
-              </button>
-            ) : (
-              <span className="px-3 py-1.5 rounded-xl text-[12px] text-fg-muted border border-white/[0.04] bg-bg-base/40 shrink-0">
-                Coming soon
-              </span>
+            {error && (
+              <p className="mt-2 text-[12px] text-warning leading-relaxed px-1">{error}</p>
             )}
           </div>
         ))}
@@ -743,7 +767,7 @@ export default function SettingsPage() {
   usePageTitle("Zerra · Settings");
 
   const params = new URLSearchParams(window.location.search);
-  const connected = params.get("connected");
+  const connected = params.get("connected"); // 'tiktok' | 'instagram' | null
   const tabParam  = params.get("tab");
   const initial   = connected ? "connected" : tabParam ?? "account";
   const [activeTab, setActiveTab] = useState(initial);
