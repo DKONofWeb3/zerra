@@ -185,10 +185,10 @@ export function ActivityHeroCard({
 
         {!tiktokLinked ? (
           <a
-            href="/settings"
+            href="/settings?tab=connected"
             className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12.5px] font-medium text-fg-secondary border border-white/[0.08] bg-bg-elevated hover:bg-white/[0.06] transition-colors"
           >
-            Link TikTok <span className="text-fg-muted">›</span>
+            Link Socials <span className="text-fg-muted">›</span>
           </a>
         ) : (
           <div className="mt-3">
