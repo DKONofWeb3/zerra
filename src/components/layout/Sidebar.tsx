@@ -2,6 +2,7 @@ import { NavLink, useLocation, Link } from "react-router-dom";
 import {
   LayoutDashboard, Briefcase, MessageSquareText,
   Compass, TrendingUp, Wallet, ChevronRight, Settings as SettingsIcon,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
@@ -18,9 +19,10 @@ interface NavItem {
 }
 
 const accountItems: NavItem[] = [
-  { to: "/portfolio", label: "Portfolio", icon: Briefcase },
+  { to: "/portfolio",  label: "Portfolio",  icon: Briefcase },
   { to: "/influence",  label: "Influence",  icon: MessageSquareText },
   { to: "/explore",    label: "Explore",    icon: Compass },
+  { to: "/referrals",  label: "Referrals",  icon: Users },
 ];
 
 const activityItems: NavItem[] = [
@@ -70,7 +72,6 @@ function DashboardRow() {
 function NavRow({ item }: { item: NavItem }) {
   const Icon = item.icon;
   const location = useLocation();
-  // For influence, mark active for any /influence/* route
   const forceActive = item.to === "/influence"
     ? location.pathname === "/influence" || location.pathname.startsWith("/influence/")
     : undefined;
@@ -113,19 +114,17 @@ function NavRow({ item }: { item: NavItem }) {
 }
 
 export function Sidebar() {
-  const { session } = useAuth();
-  const { user } = useCurrentUser();
-  const { accounts } = useSocialAccounts();
-
-  const tiktokAccount = accounts.find((a) => a.platform === "tiktok");
-  const tiktokFollowerCount = tiktokAccount?.follower_count ?? null;
-  const { badges } = useBadges(tiktokFollowerCount);
-  const attainedBadges = badges.filter((b) => b.attained);
-  const firstName = user?.name?.split(" ")[0] ?? "Creator";
-
-  const loginTime = session?.user?.last_sign_in_at
+  const { user }           = useCurrentUser();
+  const { accounts }       = useSocialAccounts();
+  const tiktokAccount      = accounts.find((a) => a.platform === "tiktok");
+  const followerCount      = tiktokAccount?.follower_count ?? null;
+  const { badges }         = useBadges(followerCount);
+  const attainedBadges     = badges.filter((b) => b.attained);
+  const firstName          = user?.name?.split(" ")[0] ?? "Creator";
+  const { session }        = useAuth();
+  const loginTime          = session?.user?.last_sign_in_at
     ? new Date(session.user.last_sign_in_at).toLocaleDateString("en-US", {
-        day: "numeric", month: "short", year: "numeric",
+        month: "short", day: "numeric", year: "numeric",
       })
     : null;
 

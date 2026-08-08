@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/api/supabase";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { getPostLoginRedirect } from "../../lib/redirectAfterLogin";
+import { useReferral } from "@/hooks/useReferral";
 
 export default function AuthCallback() {
   usePageTitle("Signing in to Zerra");
   const navigate = useNavigate();
   const [status, setStatus] = useState<"loading" | "error">("loading");
+  useReferral(); // applies any stored referral code after login
 
   useEffect(() => {
     async function handleCallback() {

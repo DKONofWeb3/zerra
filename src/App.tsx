@@ -14,6 +14,8 @@ import TopPerformingPage from "./pages/Influence/TopPerforming";
 import ExplorePage from "./pages/Explore";
 import CampaignLeaderboardPage from "./pages/Explore/Leaderboard";
 import PostContentPage from "./pages/Post";
+import ReferralRedirectPage from "./pages/Referral";
+import ReferralDashboardPage from "./pages/Referral/Dashboard";
 import MarketPage from "./pages/Market";
 import WalletPage from "./pages/Wallet";
 import SettingsPage from "./pages/Settings";
@@ -153,6 +155,8 @@ export default function App() {
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/terms"         element={<TermsPage />} />
         <Route path="/privacy"       element={<PrivacyPage />} />
+        {/* Public referral redirect — no auth needed, just stores code and sends to signup */}
+        <Route path="/ref/:code"     element={<ReferralRedirectPage />} />
 
         {/* Creator protected */}
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
@@ -164,6 +168,7 @@ export default function App() {
           <Route path="/explore"                  element={<ExplorePage />} />
           <Route path="/explore/leaderboard"      element={<CampaignLeaderboardPage />} />
           <Route path="/post"                     element={<PostContentPage />} />
+          <Route path="/referrals"                element={<ReferralDashboardPage />} />
           <Route path="/market"                   element={<MarketPage />} />
           <Route path="/wallet"                   element={<WalletPage />} />
           <Route path="/settings"                 element={<SettingsPage />} />

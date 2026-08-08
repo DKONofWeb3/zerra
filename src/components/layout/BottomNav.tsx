@@ -1,13 +1,13 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Star, Compass, TrendingUp, Settings } from "lucide-react";
+import { LayoutDashboard, Star, Compass, TrendingUp, Users } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 const NAV_ITEMS = [
-  { to: "/dashboard", label: "Home",     icon: LayoutDashboard },
-  { to: "/influence", label: "Influence",icon: Star },
-  { to: "/explore",   label: "Explore",  icon: Compass },
-  { to: "/market",    label: "Market",   icon: TrendingUp },
-  { to: "/settings",  label: "Settings", icon: Settings },
+  { to: "/dashboard",  label: "Home",      icon: LayoutDashboard },
+  { to: "/influence",  label: "Influence", icon: Star },
+  { to: "/explore",    label: "Explore",   icon: Compass },
+  { to: "/referrals",  label: "Referrals", icon: Users },
+  { to: "/market",     label: "Market",    icon: TrendingUp },
 ];
 
 export function BottomNav() {
