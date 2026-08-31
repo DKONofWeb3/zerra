@@ -1,8 +1,12 @@
 import { apiGet, apiPost, apiGetPublic, apiPut, apiDelete } from "./client";
 import { supabase } from "./supabase";
+import type { InfluenceRatingResponse } from "../types";
 
 // ——— Auth / User ———
 export const getMe = () => apiGet<{ user: any }>("/me");
+
+export const getInfluenceRating = () =>
+  apiGet<InfluenceRatingResponse>("/me/influence-rating");
 
 // ——— Bounties ———
 export const getBounties = () =>

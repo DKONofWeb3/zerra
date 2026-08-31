@@ -3,7 +3,7 @@ import { cn } from "@/lib/cn";
 import { DiamondIcon } from "@/components/icons/DiamondIcon";
 import { UserActivityMarquee } from "@/components/dashboard/UserActivityMarquee";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
-import { InfluenceStatsCard } from "@/components/dashboard/InfluenceStatsCard";
+import { InfluenceRatingCard } from "@/components/dashboard/InfluenceRatingCard";
 import { ActivityHeroCard } from "@/components/dashboard/ActivityHeroCard";
 import { BadgeTilesRow } from "@/components/dashboard/BadgesCard";
 import { BadgeClaimModal } from "@/components/dashboard/BadgeClaimModal";
@@ -11,9 +11,10 @@ import { AnalyticsOverview } from "@/components/dashboard/AnalyticsOverview";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { apiGet } from "@/lib/api/client";
+import { getInfluenceRating } from "@/lib/api";
 import { useBadges } from "@/hooks/useBadges";
 import { useSocialAccounts } from "@/hooks/useSocialAccounts";
-import type { ActivityItem, TikTokAnalytics } from "@/lib/types";
+import type { ActivityItem, TikTokAnalytics, InfluenceRatingResponse } from "@/lib/types";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
 function OverviewView() {
@@ -27,11 +28,7 @@ function OverviewView() {
   const [tiktokLinked, setTiktokLinked] = useState(false);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
 
-  const [influenceStats, setInfluenceStats] = useState({
-    totalScore: 0, scoreChangePercent: 0,
-    earnedPoints: 0, earnedChangePercent: 0,
-    referralPoints: 0, referralChangePercent: 0,
-  });
+  const [influenceRating, setInfluenceRating] = useState<InfluenceRatingResponse>({ calculated: false });
   const [influenceLoading, setInfluenceLoading] = useState(true);
 
   useEffect(() => {
@@ -46,14 +43,9 @@ function OverviewView() {
       .catch(() => setAnalytics(null))
       .finally(() => setAnalyticsLoading(false));
 
-    apiGet<{ totalScore: number; scoreChangePercent: number }>("/me/influence-stats")
-      .then((d) => setInfluenceStats((prev) => ({
-        ...prev,
-        totalScore: d.totalScore,
-        scoreChangePercent: d.scoreChangePercent,
-        // earnedPoints / referralPoints stay 0 until the referral system exists
-      })))
-      .catch(() => {})
+    getInfluenceRating()
+      .then(setInfluenceRating)
+      .catch(() => setInfluenceRating({ calculated: false }))
       .finally(() => setInfluenceLoading(false));
   }, [session]);
 
@@ -86,11 +78,7 @@ function OverviewView() {
         tiktokLinked={tiktokLinked}
         loading={analyticsLoading}
         hasData={hasAnalyticsData}
-        totalReach={summary?.total_views ?? 0}
-        engagementRate={summary?.avg_engagement_rate ?? 0}
-        totalLikes={summary?.total_likes ?? 0}
         postsSynced={summary?.total_posts ?? 0}
-        posts={analytics?.posts ?? []}
         badges={badges}
         claimingId={claimingId}
         onClaim={handleClaim}
@@ -114,14 +102,7 @@ function OverviewView() {
               <p className="text-[13px] text-fg-tertiary">Loading stats...</p>
             </div>
           ) : (
-            <InfluenceStatsCard
-              totalScore={influenceStats.totalScore}
-              scoreChangePercent={influenceStats.scoreChangePercent}
-              earnedPoints={influenceStats.earnedPoints}
-              earnedChangePercent={influenceStats.earnedChangePercent}
-              referralPoints={influenceStats.referralPoints}
-              referralChangePercent={influenceStats.referralChangePercent}
-            />
+            <InfluenceRatingCard rating={influenceRating} />
           )}
         </div>
         <div>

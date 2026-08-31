@@ -250,6 +250,24 @@ export interface TikTokAnalytics {
 }
 
 /* ============================================================
+   INFLUENCE RATING — cross-platform score (100-1000) computed from a
+   creator's connected social accounts. Distinct from the per-campaign
+   leaderboard score. Backend: GET /me/influence-rating.
+   ============================================================ */
+export type InfluenceRatingResponse =
+  | { calculated: false }
+  | {
+      calculated: true;
+      score: number;
+      audienceScore: number;
+      engagementScore: number;
+      impactScore: number;
+      percentile: number | null;
+      scoreChange24h: number | null;
+      confidenceScore: number;
+    };
+
+/* ============================================================
    BADGES — "Early Creators" + "Influencer Badge" claim flow.
    Backend contract (expected, not yet implemented):
      GET  /me/badges            -> { badges: BadgeState[] }
