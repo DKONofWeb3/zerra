@@ -454,8 +454,8 @@ function ConnectedAccountsSection() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const error = params.get("error");
-    if (error === "instagram_no_business_account") {
-      setIgError("No Instagram Business or Creator account found linked to your Facebook Page. Convert your Instagram account to a Professional account first, then try again.");
+    if (error === "instagram_not_professional") {
+      setIgError("Your Instagram account needs to be a Professional (Business or Creator) account. Switch to one in the Instagram app, then try again.");
     } else if (error === "instagram_failed") {
       setIgError("Instagram connection failed. Please try again.");
     }
