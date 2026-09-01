@@ -122,6 +122,12 @@ interface BadgesPanelProps {
 export function BadgesPanel({ badges, claimingId, onClaim, variant = "default" }: BadgesPanelProps) {
   const paired = variant === "desktop-paired";
 
+  // Once a badge is claimed, it drops out of this "claim it" panel entirely —
+  // attained badges surface elsewhere (AttainedBadgePills). If nothing's
+  // left to claim, the whole panel disappears rather than showing empty.
+  const unclaimed = badges.filter((b) => !b.attained);
+  if (unclaimed.length === 0) return null;
+
   return (
     <div
       className="relative overflow-hidden rounded-card p-5 md:p-6 h-full flex flex-col"
@@ -141,7 +147,7 @@ export function BadgesPanel({ badges, claimingId, onClaim, variant = "default" }
       </h3>
 
       <div className={cn("mt-4 flex-1", paired ? "grid grid-cols-2 gap-3.5" : "flex flex-col gap-3")}>
-        {badges.map((badge) => (
+        {unclaimed.map((badge) => (
           <BadgeTile
             key={badge.id}
             badge={badge}
@@ -168,9 +174,13 @@ interface BadgeTilesRowProps {
  * round — uses the default "row" BadgeTile layout exactly as before.
  */
 export function BadgeTilesRow({ badges, claimingId, onClaim }: BadgeTilesRowProps) {
+  // Same rule as BadgesPanel — a claimed badge disappears from this row too.
+  const unclaimed = badges.filter((b) => !b.attained);
+  if (unclaimed.length === 0) return null;
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-      {badges.map((badge) => (
+      {unclaimed.map((badge) => (
         <BadgeTile key={badge.id} badge={badge} claiming={claimingId === badge.id} onClaim={onClaim} />
       ))}
     </div>
