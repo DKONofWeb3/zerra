@@ -1,5 +1,4 @@
 import { useSearchParams } from "react-router-dom";
-import { cn } from "@/lib/cn";
 import { DiamondIcon } from "@/components/icons/DiamondIcon";
 import { UserActivityMarquee } from "@/components/dashboard/UserActivityMarquee";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
@@ -30,6 +29,7 @@ function OverviewView() {
 
   const [influenceRating, setInfluenceRating] = useState<InfluenceRatingResponse>({ calculated: false });
   const [influenceLoading, setInfluenceLoading] = useState(true);
+  const [referralPoints, setReferralPoints] = useState(0);
 
   useEffect(() => {
     if (!session) { setAnalyticsLoading(false); setInfluenceLoading(false); return; }
@@ -47,6 +47,10 @@ function OverviewView() {
       .then(setInfluenceRating)
       .catch(() => setInfluenceRating({ calculated: false }))
       .finally(() => setInfluenceLoading(false));
+
+    apiGet<{ referralPoints: number }>("/me/referral")
+      .then((d) => setReferralPoints(d.referralPoints ?? 0))
+      .catch(() => {});
   }, [session]);
 
   const summary = analytics?.summary;
@@ -74,15 +78,23 @@ function OverviewView() {
         </span>
       </div>
 
-      <ActivityHeroCard
-        tiktokLinked={tiktokLinked}
-        loading={analyticsLoading}
-        hasData={hasAnalyticsData}
-        postsSynced={summary?.total_posts ?? 0}
-        badges={badges}
-        claimingId={claimingId}
-        onClaim={handleClaim}
-      />
+      <div>
+        <SectionHeader label="Live Update" title="Influence Section" />
+        {influenceLoading ? (
+          <div className="relative overflow-hidden rounded-card border border-white/[0.06] shadow-card min-h-[220px] flex items-center justify-center"
+            style={{ background: "rgb(var(--bg-card))" }}>
+            <p className="text-[13px] text-fg-tertiary">Loading stats...</p>
+          </div>
+        ) : (
+          <InfluenceRatingCard
+            rating={influenceRating}
+            earnedPoints={0}
+            earnedChangePercent={0}
+            referralPoints={referralPoints}
+            referralChangePercent={0}
+          />
+        )}
+      </div>
 
       {/* Mobile-only: once a badge is attained, mobile moves tiles below the hero card.
           Desktop now ALWAYS keeps badges inside the hero card's right column (fixed
@@ -94,17 +106,15 @@ function OverviewView() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 pt-2 md:pt-4">
-        <div>
-          <SectionHeader label="Live Update" title="Influence Section" />
-          {influenceLoading ? (
-            <div className={cn("relative overflow-hidden rounded-card border border-white/[0.06] shadow-card min-h-[220px]", "flex items-center justify-center")}
-              style={{ background: "rgb(var(--bg-card))" }}>
-              <p className="text-[13px] text-fg-tertiary">Loading stats...</p>
-            </div>
-          ) : (
-            <InfluenceRatingCard rating={influenceRating} />
-          )}
-        </div>
+        <ActivityHeroCard
+          tiktokLinked={tiktokLinked}
+          loading={analyticsLoading}
+          hasData={hasAnalyticsData}
+          postsSynced={summary?.total_posts ?? 0}
+          badges={badges}
+          claimingId={claimingId}
+          onClaim={handleClaim}
+        />
         <div>
           <SectionHeader label="Live Update" title="Campaign Overview" />
           <div className="relative overflow-hidden rounded-card border border-white/[0.06] shadow-card min-h-[220px] flex flex-col items-center justify-center gap-4 p-6"
