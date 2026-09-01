@@ -79,7 +79,7 @@ function OverviewView() {
       </div>
 
       <div>
-        <SectionHeader label="Live Update" title="Influence Section" />
+        <SectionHeader title="Influence Section" />
         {influenceLoading ? (
           <div className="relative overflow-hidden rounded-card border border-white/[0.06] shadow-card min-h-[220px] flex items-center justify-center"
             style={{ background: "rgb(var(--bg-card))" }}>
@@ -88,8 +88,6 @@ function OverviewView() {
         ) : (
           <InfluenceRatingCard
             rating={influenceRating}
-            earnedPoints={0}
-            earnedChangePercent={0}
             referralPoints={referralPoints}
             referralChangePercent={0}
           />

@@ -1,7 +1,7 @@
 import { DiamondIcon } from "@/components/icons/DiamondIcon";
 
 interface SectionHeaderProps {
-  label: string; // e.g. "Live Update"
+  label?: string; // omit to render just the title, no diamond+label row above it
   title: string; // e.g. "Influence Section"
 }
 
@@ -12,10 +12,12 @@ interface SectionHeaderProps {
 export function SectionHeader({ label, title }: SectionHeaderProps) {
   return (
     <div className="mb-5">
-      <div className="flex items-center gap-2.5 text-fg-tertiary">
-        <DiamondIcon size={14} />
-        <span className="text-[12.5px]">{label}</span>
-      </div>
+      {label && (
+        <div className="flex items-center gap-2.5 text-fg-tertiary">
+          <DiamondIcon size={14} />
+          <span className="text-[12.5px]">{label}</span>
+        </div>
+      )}
       <h3 className="mt-2 font-display font-medium text-[26px] tracking-[-0.015em] text-fg-primary">
         {title}
       </h3>

@@ -19,25 +19,26 @@ function ChangeBadge({ percent, onDark }: { percent: number; onDark?: boolean })
 
 interface InfluenceRatingCardProps {
   rating: InfluenceRatingResponse;
-  earnedPoints: number;
-  earnedChangePercent: number;
   referralPoints: number;
   referralChangePercent: number;
 }
 
 /**
- * "Influence Section" panel — matches the original Total Score / Earned
- * Point / Referral Point design exactly, with one change: the main number
- * is now the real cross-platform Influence Rating (GET /me/influence-rating)
- * instead of the old campaign-leaderboard total_score. Earned Point stays 0
- * until an "earned points" concept exists on the backend; Referral Point is
- * wired to the real referral system (GET /me/referral).
+ * "Influence Section" panel. Per the founder's call: the card is never
+ * labeled "Influence Rating" on screen — it's "Total Score", made up of
+ * two tiles the way it always was:
+ *   - "Earned Point"   → value IS the cross-platform Influence Rating
+ *                        (GET /me/influence-rating), just labeled
+ *                        "Earned Point" instead of naming the engine.
+ *   - "Referral Point" → real referral count (GET /me/referral), unchanged.
+ * "Total Score" up top is Earned Point + Referral Point combined — not an
+ * independently tracked number, so its "24h Change" reuses the Influence
+ * Rating's own 24h delta (the only piece of this sum with real history).
  */
-export function InfluenceRatingCard({
-  rating, earnedPoints, earnedChangePercent, referralPoints, referralChangePercent,
-}: InfluenceRatingCardProps) {
-  const score = rating.calculated ? rating.score : 0;
-  const scoreChangePercent = rating.calculated ? (rating.scoreChange24h ?? 0) : 0;
+export function InfluenceRatingCard({ rating, referralPoints, referralChangePercent }: InfluenceRatingCardProps) {
+  const earnedPoints = rating.calculated ? rating.score : 0;
+  const earnedChangePercent = rating.calculated ? (rating.scoreChange24h ?? 0) : 0;
+  const totalScore = earnedPoints + referralPoints;
 
   return (
     <div className="relative overflow-hidden rounded-card border border-white/[0.06] shadow-card p-5 md:p-6"
@@ -46,20 +47,20 @@ export function InfluenceRatingCard({
         style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
 
       <div className="flex items-center justify-between">
-        <p className="text-[13px] text-fg-tertiary">Influence Rating</p>
+        <p className="text-[13px] text-fg-tertiary">Total Score</p>
         <p className="text-[12px] text-fg-muted">24h Change</p>
       </div>
 
       <div className="flex items-center gap-3 mt-2 mb-1">
         <p className="font-display font-medium text-[36px] md:text-[42px] text-fg-primary tabular-nums leading-none">
-          {score.toLocaleString()}
+          {totalScore.toLocaleString()}
         </p>
-        <ChangeBadge percent={scoreChangePercent} />
+        <ChangeBadge percent={earnedChangePercent} />
       </div>
 
       {!rating.calculated ? (
         <p className="text-[12.5px] text-fg-tertiary mb-4">
-          Connect a TikTok or Instagram account in Settings to get rated.
+          Connect a TikTok or Instagram account in Settings to start earning points.
         </p>
       ) : (
         <div className="mb-4">

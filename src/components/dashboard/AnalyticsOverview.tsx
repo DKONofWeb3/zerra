@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Eye, Heart, MessageCircle, Share2, Sparkles, Play, ChevronRight } from "lucide-react";
+import { Eye, Heart, MessageCircle, Share2, Sparkles, Play, ChevronRight, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { apiGet } from "@/lib/api/client";
+import { syncTikTok } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
 import { LockedCard } from "@/components/dashboard/LockedCard";
@@ -57,18 +58,34 @@ export function AnalyticsOverview() {
   const [tab, setTab] = useState<typeof TABS[number]>("Overview");
   const [analytics, setAnalytics] = useState<TikTokAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchAnalytics = () => {
     if (!session) { setLoading(false); return; }
+    setLoading(true);
     apiGet<{ analytics: TikTokAnalytics | null; message?: string }>("/analytics/tiktok")
       .then((d) => {
         setAnalytics(d.analytics ?? null);
-        if (!d.analytics) setError(d.message ?? null);
+        setError(d.analytics ? null : d.message ?? null);
       })
       .catch((e) => setError(e.message ?? "Failed to load analytics"))
       .finally(() => setLoading(false));
-  }, [session]);
+  };
+
+  useEffect(fetchAnalytics, [session]);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      await syncTikTok();
+      fetchAnalytics();
+    } catch (e: any) {
+      setError(e.message ?? "Sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const summary = analytics?.summary ?? null;
   const posts = analytics?.posts ?? [];
@@ -93,14 +110,24 @@ export function AnalyticsOverview() {
   return (
     <div className="space-y-5 md:space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="font-display font-medium text-[26px] md:text-[32px] text-fg-primary tracking-[-0.02em]">
-          Analytics
-        </h2>
-        <p className="mt-1.5 flex items-center gap-1.5 text-[12.5px] text-fg-tertiary">
-          <Sparkles className="w-3.5 h-3.5 text-brand" />
-          Track your TikTok performance in real-time.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="font-display font-medium text-[26px] md:text-[32px] text-fg-primary tracking-[-0.02em]">
+            Analytics
+          </h2>
+          <p className="mt-1.5 flex items-center gap-1.5 text-[12.5px] text-fg-tertiary">
+            <Sparkles className="w-3.5 h-3.5 text-brand" />
+            Track your TikTok performance in real-time.
+          </p>
+        </div>
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[12.5px] font-medium text-fg-secondary border border-white/[0.08] bg-bg-elevated hover:bg-white/[0.06] disabled:opacity-50 transition-colors"
+        >
+          <RefreshCw className={cn("w-3.5 h-3.5", syncing && "animate-spin")} />
+          {syncing ? "Syncing..." : "Sync"}
+        </button>
       </div>
 
       {/* Sub-tabs */}
@@ -136,6 +163,15 @@ export function AnalyticsOverview() {
           <p className="text-[13px] text-fg-tertiary leading-relaxed max-w-sm">
             {error ?? "Connect your TikTok and sync your posts to see analytics here."}
           </p>
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="mt-1 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12.5px] font-semibold text-white disabled:opacity-50 transition-opacity"
+            style={{ background: "rgb(74 125 255)" }}
+          >
+            <RefreshCw className={cn("w-3.5 h-3.5", syncing && "animate-spin")} />
+            {syncing ? "Syncing..." : "Sync Now"}
+          </button>
         </Card>
       ) : (
         <>
