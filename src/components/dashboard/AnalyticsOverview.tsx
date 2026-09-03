@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { Eye, Heart, MessageCircle, Share2, Sparkles, Play, ChevronRight, RefreshCw } from "lucide-react";
+import { Eye, Sparkles, Play, ChevronRight, ChevronDown, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { apiGet } from "@/lib/api/client";
-import { syncTikTok } from "@/lib/api";
+import { syncTikTok, getAnalyticsInsights } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
 import { LockedCard } from "@/components/dashboard/LockedCard";
-import type { TikTokAnalytics, TikTokPost } from "@/lib/types";
+import type { TikTokAnalytics, TikTokPost, AnalyticsInsights } from "@/lib/types";
 
 const TABS = ["Overview", "Audience", "Content", "Engagement", "Earnings", "Campaigns", "Comparison"] as const;
 
@@ -39,12 +39,24 @@ function ViewAllLink({ label = "View full report", onClick }: { label?: string; 
   );
 }
 
-/** Build a simple "views over time" series by bucketing posts by sync date. */
+/** A label/value row for the Performance card — "—" whenever the value isn't real yet. */
+function StatRow({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div className="flex items-center justify-between py-3 border-b border-white/[0.04] last:border-0">
+      <span className="text-[13px] text-fg-tertiary">{label}</span>
+      <span className="text-[13px] font-medium text-fg-primary">{value ?? "—"}</span>
+    </div>
+  );
+}
+
+/** Build a "views over time" series from real post dates — created_time (the actual
+ *  TikTok publish time) where available, falling back to fetched_at for posts synced
+ *  before that field was captured. */
 function buildPerformanceSeries(posts: TikTokPost[]) {
   if (!posts.length) return [];
   const byDate = new Map<string, number>();
   for (const p of posts) {
-    const date = new Date(p.fetched_at);
+    const date = new Date(p.created_time ?? p.fetched_at);
     const key = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     byDate.set(key, (byDate.get(key) ?? 0) + Number(p.view_count ?? 0));
   }
@@ -57,6 +69,7 @@ export function AnalyticsOverview() {
   const { session } = useAuth();
   const [tab, setTab] = useState<typeof TABS[number]>("Overview");
   const [analytics, setAnalytics] = useState<TikTokAnalytics | null>(null);
+  const [insights, setInsights] = useState<AnalyticsInsights | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +84,8 @@ export function AnalyticsOverview() {
       })
       .catch((e) => setError(e.message ?? "Failed to load analytics"))
       .finally(() => setLoading(false));
+
+    getAnalyticsInsights().then(setInsights).catch(() => setInsights(null));
   };
 
   useEffect(fetchAnalytics, [session]);
@@ -97,15 +112,6 @@ export function AnalyticsOverview() {
     () => [...posts].sort((a, b) => Number(b.view_count) - Number(a.view_count)).slice(0, 5),
     [posts]
   );
-
-  const statCards = summary
-    ? [
-        { key: "views",       label: "Total Views",     value: fmt(summary.total_views),    icon: Eye },
-        { key: "engagement",  label: "Avg Engagement",   value: `${summary.avg_engagement_rate}%`, icon: Heart },
-        { key: "comments",    label: "Total Comments",   value: fmt(summary.total_comments), icon: MessageCircle },
-        { key: "shares",      label: "Total Shares",     value: fmt(summary.total_shares),   icon: Share2 },
-      ]
-    : [];
 
   return (
     <div className="space-y-5 md:space-y-6">
@@ -175,116 +181,131 @@ export function AnalyticsOverview() {
         </Card>
       ) : (
         <>
-          {/* Stat cards — real, from summary */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-            {statCards.map(({ key, label, value, icon: Icon }) => (
-              <Card key={key} className="overflow-hidden">
-                <div className="flex items-center gap-1.5 text-fg-tertiary">
-                  <Icon className="w-3.5 h-3.5" />
-                  <span className="text-[11.5px]">{label}</span>
-                </div>
-                <div className="flex items-baseline gap-2 mt-2">
-                  <span className="font-display font-medium text-[22px] md:text-[26px] text-fg-primary tabular-nums">{value}</span>
-                </div>
-                <p className="text-[10.5px] text-fg-muted mt-1">{summary!.total_posts} posts synced</p>
-              </Card>
-            ))}
-          </div>
-
-          {/* Performance + Audience (locked) */}
+          {/* Your Performance + Performance */}
           <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-4">
             <Card>
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p className="text-[13.5px] font-medium text-fg-primary">Performance Over Time</p>
-                  <p className="text-[11px] text-fg-muted mt-0.5">Views by sync date (thousands)</p>
+              <div className="flex items-center justify-between">
+                <p className="text-[13px] text-fg-tertiary">Your Performance</p>
+                <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11.5px] text-fg-secondary border border-white/[0.08] bg-black/20">
+                  Last 30 days <ChevronDown className="w-3 h-3" />
                 </div>
               </div>
+              <div className="flex items-baseline gap-2 mt-2">
+                <span className="font-display font-medium text-[30px] md:text-[36px] text-fg-primary tabular-nums">
+                  {fmt(summary!.total_views)}
+                </span>
+              </div>
+              <p className="text-[12px] text-fg-tertiary mt-0.5">Total Impressions</p>
               {performanceSeries.length > 1 ? (
-                <div className="h-[220px] md:h-[260px]">
+                <div className="h-[160px] md:h-[190px] mt-3">
                   <PerformanceChart data={performanceSeries} />
                 </div>
               ) : (
-                <div className="h-[220px] md:h-[260px] flex items-center justify-center">
+                <div className="h-[160px] md:h-[190px] mt-3 flex items-center justify-center">
                   <p className="text-[12.5px] text-fg-tertiary">Sync more than once to see a trend.</p>
                 </div>
               )}
             </Card>
 
-            <LockedCard title="Audience Demographics" note="Coming soon" />
-          </div>
-
-          {/* Locked: Traffic Sources + Engagement by Platform / Real: Engagement Breakdown */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <LockedCard title="Traffic Sources" note="Coming soon" />
-
             <Card>
-              <p className="text-[13.5px] font-medium text-fg-primary mb-4">Engagement Breakdown</p>
-              <div className="flex flex-col gap-4">
-                {[
-                  { label: "Likes",    value: summary!.total_likes,    max: summary!.total_likes },
-                  { label: "Comments", value: summary!.total_comments, max: summary!.total_likes || 1 },
-                  { label: "Shares",   value: summary!.total_shares,   max: summary!.total_likes || 1 },
-                ].map((e) => (
-                  <div key={e.label}>
-                    <div className="flex items-center justify-between text-[12px] mb-1.5">
-                      <span className="text-fg-secondary">{e.label}</span>
-                      <span className="text-fg-muted tabular-nums">{fmt(e.value)}</span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-                      <div
-                        className="h-full rounded-full"
-                        style={{ width: `${Math.min(100, (e.value / e.max) * 100)}%`, background: "rgb(74 125 255)" }}
-                      />
-                    </div>
-                  </div>
-                ))}
+              <p className="text-[13.5px] font-medium text-fg-primary mb-1">Performance</p>
+              <div className="mt-3">
+                <StatRow label="Best Platform" value={insights?.bestPlatform ?? null} />
+                <StatRow label="Best Content" value={null} />
+                <StatRow label="Best Format" value={insights?.bestFormat ?? null} />
+                <StatRow label="Best Time" value={insights?.bestTime ?? null} />
               </div>
             </Card>
-
-            <LockedCard title="Engagement by Platform" note="Coming soon — TikTok only for now" />
           </div>
 
-          {/* Top Performing Content — real */}
-          <Card>
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-[13.5px] font-medium text-fg-primary">Top Performing Content</p>
-              <ViewAllLink label="View all" />
-            </div>
-            {topPosts.length === 0 ? (
-              <p className="text-[13px] text-fg-tertiary">No posts found.</p>
-            ) : (
-              <div className="flex flex-col">
-                {topPosts.map((p, i) => (
-                  <div key={p.post_id} className={cn("flex items-center gap-3 py-3", i !== topPosts.length - 1 && "border-b border-white/[0.04]")}>
-                    <div className="w-9 h-9 rounded-lg overflow-hidden bg-bg-elevated border border-white/[0.06] flex items-center justify-center shrink-0">
-                      {p.cover_image_url ? (
-                        <img
-                          src={p.cover_image_url}
-                          alt=""
-                          className="w-full h-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                        />
-                      ) : (
-                        <Play className="w-3.5 h-3.5 text-fg-muted" fill="currentColor" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[12.5px] font-medium text-fg-primary truncate">{p.title || "Untitled post"}</p>
-                      <p className="text-[11px] text-fg-tertiary mt-0.5">
-                        {new Date(p.fetched_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                        {p.verification?.final_score != null && ` · ${p.verification.final_score} pts`}
-                      </p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-[12.5px] font-medium text-fg-primary tabular-nums">{fmt(Number(p.view_count))}</p>
-                      <p className="text-[10.5px] text-fg-muted mt-0.5">{p.engagement_rate}% engagement</p>
-                    </div>
-                  </div>
-                ))}
+          {/* Zerra Insight */}
+          {insights?.performanceInsight ? (
+            <div className="relative overflow-hidden rounded-card p-5 md:p-6"
+              style={{ background: "linear-gradient(135deg, rgb(15 21 46) 0%, rgb(8 12 28) 100%)" }}>
+              <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
+                style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
+              <div className="flex items-center gap-1.5 text-brand">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span className="text-[12px] font-medium">Zerra Insight</span>
               </div>
+              <p className="mt-2 text-[16px] md:text-[18px] font-medium text-fg-primary leading-snug max-w-2xl">
+                {insights.performanceInsight.headline}
+              </p>
+              <p className="mt-3 text-[11.5px] text-fg-muted">Recommendation:</p>
+              <p className="text-[12.5px] text-fg-secondary">{insights.performanceInsight.recommendation}</p>
+            </div>
+          ) : (
+            <LockedCard title="Zerra Insight" note="Still analyzing your content — check back after a few more posts." />
+          )}
+
+          {/* Where Your Influence Fit + Top Performing content */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {insights?.influenceFit ? (
+              <Card>
+                <p className="text-[15px] font-medium text-fg-primary">Where Your Influence Fit</p>
+                <p className="text-[12px] text-fg-tertiary mt-1 mb-4">
+                  A campaign matching your best-performing content, based on your real engagement.
+                </p>
+                <div className="rounded-xl overflow-hidden border border-white/[0.06]">
+                  <div className="flex items-center justify-between px-3.5 py-2.5 bg-white/[0.04] text-[11px] text-fg-muted">
+                    <span>Potential Fit</span>
+                    <span>Why</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4 px-3.5 py-3">
+                    <span className="text-[12.5px] font-medium text-fg-primary shrink-0">{insights.influenceFit.campaignName}</span>
+                    <span className="text-[11.5px] text-fg-tertiary text-right">{insights.influenceFit.why}</span>
+                  </div>
+                </div>
+                <a href="/explore"
+                  className="mt-4 block text-center px-5 py-2.5 rounded-xl text-[13px] font-semibold text-white"
+                  style={{ background: "rgb(74 125 255)" }}>
+                  Explore potential matches
+                </a>
+              </Card>
+            ) : (
+              <LockedCard title="Where Your Influence Fit" note="Still finding your best-fit campaigns — check back after a few more posts." />
             )}
-          </Card>
+
+            <Card>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[13.5px] font-medium text-fg-primary">Top Performing content</p>
+                <ViewAllLink label="View all" />
+              </div>
+              {topPosts.length === 0 ? (
+                <p className="text-[13px] text-fg-tertiary">No posts found.</p>
+              ) : (
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-between text-[11px] text-fg-muted pb-2 border-b border-white/[0.04]">
+                    <span>Content</span>
+                    <span>Impressions</span>
+                  </div>
+                  {topPosts.map((p, i) => (
+                    <div key={p.post_id} className={cn("flex items-center gap-3 py-3", i !== topPosts.length - 1 && "border-b border-white/[0.04]")}>
+                      <div className="w-9 h-9 rounded-lg overflow-hidden bg-bg-elevated border border-white/[0.06] flex items-center justify-center shrink-0">
+                        {p.cover_image_url ? (
+                          <img
+                            src={p.cover_image_url}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                          />
+                        ) : (
+                          <Play className="w-3.5 h-3.5 text-fg-muted" fill="currentColor" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12.5px] font-medium text-fg-primary truncate">{p.title || "Untitled post"}</p>
+                        <p className="text-[11px] text-fg-tertiary mt-0.5">TikTok</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-[12.5px] font-medium text-fg-primary tabular-nums">{fmt(Number(p.view_count))}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </div>
         </>
       )}
     </div>

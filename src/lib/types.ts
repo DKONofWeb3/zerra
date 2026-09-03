@@ -231,6 +231,8 @@ export interface TikTokPost {
   share_count: number;
   engagement_rate: number;
   fetched_at: string;
+  /** The video's actual TikTok publish time — null for posts synced before this field was captured. */
+  created_time: string | null;
   /** Present only if this post matched an active campaign and was queued for AI verification. */
   verification: { final_score?: number; status?: string } | null;
 }
@@ -247,6 +249,19 @@ export interface TikTokAnalyticsSummary {
 export interface TikTokAnalytics {
   summary: TikTokAnalyticsSummary;
   posts: TikTokPost[];
+}
+
+/* ============================================================
+   ANALYTICS INSIGHTS — Analytics Overview's Performance list + Zerra
+   Insight + Where Your Influence Fit cards. Every field is real or null —
+   never a placeholder example. Backend: GET /analytics/tiktok/insights.
+   ============================================================ */
+export interface AnalyticsInsights {
+  bestPlatform: string | null;
+  bestFormat: string | null;
+  bestTime: string | null;
+  performanceInsight: { headline: string; recommendation: string } | null;
+  influenceFit: { campaignName: string; why: string } | null;
 }
 
 /* ============================================================

@@ -1,6 +1,6 @@
 import { apiGet, apiPost, apiGetPublic, apiPut, apiDelete } from "./client";
 import { supabase } from "./supabase";
-import type { InfluenceRatingResponse } from "../types";
+import type { InfluenceRatingResponse, AnalyticsInsights } from "../types";
 
 // ——— Auth / User ———
 export const getMe = () => apiGet<{ user: any }>("/me");
@@ -37,6 +37,9 @@ export const getTikTokAnalytics = () =>
 
 export const getTopCreators = () =>
   apiGetPublic<{ creators: any[] }>("/analytics/top-creators");
+
+export const getAnalyticsInsights = () =>
+  apiGet<AnalyticsInsights>("/analytics/tiktok/insights");
 
 // ——— Instagram ———
 // Redirects the user to Meta's OAuth flow. The backend callback handles
