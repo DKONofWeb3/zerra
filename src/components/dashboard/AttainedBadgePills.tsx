@@ -10,11 +10,7 @@ const THEME_BG: Record<BadgeState["theme"], string> = {
   violet: "rgb(110 124 255 / 0.12)",
 };
 
-/**
- * Small attained-badge pills shown beside "All Activity Update" once a
- * user has claimed at least one badge — reference: IMG_3069 / IMG_0085
- * top header row ("Early Adopter" / "Verified Influencer" chips).
- */
+/** Small attained-badge pills shown beside "All Activity Update" once a user has claimed at least one badge. */
 export function AttainedBadgePills({ badges }: { badges: BadgeState[] }) {
   const attained = badges.filter((b) => b.attained);
   if (!attained.length) return null;

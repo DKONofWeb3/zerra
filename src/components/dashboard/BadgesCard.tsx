@@ -7,7 +7,7 @@ interface BadgeTileProps {
   claiming: boolean;
   onClaim: (id: string) => void;
   /** "compact" stacks icon-above-text in a narrower card, for the desktop side-by-side pair inside BadgesPanel.
-   *  Default ("row") keeps the existing icon-left/text-right horizontal layout — unchanged for BadgeTilesRow. */
+   *  Default ("row") is the icon-left/text-right horizontal layout used by BadgeTilesRow. */
   layout?: "row" | "compact";
 }
 
@@ -107,24 +107,15 @@ interface BadgesPanelProps {
   badges: BadgeState[];
   claimingId: string | null;
   onClaim: (id: string) => void;
-  /** "desktop-paired": dark-blue gradient surface, two compact tiles side by side (fic.jpg).
-   *  Default: flat surface, tiles stacked full-width (original mobile/unclaimed behavior — unchanged). */
+  /** "desktop-paired": dark-blue gradient surface, two compact tiles side by side.
+   *  Default: flat surface, tiles stacked full-width. */
   variant?: "default" | "desktop-paired";
 }
 
-/**
- * Wrapped "Verified Badge for Creators" panel — used ONLY while no badge
- * has been attained yet, rendered as the second column inside the hero
- * card. Reference: IMG_0085 (unclaimed state, default variant) and
- * fic.jpg (desktop-paired variant: dark-blue gradient surface, two
- * compact tiles side by side instead of stacked).
- */
 export function BadgesPanel({ badges, claimingId, onClaim, variant = "default" }: BadgesPanelProps) {
   const paired = variant === "desktop-paired";
 
-  // Once a badge is claimed, it drops out of this "claim it" panel entirely —
-  // attained badges surface elsewhere (AttainedBadgePills). If nothing's
-  // left to claim, the whole panel disappears rather than showing empty.
+  // Claimed badges drop out here — attained ones surface via AttainedBadgePills instead.
   const unclaimed = badges.filter((b) => !b.attained);
   if (unclaimed.length === 0) return null;
 
@@ -167,14 +158,8 @@ interface BadgeTilesRowProps {
   onClaim: (id: string) => void;
 }
 
-/**
- * Bare side-by-side badge tiles, no wrapper panel — used once at least
- * one badge is attained, rendered as its own row BELOW the hero card.
- * Reference: 441995.jpg / mobile.jpg (attained state). UNCHANGED this
- * round — uses the default "row" BadgeTile layout exactly as before.
- */
+/** Bare side-by-side badge tiles, no wrapper panel — rendered below the hero card once at least one badge is attained. */
 export function BadgeTilesRow({ badges, claimingId, onClaim }: BadgeTilesRowProps) {
-  // Same rule as BadgesPanel — a claimed badge disappears from this row too.
   const unclaimed = badges.filter((b) => !b.attained);
   if (unclaimed.length === 0) return null;
 

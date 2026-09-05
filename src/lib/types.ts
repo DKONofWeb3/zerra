@@ -252,9 +252,8 @@ export interface TikTokAnalytics {
 }
 
 /* ============================================================
-   ANALYTICS INSIGHTS — Analytics Overview's Performance list + Zerra
-   Insight + Where Your Influence Fit cards. Every field is real or null —
-   never a placeholder example. Backend: GET /analytics/tiktok/insights.
+   ANALYTICS INSIGHTS — Performance list + Zerra Insight + Where Your
+   Influence Fit cards. Backend: GET /analytics/tiktok/insights.
    ============================================================ */
 export interface AnalyticsInsights {
   bestPlatform: string | null;
@@ -265,9 +264,8 @@ export interface AnalyticsInsights {
 }
 
 /* ============================================================
-   INFLUENCE RATING — cross-platform score (100-1000) computed from a
-   creator's connected social accounts. Distinct from the per-campaign
-   leaderboard score. Backend: GET /me/influence-rating.
+   INFLUENCE RATING — cross-platform score (100-1000), distinct from the
+   per-campaign leaderboard score. Backend: GET /me/influence-rating.
    ============================================================ */
 export type InfluenceRatingResponse =
   | { calculated: false }

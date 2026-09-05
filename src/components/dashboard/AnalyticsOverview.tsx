@@ -49,9 +49,7 @@ function StatRow({ label, value }: { label: string; value: string | null }) {
   );
 }
 
-/** Build a "views over time" series from real post dates — created_time (the actual
- *  TikTok publish time) where available, falling back to fetched_at for posts synced
- *  before that field was captured. */
+/** Builds a "views over time" series, keyed by created_time where available (falls back to fetched_at). */
 function buildPerformanceSeries(posts: TikTokPost[]) {
   if (!posts.length) return [];
   const byDate = new Map<string, number>();

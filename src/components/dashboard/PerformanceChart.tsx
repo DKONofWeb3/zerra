@@ -9,10 +9,7 @@ interface PerformanceChartProps {
   data: PerformancePoint[];
 }
 
-/**
- * "Performance Over Time" chart on the analytics overview tab.
- * Reference: ana.jpg left chart, red/coral line with soft area fill.
- */
+/** "Performance Over Time" chart on the analytics overview tab. */
 export function PerformanceChart({ data }: PerformanceChartProps) {
   return (
     <ResponsiveContainer width="100%" height="100%">

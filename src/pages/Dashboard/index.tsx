@@ -94,9 +94,7 @@ function OverviewView() {
         )}
       </div>
 
-      {/* Mobile-only: once a badge is attained, mobile moves tiles below the hero card.
-          Desktop now ALWAYS keeps badges inside the hero card's right column (fixed
-          this round), so this row must not render on desktop or badges would show twice. */}
+      {/* Mobile only — desktop keeps badges inside ActivityHeroCard instead. */}
       {anyAttained && (
         <div className="md:hidden">
           <BadgeTilesRow badges={badges} claimingId={claimingId} onClaim={handleClaim} />

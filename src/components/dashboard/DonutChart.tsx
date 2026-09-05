@@ -6,10 +6,7 @@ interface DonutChartProps {
   strokeWidth?: number;
 }
 
-/**
- * Plain SVG donut — used for "Audience Demographics" (gender) and
- * "Traffic Sources" in the analytics view. Reference: ana.jpg.
- */
+/** Plain SVG donut — used for "Audience Demographics" and "Traffic Sources" in the analytics view. */
 export function DonutChart({ segments, centerLabel, centerSubLabel, size = 144, strokeWidth = 16 }: DonutChartProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;

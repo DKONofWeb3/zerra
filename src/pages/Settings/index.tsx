@@ -34,7 +34,6 @@ const SETTINGS_ITEMS: SettingsItem[] = [
   { id: "appearance",    label: "Appearance",         icon: Palette },
 ];
 
-// Desktop menu row — unchanged behavior, just renders the row itself
 function SettingsMenuRow({ item, active, onClick }: { item: SettingsItem; active: boolean; onClick: () => void }) {
   const Icon = item.icon;
   return (

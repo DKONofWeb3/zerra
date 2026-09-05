@@ -1,9 +1,5 @@
-/**
- * The two badge images used across the dashboard's claim flow.
- * Replaced the earlier hand-drawn SVG approximations with the real
- * badge artwork provided by the founder — same files used everywhere
- * a badge renders, small (card row) or large (claim modal).
- */
+// The two badge images used across the dashboard's claim flow — same
+// files used everywhere a badge renders, small (card row) or large (claim modal).
 
 const BADGE_SRC: Record<"ember" | "violet", string> = {
   ember: "/badges/early-creator.png",

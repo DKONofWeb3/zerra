@@ -49,7 +49,6 @@ const FEATURES = [
 const SIGNUP = "/login?mode=signup";
 const SIGNIN = "/login?mode=signin";
 
-// Founder-approved hero subheading — used for both the mobile and desktop hero blocks below
 const HERO_SUBHEADING =
   "Discover verified campaigns, connect your social accounts, track performance, and receive payouts in USDC. All from one dashboard.";
 

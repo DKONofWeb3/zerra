@@ -229,19 +229,10 @@ function CampaignModal({
   );
 }
 
-/**
- * CampaignCard — Explore grid
- * -------------------------------------------------
- * Redesigned to match the campaign-card reference:
- *  - gradient wash sampled from the project's own token icon
- *  - logo badge + name, top
- *  - description
- *  - stats trimmed to ONLY Prize Pool + Status (no per-creator, no participants)
- *  - cover image as a large banner panel filling the lower portion
- *  - floating pill, top-right (shows join state, or "View details")
- * All images go through ValidatedImage — a broken URL never renders
- * a broken-image icon, it falls back to the accent gradient + initial.
- */
+// CampaignCard — gradient wash sampled from the project's token icon, logo +
+// name, description, Prize Pool + Status stats, cover image banner, and a
+// floating join-state pill. Images route through ValidatedImage, so a
+// broken URL falls back to the accent gradient + initial instead of a broken-image icon.
 function CampaignCard({ campaign, joined, onClick }: {
   campaign: Campaign; joined: boolean; onClick: () => void;
 }) {

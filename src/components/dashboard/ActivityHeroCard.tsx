@@ -12,15 +12,7 @@ interface ActivityHeroCardProps {
   onClaim: (id: string) => void;
 }
 
-/**
- * The activity/badges card — now the second block on the Dashboard,
- * paired with Campaign Overview (Influence Rating took over the top hero
- * slot). The Wallet Balance / Linked Socials dropdowns and the "Link
- * Socials" CTA have been removed per the founder's redesign; Settings is
- * reachable from the sidebar. The "Total Reach / Engagement Rate / Total
- * Likes" stats block that used to live here was removed earlier too —
- * that data duplicated what the Analytics tab already shows.
- */
+// Settings is reachable from the sidebar, so no CTA link needed here.
 export function ActivityHeroCard({
   tiktokLinked, loading, hasData, postsSynced,
   badges, claimingId, onClaim,
@@ -66,16 +58,13 @@ export function ActivityHeroCard({
           )}
         </div>
 
-        {/* Mobile — badges panel only while unclaimed; once attained, BadgeTilesRow
-            (rendered by the Dashboard page, md:hidden) takes over below the hero card. */}
+        {/* Mobile: hidden once attained — BadgeTilesRow takes over below the hero card. */}
         {!anyAttained && (
           <div className="md:hidden mt-5">
             <BadgesPanel badges={badges} claimingId={claimingId} onClaim={onClaim} />
           </div>
         )}
 
-        {/* Desktop — badges panel always stays in the hero card, regardless of
-            attained state; it never moves below like it does on mobile. */}
         <div className="hidden md:block mt-5">
           <BadgesPanel badges={badges} claimingId={claimingId} onClaim={onClaim} />
         </div>

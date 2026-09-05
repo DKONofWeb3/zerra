@@ -6,11 +6,7 @@ interface MiniSparklineProps {
   className?: string;
 }
 
-/**
- * Tiny background sparkline for the analytics stat cards (Total Views,
- * Engagement Rate, Clicks, Conversions) — reference: ana.jpg top row.
- * Deliberately simple: smoothed line + soft area fill, no animation.
- */
+/** Tiny background sparkline for the analytics stat cards — smoothed line + soft area fill, no animation. */
 export function MiniSparkline({ data, color, width = 240, height = 64, className }: MiniSparklineProps) {
   if (data.length < 2) return null;
 

@@ -25,12 +25,8 @@ const THEME_GLOW: Record<BadgeState["theme"], string> = {
   violet: "rgb(110 124 255 / 0.5)",
 };
 
-/**
- * Full-screen reward reveal shown right after a user taps "Claim Badge".
- * Visual reference: IMG_6523 (ember/Congratulation) and IMG_6522
- * (violet/You're Now an Influencer). Renders via portal so it sits above
- * the app shell regardless of where it's mounted.
- */
+// Full-screen reward reveal shown right after a user taps "Claim Badge".
+// Renders via portal so it sits above the app shell regardless of where it's mounted.
 export function BadgeClaimModal({ badge, onClose }: BadgeClaimModalProps) {
   useEffect(() => {
     if (!badge) return;

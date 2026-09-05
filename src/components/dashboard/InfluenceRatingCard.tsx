@@ -23,18 +23,10 @@ interface InfluenceRatingCardProps {
   referralChangePercent: number;
 }
 
-/**
- * "Influence Section" panel. Per the founder's call: the card is never
- * labeled "Influence Rating" on screen — it's "Total Score", made up of
- * two tiles the way it always was:
- *   - "Earned Point"   → value IS the cross-platform Influence Rating
- *                        (GET /me/influence-rating), just labeled
- *                        "Earned Point" instead of naming the engine.
- *   - "Referral Point" → real referral count (GET /me/referral), unchanged.
- * "Total Score" up top is Earned Point + Referral Point combined — not an
- * independently tracked number, so its "24h Change" reuses the Influence
- * Rating's own 24h delta (the only piece of this sum with real history).
- */
+// "Total Score" = Earned Point (the Influence Rating from
+// GET /me/influence-rating) + Referral Point (GET /me/referral). The 24h
+// change badge reuses the Influence Rating's own delta since that's the
+// only piece of the sum with tracked history.
 export function InfluenceRatingCard({ rating, referralPoints, referralChangePercent }: InfluenceRatingCardProps) {
   const earnedPoints = rating.calculated ? rating.score : 0;
   const earnedChangePercent = rating.calculated ? (rating.scoreChange24h ?? 0) : 0;
