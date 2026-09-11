@@ -4,13 +4,6 @@ import { signInWithGoogle } from "../../lib/api/auth";
 import { supabase } from "../../lib/api/supabase";
 import { getPostLoginRedirect } from "../../lib/redirectAfterLogin";
 
-const CARDS = [
-  { src: "/creator-cards/card-1.png", style: { top: "8%",  left: "52%", width: 210, transform: "rotate(-1.5deg)", zIndex: 5 } },
-  { src: "/creator-cards/card-2.png", style: { top: "28%", left: "30%", width: 185, transform: "rotate(1deg)",    zIndex: 4 } },
-  { src: "/creator-cards/card-3.png", style: { top: "53%", left: "24%", width: 195, transform: "rotate(-1deg)",   zIndex: 5 } },
-  { src: "/creator-cards/card-4.png", style: { top: "50%", left: "53%", width: 200, transform: "rotate(1.5deg)",  zIndex: 4 } },
-];
-
 export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -111,81 +104,90 @@ export default function LoginPage() {
     <>
       <style>{`
         @media (max-width: 767px) {
-          .login-left  { display: none !important; }
-          .login-right { flex: 1 !important; border-left: none !important; }
-          .login-form  { padding: 0 24px !important; max-width: 100% !important; }
+          .login-page   { padding: 0 !important; gap: 0 !important; }
+          .login-left   { display: none !important; }
+          .login-right  { flex: 1 !important; border-radius: 0 !important; background: #010d1e !important; }
+          .login-ambient-glow { display: none !important; }
+          .login-mobile-glow  { display: block !important; }
+          .login-form   { padding: 0 24px !important; max-width: 100% !important; }
+          .login-intro  { text-align: center !important; }
+          .mobile-logo  { color: rgb(0 0 0) !important; }
+          .desktop-or-text { display: none !important; }
+          .mobile-or-text  { display: inline !important; }
         }
       `}</style>
 
-      <div style={{
-        display: "flex", minHeight: "100vh", background: "#000",
+      <div className="login-page" style={{
+        display: "flex", minHeight: "100vh", background: "rgb(6 8 14)",
+        padding: 24, gap: 40, boxSizing: "border-box",
         fontFamily: '"Satoshi", ui-sans-serif, system-ui, sans-serif',
-        WebkitFontSmoothing: "antialiased", overflow: "hidden",
+        WebkitFontSmoothing: "antialiased",
       }}>
 
-        {/* LEFT PANEL */}
+        {/* LEFT PANEL — exact Figma-rendered card (logo, badge, mini-cards, headline
+            and copy are all baked into this image, pulled straight from the design
+            file at nodes 358:44/358:138 — hand-recreating the gradient+glass-card
+            composition in CSS didn't match, so this uses the real pixels instead).
+            Two source images only because the mini-card text ("Welcome" vs
+            "Welcome Back") is the one thing that differs by mode. */}
         <div className="login-left" style={{
-          flex: "0 0 55%", position: "relative", overflow: "hidden",
-          display: "flex", flexDirection: "column", justifyContent: "flex-end",
-          padding: "48px", background: "#000",
+          flex: "1 1 51%", position: "relative", overflow: "hidden", borderRadius: 24,
         }}>
-          <img src="/login-bg/rect-blue.png" alt="" aria-hidden draggable={false}
-            style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "fill", pointerEvents: "none", userSelect: "none" }} />
-          <img src="/login-bg/rect-overlay.png" alt="" aria-hidden draggable={false}
-            style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "fill", mixBlendMode: "overlay", opacity: 0.5, pointerEvents: "none", userSelect: "none" }} />
-          <div aria-hidden style={{ position: "absolute", bottom: 0, left: 0, width: "60%", height: "35%", background: "radial-gradient(ellipse 80% 80% at 0% 100%, rgb(40 70 160 / 0.4) 0%, transparent 70%)", pointerEvents: "none", zIndex: 1 }} />
-
-          {CARDS.map((card, i) => (
-            <img key={i} src={card.src} alt={`Creator card ${i + 1}`} draggable={false}
-              style={{ position: "absolute", borderRadius: 16, boxShadow: "0 24px 64px rgb(0 0 0 / 0.55), 0 4px 12px rgb(0 0 0 / 0.4)", objectFit: "cover", userSelect: "none", ...card.style }}
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-          ))}
-
-          <div style={{ position: "relative", zIndex: 10, maxWidth: 460 }}>
-            <h1 style={{ margin: "0 0 14px", fontSize: 42, fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.5px", color: "rgb(245 245 247)" }}>
-              Turn your content{" "}
-              <span style={{ background: "linear-gradient(90deg, rgb(74 125 255), rgb(140 100 255))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                into a
-              </span>
-              {" "}financial asset
-            </h1>
-            <p style={{ margin: "0 0 28px", fontSize: 14, color: "rgb(110 115 128)", lineHeight: 1.6, maxWidth: 380 }}>
-              Join thousands of creators earning more, growing faster, and building their brand with Zerra.
-            </p>
-            <button onClick={() => setMode("signup")}
-              style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgb(12 14 20 / 0.75)", border: "1px solid rgb(44 50 65)", borderRadius: 9999, padding: "10px 20px", fontSize: 13.5, fontWeight: 500, color: "rgb(245 245 247)", cursor: "pointer", fontFamily: "inherit", backdropFilter: "blur(8px)" }}>
-              Sign up
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
+          <img
+            src={mode === "signup" ? "/login-bg/card-signup.png" : "/login-bg/card-login.png"}
+            alt="Zerra — turn your content into a financial asset"
+            draggable={false}
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          />
         </div>
 
         {/* RIGHT PANEL */}
         <div className="login-right" style={{
-          flex: "0 0 45%", position: "relative", display: "flex",
+          flex: "1 1 49%", position: "relative", display: "flex",
           alignItems: "center", justifyContent: "center",
-          background: "rgb(8 9 14)", borderLeft: "1px solid rgb(18 20 28)", overflow: "hidden",
+          background: "rgb(6 8 14)", overflow: "hidden",
         }}>
-          <div aria-hidden style={{ position: "absolute", bottom: "-10%", left: "-10%", right: "-10%", height: "55%", background: "radial-gradient(ellipse 90% 80% at 40% 100%, rgb(40 70 180 / 0.2) 0%, rgb(70 30 160 / 0.1) 45%, transparent 70%)", pointerEvents: "none" }} />
+          <div aria-hidden className="login-ambient-glow" style={{ position: "absolute", bottom: "-10%", left: "-10%", right: "-10%", height: "55%", background: "radial-gradient(ellipse 90% 80% at 40% 100%, rgb(40 70 180 / 0.2) 0%, rgb(70 30 160 / 0.1) 45%, transparent 70%)", pointerEvents: "none" }} />
 
-          <div style={{ position: "absolute", top: 24, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
+          {/* Mobile-only glow — the real Figma gradient assets (nodes 359:1261-1263 from
+              358:230), positioned as percentages of the 430×932 reference frame so the
+              layered plus-lighter blend reproduces the actual glow shape, not a guessed
+              CSS gradient. Hidden on desktop (the card image already has its own glow). */}
+          <div aria-hidden className="login-mobile-glow" style={{ display: "none", position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
+            <div style={{ position: "absolute", left: "-79.82%", top: "-72.42%", width: "259.51%", height: "113.99%" }}>
+              <div style={{ position: "absolute", inset: "-15.71% -14.95%" }}>
+                <img src="/login-bg/mobile-glow-1.svg" alt="" style={{ display: "block", width: "100%", height: "100%" }} />
+              </div>
+            </div>
+            <div style={{ position: "absolute", left: "-57.67%", top: "-69.96%", width: "215.50%", height: "94.63%", mixBlendMode: "plus-lighter" }}>
+              <div style={{ position: "absolute", inset: "-15.71% -14.95%" }}>
+                <img src="/login-bg/mobile-glow-2.svg" alt="" style={{ display: "block", width: "100%", height: "100%" }} />
+              </div>
+            </div>
+            <div style={{ position: "absolute", left: "-57.91%", top: "-77.90%", width: "215.50%", height: "94.63%", mixBlendMode: "plus-lighter" }}>
+              <div style={{ position: "absolute", inset: "-15.71% -14.95%" }}>
+                <img src="/login-bg/mobile-glow-2.svg" alt="" style={{ display: "block", width: "100%", height: "100%" }} />
+              </div>
+            </div>
+          </div>
+
+          <div style={{ position: "absolute", top: 24, left: 0, right: 0, zIndex: 1, display: "flex", justifyContent: "center" }}>
             <style>{`@media (min-width: 768px) { .mobile-logo { display: none !important; } }`}</style>
-            <span className="mobile-logo" style={{ fontSize: 18, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "rgb(74 125 255)" }}>
-              ZERRA
+            <span className="mobile-logo" style={{ display: "flex", alignItems: "center", gap: 8, color: "rgb(74 125 255)" }}>
+              <img src="/login-bg/z-logo.png" alt="" style={{ width: 20, height: 16 }} />
+              <span style={{ fontSize: 18, fontWeight: 500 }}>Zerra</span>
             </span>
           </div>
 
           <div className="login-form" style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 400, padding: "0 44px" }}>
-            <h2 style={{ margin: "0 0 10px", fontSize: 34, fontWeight: 700, color: "rgb(245 245 247)", letterSpacing: "-0.5px", lineHeight: 1.2 }}>
-              {mode === "signup" ? "Create an account" : "Welcome back"}
-            </h2>
-            <p style={{ margin: "0 0 32px", fontSize: 13, color: "rgb(100 104 116)", lineHeight: 1.65 }}>
-              {mode === "signup"
-                ? "Access your earnings, points, rewards and projects anytime, anywhere and keep everything flowing in one place."
-                : "Sign in to your Zerra account to continue."}
-            </p>
+            <div className="login-intro">
+              <h2 style={{ margin: "0 0 10px", fontSize: 34, fontWeight: 700, color: "rgb(245 245 247)", letterSpacing: "-0.5px", lineHeight: 1.2 }}>
+                {mode === "signup" ? "Sign Up Account" : "Welcome Back"}
+              </h2>
+              <p style={{ margin: "0 0 32px", fontSize: 13, color: "rgb(100 104 116)", lineHeight: 1.65 }}>
+                Access your earnings, points, rewards and projects anytime, anywhere and keep everything flowing in one place.
+              </p>
+            </div>
 
             {error && (
               <div style={{ marginBottom: 16, padding: "10px 14px", background: "rgb(232 80 80 / 0.08)", border: "1px solid rgb(232 80 80 / 0.18)", borderRadius: 10, fontSize: 13, color: "rgb(232 80 80)", lineHeight: 1.5 }}>
@@ -244,12 +246,15 @@ export default function LoginPage() {
               style={{ display: "block", width: "100%", padding: "13px", marginBottom: 24, background: "rgb(11 13 20)", border: "1px solid rgb(36 40 55)", borderRadius: 10, fontSize: 13.5, fontWeight: 600, color: loading ? "rgb(60 64 78)" : "rgb(230 230 235)", cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", letterSpacing: "0.1px", boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 3px rgb(0 0 0 / 0.4)", transition: "background 0.15s" }}
               onMouseEnter={(e) => { if (!loading) (e.currentTarget.style.background = "rgb(16 19 28)"); }}
               onMouseLeave={(e) => { (e.currentTarget.style.background = "rgb(11 13 20)"); }}>
-              {loading ? "Please wait..." : mode === "signup" ? "Create Account" : "Sign In"}
+              {loading ? "Please wait..." : mode === "signup" ? "Sign Up" : "Login"}
             </button>
 
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
               <div style={{ flex: 1, height: 1, background: "rgb(22 25 36)" }} />
-              <span style={{ fontSize: 11.5, color: "rgb(55 58 70)", whiteSpace: "nowrap" }}>or continue with</span>
+              <span style={{ fontSize: 11.5, color: "rgb(55 58 70)", whiteSpace: "nowrap" }}>
+                <span className="desktop-or-text">or continue with</span>
+                <span className="mobile-or-text" style={{ display: "none" }}>Or</span>
+              </span>
               <div style={{ flex: 1, height: 1, background: "rgb(22 25 36)" }} />
             </div>
 
@@ -267,14 +272,14 @@ export default function LoginPage() {
                 {googleLoading ? "..." : "Google"}
               </button>
 
-              <button style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "11px 6px", background: "rgb(8 9 14)", border: "1px solid rgb(22 25 36)", borderRadius: 10, fontSize: 12.5, fontWeight: 600, color: "rgb(220 222 228)", cursor: "pointer", fontFamily: "inherit", opacity: 0.4 }} title="Coming soon">
+              <button style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "11px 6px", background: "rgb(8 9 14)", border: "1px solid rgb(22 25 36)", borderRadius: 10, fontSize: 12.5, fontWeight: 600, color: "rgb(220 222 228)", cursor: "not-allowed", fontFamily: "inherit" }} title="Coming soon">
                 <svg width="13" height="15" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V9.15a8.16 8.16 0 0 0 4.77 1.52V7.22a4.85 4.85 0 0 1-1-.53z"/>
                 </svg>
                 TikTok
               </button>
 
-              <button style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "11px 6px", background: "rgb(8 9 14)", border: "1px solid rgb(22 25 36)", borderRadius: 10, fontSize: 12.5, fontWeight: 600, color: "rgb(220 222 228)", cursor: "pointer", fontFamily: "inherit", opacity: 0.4 }} title="Coming soon">
+              <button style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "11px 6px", background: "rgb(8 9 14)", border: "1px solid rgb(22 25 36)", borderRadius: 10, fontSize: 12.5, fontWeight: 600, color: "rgb(220 222 228)", cursor: "not-allowed", fontFamily: "inherit" }} title="Coming soon">
                 <svg width="16" height="11" viewBox="0 0 24 17" fill="none">
                   <path d="M23.5 2.5s-.3-1.8-1-2.6c-1-.9-2-.9-2.5-1C17 .7 12 .7 12 .7s-5 0-8 .2C3.5.9 2.4.9 1.5 1.9c-.7.8-1 2.6-1 2.6S.2 4.6.2 6.7v2C.2 10.8.5 12.6.5 12.6s.3 1.8 1 2.6c1 .9 2.2.9 2.8 1C6.2 16.4 12 16.4 12 16.4s5 0 8-.2c.5-.1 1.5-.1 2.5-1 .7-.8 1-2.6 1-2.6s.3-1.8.3-3.9v-2C23.8 4.6 23.5 2.5 23.5 2.5zM9.7 11.5v-6l6.6 3-6.6 3z" fill="#FF0000"/>
                 </svg>

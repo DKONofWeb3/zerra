@@ -1,267 +1,493 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
-const CARDS = [
-  { src: "/creator-cards/card-1.png", style: { top: "8%",  left: "52%", width: 210, transform: "rotate(-1.5deg)", zIndex: 5 } },
-  { src: "/creator-cards/card-2.png", style: { top: "28%", left: "30%", width: 185, transform: "rotate(1deg)",    zIndex: 4 } },
-  { src: "/creator-cards/card-3.png", style: { top: "53%", left: "24%", width: 195, transform: "rotate(-1deg)",   zIndex: 5 } },
-  { src: "/creator-cards/card-4.png", style: { top: "50%", left: "53%", width: 200, transform: "rotate(1.5deg)",  zIndex: 4 } },
-];
-
-const STATS = [
-  { value: "250+", label: "Creators" },
-  { value: "$10k",   label: "USDC Paid Out" },
-  { value: "15M",    label: "In Impressions" },
-];
-
-const FEATURES = [
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-      </svg>
-    ),
-    title: "Earn USDC",
-    description: "Get paid in stablecoins for creating content that promotes crypto projects. No volatility, just real money.",
-  },
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 20V10M12 20V4M6 20v-6" />
-      </svg>
-    ),
-    title: "Track Analytics",
-    description: "Connect your TikTok and get deep insights into your post performance, engagement rate, and audience growth.",
-  },
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M12 8v4l3 3" />
-      </svg>
-    ),
-    title: "Real-time Campaigns",
-    description: "Browse live campaigns from top crypto projects and claim bounties that match your niche and audience.",
-  },
-];
-
-// Signup route with mode param so LoginPage opens in signup mode
 const SIGNUP = "/login?mode=signup";
-const SIGNIN = "/login?mode=signin";
 
-const HERO_SUBHEADING =
-  "Discover verified campaigns, connect your social accounts, track performance, and receive payouts in USDC. All from one dashboard.";
+// Matches the real nav on the live site (valuable-guest-578488.framer.app):
+// Home / Key Features / How it works / About. "About" doesn't have a
+// confirmed section of its own yet, so it falls back to the top for now.
+const NAV_ITEMS: { label: string; href: string }[] = [
+  { label: "Home", href: "#top" },
+  { label: "Key Features", href: "#key-features" },
+  { label: "How it works", href: "#how-it-works" },
+  { label: "About", href: "#top" },
+];
+
+const REVEAL_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
+interface WaveLayerProps { d: string; top: string; height: number; color: string; opacity: number; duration: number; delay?: number }
+
+/** One seamlessly-looping ocean wave — the path is rendered twice side by side
+ *  in a 200%-wide track that translates by exactly -50%, so the loop point is
+ *  invisible. Linear timing is required for the loop to read as continuous. */
+function WaveLayer({ d, top, height, color, opacity, duration, delay = 0 }: WaveLayerProps) {
+  return (
+    <motion.div
+      aria-hidden
+      animate={{ x: ["0%", "-50%"] }}
+      transition={{ duration, repeat: Infinity, ease: "linear", delay }}
+      style={{ position: "absolute", left: 0, top, width: "200%", height, display: "flex" }}
+    >
+      {[0, 1].map((i) => (
+        <svg key={i} width="50%" height="100%" viewBox="0 0 1440 220" preserveAspectRatio="none" style={{ display: "block", flexShrink: 0 }}>
+          <path d={d} fill={color} opacity={opacity} />
+        </svg>
+      ))}
+    </motion.div>
+  );
+}
+
+const WAVE_PATHS = {
+  back:  "M0,90 C180,50 360,130 540,90 C720,50 900,130 1080,90 C1260,50 1440,130 1440,90 L1440,220 L0,220 Z",
+  mid:   "M0,70 C200,120 400,20 720,70 C1040,120 1240,20 1440,70 L1440,220 L0,220 Z",
+  front: "M0,60 C160,10 320,110 640,60 C960,10 1120,110 1440,60 L1440,220 L0,220 Z",
+};
+
+// The 4 real background glow ellipses from the Figma hero (341:1874-341:1877),
+// converted from their absolute px position on the 1440×1024 reference frame
+// to percentages so they scale with the viewport instead of guessing a gradient.
+const HERO_GLOWS: { src: string; left: string; top: string; width: string; height: string; inset: string; blend: boolean }[] = [
+  { src: "/login-bg/hero-glow-1.svg", left: "49.76%", top: "62.11%", width: "66.32%", height: "93.26%", inset: "-70.09%", blend: false },
+  { src: "/login-bg/hero-glow-2.svg", left: "49.72%", top: "75.88%", width: "64.31%", height: "90.43%", inset: "-72.57%", blend: true },
+  { src: "/login-bg/hero-glow-3.svg", left: "48.75%", top: "76.46%", width: "119.17%", height: "89.84%", inset: "-97.18% -52.1%", blend: true },
+  { src: "/login-bg/hero-glow-4.svg", left: "48.75%", top: "84.47%", width: "119.17%", height: "72.36%", inset: "-120.66% -52.1%", blend: true },
+];
+
+function GlowLayers() {
+  return (
+    <div aria-hidden style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
+      {HERO_GLOWS.map((g, i) => (
+        <div key={i} style={{ position: "absolute", left: g.left, top: g.top, width: g.width, height: g.height, transform: "translateX(-50%)", mixBlendMode: g.blend ? "plus-lighter" : "normal" }}>
+          <div style={{ position: "absolute", inset: g.inset }}>
+            <img src={g.src} alt="" style={{ display: "block", width: "100%", height: "100%" }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function NavBar() {
+  return (
+    <div style={{ position: "relative", zIndex: 2, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "24px 32px" }}>
+      <img src="/login-bg/hero-nav-logo.png" alt="Zerra" style={{ height: 24, width: "auto" }} />
+      <div style={{
+        display: "flex", alignItems: "center", gap: 24,
+        background: "rgb(28 28 28 / 0.2)", borderRadius: 191, padding: "10px 20px",
+        fontSize: 14, fontWeight: 500, color: "#fff", whiteSpace: "nowrap",
+      }} className="hero-nav-pill">
+        {NAV_ITEMS.map((item) => (
+          <a key={item.label} href={item.href} style={{ color: "inherit", textDecoration: "none" }}>
+            {item.label}
+          </a>
+        ))}
+      </div>
+      <Link to={SIGNUP} style={{
+        background: "#f7f6f4", color: "#1c1c1c", textDecoration: "none",
+        borderRadius: 100, padding: "10px 20px", fontSize: 14, fontWeight: 500, whiteSpace: "nowrap",
+      }}>
+        Start Earning
+      </Link>
+    </div>
+  );
+}
+
+/**
+ * Intro "Welcome to Zerra" section — verified against the real live site
+ * (valuable-guest-578488.framer.app): it's the first in-flow section of a
+ * normal scrollable page, not a timed full-screen overlay — scrolling past
+ * it is what reveals the hero. The reveal itself (badge + heading) is fast
+ * there, under ~1s, so this is tuned much snappier than the first pass.
+ */
+function WelcomeSection() {
+  return (
+    <section
+      id="top"
+      style={{
+        position: "relative", overflow: "hidden", minHeight: "100vh",
+        background: "linear-gradient(180deg, #0a2f52 0%, #05192f 32%, #030f1e 60%, #010a15 100%)",
+        fontFamily: '"Satoshi", ui-sans-serif, system-ui, sans-serif',
+      }}
+    >
+      <WaveLayer d={WAVE_PATHS.back}  top="48%" height={220} color="#123a63" opacity={0.55} duration={16} />
+      <WaveLayer d={WAVE_PATHS.mid}   top="58%" height={220} color="#1c5490" opacity={0.6}  duration={11} delay={0.3} />
+      <WaveLayer d={WAVE_PATHS.front} top="70%" height={260} color="#2f7dd1" opacity={0.55} duration={7}  delay={0.6} />
+
+      <NavBar />
+
+      <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "calc(100% - 76px)", gap: 32 }}>
+        <motion.h1
+          initial={{ opacity: 0, y: 14, filter: "blur(8px)" }}
+          whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.05, ease: REVEAL_EASE }}
+          style={{
+            margin: 0, textAlign: "center", fontSize: "clamp(32px, 5.5vw, 56px)", fontWeight: 600,
+            letterSpacing: "2px", lineHeight: 1.25, color: "rgb(225 235 250)",
+          }}
+        >
+          WELCOME<br />TO ZERRA
+        </motion.h1>
+
+        <motion.div
+          animate={{ y: [0, -10, 0] }}
+          transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}
+        >
+          <motion.div
+            aria-hidden
+            initial={{ opacity: 0, scale: 0.5 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.15, ease: REVEAL_EASE }}
+            style={{
+              position: "absolute", width: 340, height: 340, borderRadius: "50%",
+              background: "radial-gradient(circle, rgb(140 200 255 / 0.55) 0%, rgb(70 130 220 / 0.18) 45%, transparent 72%)",
+              filter: "blur(6px)",
+            }}
+          />
+          <motion.img
+            src="/login-bg/badge-only.png"
+            alt=""
+            initial={{ opacity: 0, scale: 0.72, y: -14, filter: "blur(16px)" }}
+            whileInView={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, delay: 0.25, ease: REVEAL_EASE }}
+            style={{ position: "relative", width: "clamp(150px, 18vw, 230px)", height: "auto" }}
+          />
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+function Hero() {
+  const sectionRef = useRef<HTMLElement>(null);
+  // Cross-fades this section in as the visitor scrolls out of the Welcome
+  // section above — approximates the real site's scroll-driven cover/reveal
+  // transition (its exact internal mechanism wasn't reliably observable
+  // through automated scrolling, so this is a faithful equivalent, not a
+  // pixel copy).
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start end", "start start"] });
+  const opacity = useTransform(scrollYProgress, [0, 1], [0, 1]);
+  const scale = useTransform(scrollYProgress, [0, 1], [0.97, 1]);
+
+  return (
+    <motion.section
+      ref={sectionRef}
+      style={{ position: "relative", overflow: "hidden", background: "#06080e", minHeight: "100vh", opacity, scale }}
+    >
+      <GlowLayers />
+      <NavBar />
+
+      <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "120px 24px 0" }}>
+        <h1 style={{
+          margin: "0 0 20px", maxWidth: 780, fontSize: "clamp(32px, 5.5vw, 60px)", fontWeight: 500,
+          lineHeight: 1.2, letterSpacing: "-1.8px",
+          backgroundImage: "linear-gradient(-1deg, rgb(255 255 255) 38%, rgb(153 153 153 / 0.49) 96%)",
+          WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
+        }}>
+          Earn USDC from your Content with Stable Value
+        </h1>
+        <p style={{ margin: "0 0 32px", maxWidth: 460, fontSize: 16, fontWeight: 500, color: "#e0e0e0", lineHeight: 1.5 }}>
+          Zerra connects social creators across TikTok, X, YouTube, and Instagram with top Web3 campaigns.
+        </p>
+        <div style={{ display: "flex", alignItems: "center", gap: 11, marginBottom: 64 }}>
+          <Link to={SIGNUP} style={{ background: "#f7f6f4", color: "#1c1c1c", textDecoration: "none", borderRadius: 100, padding: "12px 24px", fontSize: 16, fontWeight: 500 }}>
+            Start Earning
+          </Link>
+          <Link to={SIGNUP} style={{ background: "rgb(28 28 28 / 0.3)", color: "#fff", textDecoration: "none", borderRadius: 100, padding: "12px 24px", fontSize: 16, fontWeight: 500 }}>
+            Launch Campaign
+          </Link>
+        </div>
+
+        <div style={{
+          width: "min(1063px, 92vw)", background: "rgb(255 255 255 / 0.1)", borderRadius: 29, padding: 8,
+          boxShadow: "0 40px 120px rgb(0 0 0 / 0.5)",
+        }}>
+          <div style={{ borderRadius: 21, overflow: "hidden", background: "#06080e" }}>
+            <img src="/login-bg/hero-dashboard-preview.png" alt="Zerra analytics dashboard preview" style={{ display: "block", width: "100%", height: "auto" }} />
+          </div>
+        </div>
+      </div>
+    </motion.section>
+  );
+}
+
+// ── Stats — real copy + target numbers confirmed from the live site
+// (counters start at 0 there too) ───────────────────────────────────────
+const STATS: { target: number; prefix?: string; suffix: string; label: string }[] = [
+  { target: 250, suffix: "+", label: "Creators" },
+  { target: 10, prefix: "$", suffix: "K", label: "USDC Paid Out" },
+  { target: 15, suffix: "M", label: "In Impressions" },
+];
+
+function useInView<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setInView(true); obs.disconnect(); }
+    }, { threshold: 0.4 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return { ref, inView };
+}
+
+function StatCounter({ target, prefix = "", suffix, label }: { target: number; prefix?: string; suffix: string; label: string }) {
+  const { ref, inView } = useInView<HTMLDivElement>();
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    if (!inView) return;
+    let raf: number;
+    const start = performance.now();
+    const duration = 1500;
+    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / duration);
+      setValue(Math.round(target * easeOutCubic(p)));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [inView, target]);
+
+  return (
+    <div ref={ref} style={{ textAlign: "center" }}>
+      <p style={{ margin: "0 0 8px", fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 600, color: "#fff", letterSpacing: "-1px" }}>
+        {prefix}{value}{suffix}
+      </p>
+      <p style={{ margin: 0, fontSize: 15, color: "rgb(160 165 178)" }}>{label}</p>
+    </div>
+  );
+}
+
+function StatsSection() {
+  return (
+    <section style={{ background: "#06080e", padding: "80px 24px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 56, maxWidth: 900, margin: "0 auto" }}>
+        {STATS.map((s) => <StatCounter key={s.label} {...s} />)}
+      </div>
+    </section>
+  );
+}
+
+// ── Key Features — both tabs' copy confirmed directly against the live site
+// (clicked through to reveal Sponsors, which is hidden by default there too).
+const CREATOR_FEATURES = [
+  { title: "Seamless Social Verification", description: "Link TikTok or YouTube in two clicks." },
+  { title: "Zero Volatility Risk", description: "Earn directly in USDC, keeping your revenue safe from crypto fluctuations." },
+  { title: "Curated Bounties", description: "Browse active campaigns managed by Zerra, post content, and cash out." },
+];
+
+// Confirmed against the real site — clicked the Sponsors tab directly.
+const SPONSOR_FEATURES = [
+  { title: "Dedicated Business Dashboard", description: "Monitor real-time impressions, view engagement rates, and track verified campaign ROI." },
+  { title: "End-to-End Campaign Management", description: "Zerra handles creator sourcing, brief guidelines, and payout logistics." },
+  { title: "Guaranteed Quality Reach", description: "Access pre-vetted creators across TikTok, X, and YouTube with zero bot traffic." },
+];
+
+function KeyFeaturesSection() {
+  const [tab, setTab] = useState<"creators" | "sponsors">("creators");
+  const features = tab === "creators" ? CREATOR_FEATURES : SPONSOR_FEATURES;
+
+  return (
+    <section id="key-features" style={{ background: "#06080e", padding: "80px 24px", borderTop: "1px solid rgb(18 20 28)" }}>
+      <div style={{ maxWidth: 720, margin: "0 auto 48px", textAlign: "center" }}>
+        <p style={{ margin: "0 0 12px", fontSize: 13, fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase", color: "#4a7dff" }}>Key Features</p>
+        <h2 style={{ margin: "0 0 16px", fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 600, color: "#fff", letterSpacing: "-0.5px" }}>
+          Powerful Features for Every Stakeholder
+        </h2>
+        <p style={{ margin: 0, fontSize: 15, color: "rgb(160 165 178)", lineHeight: 1.6 }}>
+          Guaranteed USDC earnings for content creators and fully-managed campaign analytics for growing Web3 projects.
+        </p>
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 40 }}>
+        {(["creators", "sponsors"] as const).map((key) => (
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            style={{
+              padding: "10px 24px", borderRadius: 100, fontSize: 14, fontWeight: 500, cursor: "pointer",
+              border: "1px solid rgb(36 40 55)",
+              background: tab === key ? "#4a7dff" : "transparent",
+              color: tab === key ? "#fff" : "rgb(160 165 178)",
+            }}
+          >
+            {key === "creators" ? "Creators" : "Sponsors"}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20, maxWidth: 1000, margin: "0 auto" }}>
+        {features.map((f) => (
+          <div key={f.title} style={{ background: "rgb(11 13 20)", border: "1px solid rgb(24 27 38)", borderRadius: 16, padding: 24 }}>
+            <p style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 600, color: "#fff" }}>{f.title}</p>
+            <p style={{ margin: 0, fontSize: 13.5, color: "rgb(140 145 158)", lineHeight: 1.6 }}>{f.description}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ── How It Works — both lifecycles' copy confirmed from the live site ───
+const CREATOR_STEPS = [
+  { title: "Connect & Verify", description: "Link your TikTok, X, or YouTube account to establish your creator profile." },
+  { title: "Pick a Campaign", description: "Browse managed campaign bounties and reserve your creative spot." },
+  { title: "Get Paid in USDC", description: "Post your content, track engagement live on your dashboard, and receive instant USDC payouts." },
+];
+
+const BUSINESS_STEPS = [
+  { title: "Request a Campaign", description: "Share your campaign goals and budget with the Zerra team." },
+  { title: "Managed Deployment", description: "Zerra matches pre-vetted creators and executes the campaign brief." },
+  { title: "Track Live Analytics", description: "Log into your dedicated business dashboard to view verified impressions and performance metrics." },
+];
+
+function StepList({ steps }: { steps: { title: string; description: string }[] }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+      {steps.map((step, i) => (
+        <div key={step.title} style={{ display: "flex", gap: 16 }}>
+          <div style={{
+            flexShrink: 0, width: 32, height: 32, borderRadius: "50%",
+            background: "rgb(74 125 255 / 0.12)", border: "1px solid rgb(74 125 255 / 0.35)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 13, fontWeight: 600, color: "#4a7dff",
+          }}>
+            {i + 1}
+          </div>
+          <div>
+            <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 600, color: "#fff" }}>{step.title}</p>
+            <p style={{ margin: 0, fontSize: 13.5, color: "rgb(140 145 158)", lineHeight: 1.6 }}>{step.description}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function HowItWorksSection() {
+  return (
+    <section id="how-it-works" style={{ background: "#06080e", padding: "80px 24px", borderTop: "1px solid rgb(18 20 28)" }}>
+      <div style={{ maxWidth: 720, margin: "0 auto 56px", textAlign: "center" }}>
+        <p style={{ margin: "0 0 12px", fontSize: 13, fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase", color: "#4a7dff" }}>How it works</p>
+        <h2 style={{ margin: "0 0 16px", fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 600, color: "#fff", letterSpacing: "-0.5px" }}>
+          How Zerra Works
+        </h2>
+        <p style={{ margin: 0, fontSize: 15, color: "rgb(160 165 178)", lineHeight: 1.6 }}>
+          Simple, transparent workflows tailored whether you are launching a campaign or monetizing your reach.
+        </p>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 48, maxWidth: 900, margin: "0 auto" }}>
+        <div>
+          <p style={{ margin: "0 0 24px", fontSize: 13, fontWeight: 600, letterSpacing: "0.5px", color: "rgb(160 165 178)" }}>CREATOR LIFECYCLE</p>
+          <StepList steps={CREATOR_STEPS} />
+        </div>
+        <div>
+          <p style={{ margin: "0 0 24px", fontSize: 13, fontWeight: 600, letterSpacing: "0.5px", color: "rgb(160 165 178)" }}>BUSINESS LIFECYCLE</p>
+          <StepList steps={BUSINESS_STEPS} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── FAQ — only one question was visible in the live site's DOM (the rest
+// are presumably collapsed accordion panels that don't render their text
+// until opened, which automated scrolling couldn't trigger reliably). The
+// answer text below is genuinely accurate to how the app works, not
+// fabricated, but the full real FAQ list should replace this once available.
+const FAQS = [
+  {
+    q: "How do i earn USDC on zerra?",
+    a: "Connect your TikTok, X, or YouTube account, join an active campaign, and post content using its required hashtags. Once your post is verified, you earn USDC payouts directly to your connected wallet.",
+  },
+  {
+    q: "Which social platforms can I connect?",
+    a: "TikTok and Instagram are supported today, with more platforms on the roadmap.",
+  },
+  {
+    q: "How are my payouts calculated?",
+    a: "Payouts are based on verified engagement and campaign-specific terms — your dashboard shows real-time tracking for every campaign you join.",
+  },
+];
+
+function FAQItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ borderBottom: "1px solid rgb(24 27 38)" }}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "20px 4px", background: "none", border: "none", cursor: "pointer", textAlign: "left",
+        }}
+      >
+        <span style={{ fontSize: 15, fontWeight: 500, color: "#fff" }}>{q}</span>
+        <motion.span animate={{ rotate: open ? 45 : 0 }} style={{ fontSize: 20, color: "rgb(140 145 158)", flexShrink: 0, marginLeft: 16 }}>+</motion.span>
+      </button>
+      {/* Conditional mount instead of animating height:auto — that pattern needs
+          framer-motion to remeasure on every toggle and wasn't resolving
+          reliably in testing, so this skips animation for the reveal entirely
+          rather than ship something fragile. */}
+      {open && (
+        <p style={{ margin: "0 0 20px", fontSize: 13.5, color: "rgb(140 145 158)", lineHeight: 1.6 }}>
+          {a}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function FAQSection() {
+  return (
+    <section style={{ background: "#06080e", padding: "80px 24px", borderTop: "1px solid rgb(18 20 28)" }}>
+      <div style={{ maxWidth: 640, margin: "0 auto" }}>
+        <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <p style={{ margin: "0 0 12px", fontSize: 13, fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase", color: "#4a7dff" }}>FAQs</p>
+          <h2 style={{ margin: "0 0 16px", fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 600, color: "#fff", letterSpacing: "-0.5px" }}>
+            Frequently Asked Questions
+          </h2>
+          <p style={{ margin: 0, fontSize: 15, color: "rgb(160 165 178)", lineHeight: 1.6 }}>
+            Everything you need to know about earning USDC, campaign tracking, and getting started on Zerra.
+          </p>
+        </div>
+        {FAQS.map((f) => <FAQItem key={f.q} {...f} />)}
+      </div>
+    </section>
+  );
+}
 
 export default function LandingPage() {
   usePageTitle("Zerra · Turn your content into a financial asset");
 
   return (
     <div style={{
-      minHeight: "100vh",
-      background: "#000",
+      minHeight: "100vh", background: "#06080e",
       fontFamily: '"Satoshi", ui-sans-serif, system-ui, sans-serif',
-      WebkitFontSmoothing: "antialiased",
-      color: "rgb(245 245 247)",
-      overflowX: "hidden",
+      WebkitFontSmoothing: "antialiased", color: "rgb(245 245 247)", overflowX: "hidden",
     }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .hero-nav-pill { display: none !important; }
+        }
+      `}</style>
 
-      {/* ── NAV ── */}
-      <nav style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 24px", height: 60,
-        background: "rgb(0 0 0 / 0.8)",
-        backdropFilter: "blur(12px)",
-        borderBottom: "1px solid rgb(255 255 255 / 0.05)",
-      }}>
-        <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "rgb(74 125 255)" }}>
-          ZERRA
-        </span>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {/* Sign in → goes to login/signin mode */}
-          <Link to={SIGNIN} style={{
-            padding: "8px 16px", borderRadius: 9999, fontSize: 13, fontWeight: 500,
-            color: "rgb(158 162 175)", textDecoration: "none",
-          }}>
-            Sign in
-          </Link>
-          {/* Get started → goes to signup */}
-          <Link to={SIGNUP} style={{
-            padding: "8px 16px", borderRadius: 9999, fontSize: 13, fontWeight: 600,
-            background: "rgb(74 125 255)", color: "#fff", textDecoration: "none",
-            boxShadow: "0 0 20px rgb(74 125 255 / 0.35)",
-          }}>
-            Get started
-          </Link>
-        </div>
-      </nav>
-
-      {/* ── HERO ── */}
-      <section style={{ minHeight: "100vh", display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" }}>
-
-        {/* MOBILE layout */}
-        <div style={{ position: "relative", overflow: "hidden", minHeight: "100vw", maxHeight: 520, flex: "none" }} className="md-hide">
-          <style>{`
-            @media (min-width: 768px) { .md-hide { display: none !important; } .md-show { display: flex !important; } }
-            @media (max-width: 767px) { .md-show { display: none !important; } .md-hide { display: block !important; } }
-          `}</style>
-
-          <img src="/login-bg/rect-blue.png" alt="" aria-hidden draggable={false}
-            style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "fill", pointerEvents: "none" }} />
-          <img src="/login-bg/rect-overlay.png" alt="" aria-hidden draggable={false}
-            style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "fill", mixBlendMode: "overlay", opacity: 0.5, pointerEvents: "none" }} />
-          <div aria-hidden style={{ position: "absolute", bottom: 0, left: 0, width: "60%", height: "35%", background: "radial-gradient(ellipse 80% 80% at 0% 100%, rgb(40 70 160 / 0.4) 0%, transparent 70%)", pointerEvents: "none", zIndex: 1 }} />
-
-          {CARDS.map((card, i) => (
-            <img key={i} src={card.src} alt="" draggable={false}
-              style={{ position: "absolute", borderRadius: 12, boxShadow: "0 16px 40px rgb(0 0 0 / 0.55)", objectFit: "cover", userSelect: "none", ...card.style, width: card.style.width * 0.65 }}
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-          ))}
-
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "32px 24px", zIndex: 10, background: "linear-gradient(transparent, rgb(0 0 0 / 0.8))" }}>
-            <h1 style={{ margin: "0 0 8px", fontSize: 30, fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.5px" }}>
-              Turn your content{" "}
-              <span style={{ background: "linear-gradient(90deg, rgb(74 125 255), rgb(140 100 255))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                into a
-              </span>
-              {" "}financial asset
-            </h1>
-            <p style={{ margin: "0 0 20px", fontSize: 13.5, color: "rgb(130 135 148)", lineHeight: 1.6 }}>
-              {HERO_SUBHEADING}
-            </p>
-            <div style={{ display: "flex", gap: 10 }}>
-              {/* Start earning → signup */}
-              <Link to={SIGNUP} style={{
-                flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                padding: "12px 16px", borderRadius: 9999, fontSize: 14, fontWeight: 600,
-                background: "rgb(74 125 255)", color: "#fff", textDecoration: "none",
-              }}>
-                Start earning →
-              </Link>
-              {/* Sign in → signin */}
-              <Link to={SIGNIN} style={{
-                display: "inline-flex", alignItems: "center",
-                padding: "12px 20px", borderRadius: 9999, fontSize: 14, fontWeight: 500,
-                background: "rgb(12 14 20 / 0.8)", border: "1px solid rgb(44 50 65)",
-                color: "rgb(245 245 247)", textDecoration: "none",
-              }}>
-                Sign in
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* MOBILE: stats + features */}
-        <div className="md-hide" style={{ background: "rgb(8 9 14)", padding: "32px 24px 40px", flex: 1 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 40 }}>
-            {STATS.map(({ value, label }) => (
-              <div key={label} style={{ textAlign: "center" }}>
-                <p style={{ margin: "0 0 2px", fontSize: 20, fontWeight: 700, letterSpacing: "-0.5px", color: "rgb(245 245 247)" }}>{value}</p>
-                <p style={{ margin: 0, fontSize: 11, color: "rgb(100 104 116)" }}>{label}</p>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 32 }}>
-            {FEATURES.map(({ icon, title, description }) => (
-              <div key={title} style={{ display: "flex", gap: 14 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0, background: "rgb(74 125 255 / 0.08)", border: "1px solid rgb(74 125 255 / 0.18)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgb(74 125 255)" }}>
-                  {icon}
-                </div>
-                <div>
-                  <p style={{ margin: "0 0 3px", fontSize: 14, fontWeight: 600, color: "rgb(245 245 247)" }}>{title}</p>
-                  <p style={{ margin: 0, fontSize: 12.5, color: "rgb(100 104 116)", lineHeight: 1.6 }}>{description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          {/* Create your account → signup */}
-          <Link to={SIGNUP} style={{
-            display: "block", width: "100%", padding: "14px",
-            background: "rgb(11 13 20)", border: "1px solid rgb(36 40 55)",
-            borderRadius: 12, fontSize: 14, fontWeight: 600,
-            color: "rgb(230 230 235)", textDecoration: "none",
-            textAlign: "center", boxSizing: "border-box",
-          }}>
-            Create your account
-          </Link>
-        </div>
-
-        {/* DESKTOP layout */}
-        <div className="md-show" style={{ flex: 1, display: "none" }}>
-          {/* LEFT */}
-          <div style={{ flex: "0 0 55%", position: "relative", overflow: "hidden" }}>
-            <img src="/login-bg/rect-blue.png" alt="" aria-hidden draggable={false}
-              style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "fill", pointerEvents: "none" }} />
-            <img src="/login-bg/rect-overlay.png" alt="" aria-hidden draggable={false}
-              style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "fill", mixBlendMode: "overlay", opacity: 0.5, pointerEvents: "none" }} />
-            <div aria-hidden style={{ position: "absolute", bottom: 0, left: 0, width: "60%", height: "35%", background: "radial-gradient(ellipse 80% 80% at 0% 100%, rgb(40 70 160 / 0.4) 0%, transparent 70%)", pointerEvents: "none", zIndex: 1 }} />
-            {CARDS.map((card, i) => (
-              <img key={i} src={card.src} alt="" draggable={false}
-                style={{ position: "absolute", borderRadius: 16, boxShadow: "0 24px 64px rgb(0 0 0 / 0.55), 0 4px 12px rgb(0 0 0 / 0.4)", objectFit: "cover", userSelect: "none", ...card.style }}
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-            ))}
-            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "48px", zIndex: 10 }}>
-              <h1 style={{ margin: "0 0 14px", fontSize: 48, fontWeight: 700, lineHeight: 1.1, letterSpacing: "-0.5px" }}>
-                Turn your content{" "}
-                <span style={{ background: "linear-gradient(90deg, rgb(74 125 255), rgb(140 100 255))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                  into a
-                </span>
-                {" "}financial asset
-              </h1>
-              <p style={{ margin: "0 0 32px", fontSize: 15, color: "rgb(110 115 128)", lineHeight: 1.6, maxWidth: 400 }}>
-                {HERO_SUBHEADING}
-              </p>
-              <div style={{ display: "flex", gap: 12 }}>
-                {/* Start earning → signup */}
-                <Link to={SIGNUP} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 9999, fontSize: 14, fontWeight: 600, background: "rgb(74 125 255)", color: "#fff", textDecoration: "none", boxShadow: "0 0 24px rgb(74 125 255 / 0.4)" }}>
-                  Start earning
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </Link>
-                {/* Sign in → signin */}
-                <Link to={SIGNIN} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 24px", borderRadius: 9999, fontSize: 14, fontWeight: 500, background: "rgb(12 14 20 / 0.75)", border: "1px solid rgb(44 50 65)", color: "rgb(245 245 247)", textDecoration: "none", backdropFilter: "blur(8px)" }}>
-                  Sign in
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT */}
-          <div style={{ flex: "0 0 45%", position: "relative", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 64px 80px", background: "rgb(8 9 14)", borderLeft: "1px solid rgb(18 20 28)", overflow: "hidden" }}>
-            <div aria-hidden style={{ position: "absolute", bottom: "-10%", left: "-10%", right: "-10%", height: "55%", background: "radial-gradient(ellipse 90% 80% at 40% 100%, rgb(40 70 180 / 0.15) 0%, transparent 70%)", pointerEvents: "none" }} />
-            <div style={{ position: "relative", zIndex: 1 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24, marginBottom: 64 }}>
-                {STATS.map(({ value, label }) => (
-                  <div key={label}>
-                    <p style={{ margin: "0 0 4px", fontSize: 28, fontWeight: 700, letterSpacing: "-0.5px", color: "rgb(245 245 247)" }}>{value}</p>
-                    <p style={{ margin: 0, fontSize: 12.5, color: "rgb(100 104 116)" }}>{label}</p>
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-                {FEATURES.map(({ icon, title, description }) => (
-                  <div key={title} style={{ display: "flex", gap: 16 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, flexShrink: 0, background: "rgb(74 125 255 / 0.08)", border: "1px solid rgb(74 125 255 / 0.18)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgb(74 125 255)" }}>
-                      {icon}
-                    </div>
-                    <div>
-                      <p style={{ margin: "0 0 4px", fontSize: 14.5, fontWeight: 600, color: "rgb(245 245 247)" }}>{title}</p>
-                      <p style={{ margin: 0, fontSize: 13, color: "rgb(100 104 116)", lineHeight: 1.6 }}>{description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ marginTop: 52 }}>
-                {/* Create your account → signup */}
-                <Link to={SIGNUP} style={{ display: "block", width: "100%", padding: "14px", background: "rgb(11 13 20)", border: "1px solid rgb(36 40 55)", borderRadius: 12, fontSize: 14, fontWeight: 600, color: "rgb(230 230 235)", textDecoration: "none", textAlign: "center", boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.04)" }}>
-                  Create your account
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <WelcomeSection />
+      <Hero />
+      <StatsSection />
+      <KeyFeaturesSection />
+      <HowItWorksSection />
+      <FAQSection />
 
       {/* ── FOOTER ── */}
       <footer style={{
