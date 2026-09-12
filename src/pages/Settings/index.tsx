@@ -10,7 +10,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useSocialAccounts } from "@/hooks/useSocialAccounts";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { updateProfile, updateNotifications, updatePrivacy, changePassword, connectInstagram } from "@/lib/api";
+import { updateProfile, updateNotifications, updatePrivacy, changePassword, connectInstagram, connectTwitter } from "@/lib/api";
 import { apiDelete } from "@/lib/api/client";
 
 interface SettingsItem {
@@ -156,6 +156,9 @@ function ProfileSection() {
   const { user } = useCurrentUser();
   const [name,     setName]     = useState("");
   const [username, setUsername] = useState("");
+  const [bio,      setBio]      = useState("");
+  const [location, setLocation] = useState("");
+  const [niche,    setNiche]    = useState("");
   const [saving,   setSaving]   = useState(false);
   const [message,  setMessage]  = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -163,6 +166,9 @@ function ProfileSection() {
     if (user) {
       setName(user.name ?? "");
       setUsername((user as any).username ?? "");
+      setBio((user as any).bio ?? "");
+      setLocation((user as any).location ?? "");
+      setNiche((user as any).niche ?? "");
     }
   }, [user]);
 
@@ -170,7 +176,7 @@ function ProfileSection() {
     setSaving(true);
     setMessage(null);
     try {
-      await updateProfile({ name, username });
+      await updateProfile({ name, username, bio, location, niche });
       setMessage({ type: "success", text: "Profile updated successfully." });
     } catch (err: any) {
       setMessage({ type: "error", text: err.message });
@@ -218,6 +224,40 @@ function ProfileSection() {
             />
           </div>
           <p className="mt-1.5 text-[11.5px] text-fg-muted">Only lowercase letters, numbers and underscores.</p>
+        </div>
+        <div>
+          <label className="block text-[12.5px] text-fg-tertiary mb-2">Bio</label>
+          <textarea
+            value={bio}
+            onChange={(e) => setBio(e.target.value.slice(0, 280))}
+            placeholder="A short line about you and what you create."
+            rows={3}
+            className="w-full px-4 py-3 rounded-xl border border-white/[0.06] bg-bg-base/60 text-[14px] text-fg-primary placeholder:text-fg-muted focus:outline-none focus:border-white/[0.15] transition-colors resize-none"
+          />
+          <p className="mt-1.5 text-[11.5px] text-fg-muted text-right">{bio.length}/280</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[12.5px] text-fg-tertiary mb-2">Location</label>
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="e.g. Abuja, Nigeria"
+              className="w-full px-4 py-3 rounded-xl border border-white/[0.06] bg-bg-base/60 text-[14px] text-fg-primary placeholder:text-fg-muted focus:outline-none focus:border-white/[0.15] transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-[12.5px] text-fg-tertiary mb-2">Niche</label>
+            <input
+              type="text"
+              value={niche}
+              onChange={(e) => setNiche(e.target.value)}
+              placeholder="e.g. Lifestyle, Tech, Crypto"
+              className="w-full px-4 py-3 rounded-xl border border-white/[0.06] bg-bg-base/60 text-[14px] text-fg-primary placeholder:text-fg-muted focus:outline-none focus:border-white/[0.15] transition-colors"
+            />
+            <p className="mt-1.5 text-[11.5px] text-fg-muted">Used for your "Top X% in {niche || "your niche"}" ranking on your profile.</p>
+          </div>
         </div>
       </div>
 
@@ -462,6 +502,7 @@ function ConnectedAccountsSection() {
 
   const tiktok    = accounts.find((a) => a.platform === "tiktok");
   const instagram = accounts.find((a) => a.platform === "instagram");
+  const twitter   = accounts.find((a) => a.platform === "twitter");
 
   const handleDisconnect = async (id: string) => {
     setDisconnecting(id);
@@ -475,6 +516,16 @@ function ConnectedAccountsSection() {
       await connectInstagram();
     } catch (err: any) {
       setIgError(err.message ?? "Failed to connect Instagram");
+    }
+  };
+
+  const [twError, setTwError] = useState<string | null>(null);
+  const handleConnectTwitter = async () => {
+    setTwError(null);
+    try {
+      await connectTwitter();
+    } catch (err: any) {
+      setTwError(err.message ?? "Failed to connect X (Twitter)");
     }
   };
 
@@ -504,6 +555,18 @@ function ConnectedAccountsSection() {
       ),
       onConnect: handleConnectInstagram,
       error: igError,
+    },
+    {
+      key: "twitter", label: "X (Twitter)",
+      description: "Connect X to track your reach and engagement.",
+      account: twitter,
+      icon: (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M18.9 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/>
+        </svg>
+      ),
+      onConnect: handleConnectTwitter,
+      error: twError,
     },
   ];
 
@@ -547,6 +610,23 @@ function ConnectedAccountsSection() {
             )}
           </div>
         ))}
+
+        {/* YouTube — shown per the reference design, but not a real
+            integration yet (no OAuth app registered). Visible, unclickable. */}
+        <div className="flex items-center gap-4 p-4 rounded-xl border border-white/[0.05] bg-bg-base/40 opacity-50">
+          <div className="grid place-items-center w-10 h-10 rounded-xl bg-bg-elevated border border-white/[0.06] text-fg-secondary shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4L15.8 12Z"/>
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="text-[14px] font-medium text-fg-primary">YouTube</span>
+            <div className="text-[12px] text-fg-tertiary mt-0.5">Coming soon.</div>
+          </div>
+          <button disabled className="px-4 py-2 rounded-xl text-[12.5px] font-medium border border-white/[0.08] bg-bg-elevated text-fg-muted cursor-not-allowed shrink-0">
+            Connect
+          </button>
+        </div>
       </div>
     </CardSection>
   );
