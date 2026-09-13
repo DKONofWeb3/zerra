@@ -1,6 +1,8 @@
 {
+  "redirects": [
+    { "source": "/", "destination": "https://home.zerra.pro", "permanent": false }
+  ],
   "rewrites": [
-    { "source": "/", "destination": "https://valuable-guest-578488.framer.app/" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
