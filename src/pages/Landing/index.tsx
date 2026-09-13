@@ -52,29 +52,71 @@ function NavBar() {
   );
 }
 
+// The real badge-hero composite, positions confirmed via getBoundingClientRect
+// on the live site at a 1440×900 viewport, converted to percentages. Each is
+// a real exported Framer asset — the intro video plays once, then dims behind
+// this static layered badge (3 stacked medallion layers + a light-ray glow +
+// two partially-offscreen "edge" badges), exactly like the real site.
+const LIGHT_RAY   = { src: "/landing/hero/light-ray.png",   left: "0%",     top: "-8%",   width: "99%", height: "100%" };
+const BADGE_LAYERS = [
+  { src: "/landing/hero/badge-base.png",  left: "38.96%", top: "55.9%", width: "20.1%", height: "48.4%" },
+  { src: "/landing/hero/badge-ring.png",  left: "39.58%", top: "53.1%", width: "19.8%", height: "49.3%" },
+  { src: "/landing/hero/badge-glass.png", left: "38.5%",  top: "54.2%", width: "21.8%", height: "42.2%" },
+];
+const EDGE_BADGES = [
+  { src: "/landing/hero/edge-left.png",  left: "-31.3%", top: "-11.2%", width: "50.1%", height: "121.1%" },
+  { src: "/landing/hero/edge-right.png", left: "71.1%",  top: "-81.8%", width: "55.7%", height: "134.7%" },
+];
+
 /**
- * "Welcome to Zerra" splash — this is the real exported reveal video from
- * the Framer site (framerusercontent.com/assets/OQFDkIw64Cz13Mr1o3ZPcgdWQ.mp4),
- * not a hand-built CSS animation. It's an 8s clip that plays once (matches
- * the live site: autoplay, muted, no loop), full-bleed behind the heading.
+ * "Welcome to Zerra" splash — the real exported reveal video plays once
+ * (framerusercontent.com/assets/OQFDkIw64Cz13Mr1o3ZPcgdWQ.mp4), then dims
+ * behind the real layered badge composite once it finishes, matching the
+ * live site's actual sequence rather than looping the video forever.
  */
 function WelcomeSection() {
+  const [videoDone, setVideoDone] = useState(false);
+
   return (
     <section
       id="top"
       style={{ position: "relative", overflow: "hidden", minHeight: "100vh", background: "#06080e" }}
     >
-      <video
+      <motion.video
         autoPlay
         muted
         playsInline
-        style={{
-          position: "absolute", inset: 0, width: "100%", height: "100%",
-          objectFit: "cover", zIndex: 0,
-        }}
+        onEnded={() => setVideoDone(true)}
+        animate={{ opacity: videoDone ? 0.18 : 1 }}
+        transition={{ duration: 1.2, ease: REVEAL_EASE }}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 0 }}
       >
         <source src="/landing/hero-badge.mp4" type="video/mp4" />
-      </video>
+      </motion.video>
+
+      {/* Real badge composite — hidden until the video finishes, then fades/scales in. */}
+      <motion.div
+        aria-hidden
+        initial={{ opacity: 0 }}
+        animate={{ opacity: videoDone ? 1 : 0 }}
+        transition={{ duration: 1.2, delay: 0.3, ease: REVEAL_EASE }}
+        style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }}
+      >
+        <img src={LIGHT_RAY.src} alt="" style={{ position: "absolute", ...LIGHT_RAY }} />
+        {EDGE_BADGES.map((b, i) => (
+          <img key={i} src={b.src} alt="" className="hero-edge-badge" style={{ position: "absolute", left: b.left, top: b.top, width: b.width, height: b.height }} />
+        ))}
+        <motion.div
+          animate={{ y: [0, -12, 0] }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+          style={{ position: "absolute", inset: 0 }}
+        >
+          {BADGE_LAYERS.map((b, i) => (
+            <img key={i} src={b.src} alt="" style={{ position: "absolute", left: b.left, top: b.top, width: b.width, height: b.height }} />
+          ))}
+        </motion.div>
+      </motion.div>
+
       {/* subtle scrim so the nav + heading stay legible over the video at every frame */}
       <div aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(6,8,14,0.35) 0%, rgba(6,8,14,0.1) 30%, rgba(6,8,14,0.55) 100%)", zIndex: 1 }} />
 
@@ -112,10 +154,11 @@ function WelcomeSection() {
 function Hero() {
   return (
     <section style={{ position: "relative", overflow: "hidden", background: "#06080e" }}>
-      {/* real accent-blue glow blobs, sampled from the live site's own palette
-          (rgb(38,122,240) / rgb(110,182,255) / rgb(65,103,217)) rather than a
-          guessed gradient */}
-      <div aria-hidden style={{ position: "absolute", top: -200, left: "50%", transform: "translateX(-50%)", width: 900, height: 500, background: "radial-gradient(ellipse, rgb(38 122 240 / 0.35) 0%, rgb(65 103 217 / 0.12) 45%, transparent 75%)", filter: "blur(40px)", pointerEvents: "none" }} />
+      {/* real accent-blue glow, sampled from the live site's own palette
+          (rgb(38,122,240) / rgb(110,182,255)) — the real site's glow is much
+          brighter/larger than a subtle accent touch, washing over most of
+          the section behind the dashboard mockup. */}
+      <div aria-hidden style={{ position: "absolute", top: -100, left: "50%", transform: "translateX(-50%)", width: 1600, height: 1100, background: "radial-gradient(ellipse, rgb(38 122 240 / 0.55) 0%, rgb(65 103 217 / 0.28) 40%, rgb(38 122 240 / 0.08) 65%, transparent 80%)", filter: "blur(20px)", pointerEvents: "none" }} />
 
       <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "100px 24px 0" }}>
         <h1 style={{
@@ -265,13 +308,34 @@ function FeatureIcon({ src }: { src: string | null }) {
   return <img src={src} alt="" style={{ width: 56, height: 56, objectFit: "contain" }} />;
 }
 
+// Real blob colors sampled directly off the live site (large solid circles
+// behind the Key Features / How It Works area: rgb(73,143,232) and
+// rgb(34,66,107)). The site drifts these slowly top-to-bottom; framer-motion
+// reproduces that rather than a static glow.
+function SwirlingGlow() {
+  return (
+    <div aria-hidden style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
+      <motion.div
+        animate={{ y: [-80, 80, -80], x: [-40, 30, -40] }}
+        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+        style={{ position: "absolute", top: "-15%", left: "50%", marginLeft: -480, width: 960, height: 960, borderRadius: "50%", background: "rgb(73 143 232)", opacity: 0.22, filter: "blur(120px)" }}
+      />
+      <motion.div
+        animate={{ y: [60, -60, 60], x: [20, -30, 20] }}
+        transition={{ duration: 22, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        style={{ position: "absolute", top: "35%", left: "50%", marginLeft: -280, width: 700, height: 700, borderRadius: "50%", background: "rgb(34 66 107)", opacity: 0.3, filter: "blur(100px)" }}
+      />
+    </div>
+  );
+}
+
 function KeyFeaturesSection() {
   const [tab, setTab] = useState<"creators" | "sponsors">("creators");
   const features = tab === "creators" ? CREATOR_FEATURES : SPONSOR_FEATURES;
 
   return (
     <section id="key-features" style={{ position: "relative", background: "#06080e", padding: "100px 24px", overflow: "hidden" }}>
-      <div aria-hidden style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 700, height: 400, background: "radial-gradient(ellipse, rgb(65 103 217 / 0.25) 0%, transparent 70%)", filter: "blur(30px)", pointerEvents: "none" }} />
+      <SwirlingGlow />
 
       <div style={{ position: "relative", maxWidth: 640, margin: "0 auto 48px", textAlign: "center" }}>
         <SectionEyebrow>Key Features</SectionEyebrow>
@@ -281,15 +345,17 @@ function KeyFeaturesSection() {
         </p>
       </div>
 
-      <div style={{ position: "relative", display: "flex", justifyContent: "center", gap: 8, marginBottom: 48 }}>
+      {/* Real toggle track: rgb(28,28,28) pill, confirmed via computed style. */}
+      <div style={{ position: "relative", display: "flex", justifyContent: "center", marginBottom: 48 }}>
+        <div style={{ display: "flex", gap: 4, padding: 3, borderRadius: 165, background: "rgb(28 28 28)" }}>
         {(["creators", "sponsors"] as const).map((key) => (
           <button
             key={key}
             onClick={() => setTab(key)}
             style={{
-              padding: "10px 24px", borderRadius: 999, fontFamily: F_DISPLAY, fontSize: 14, fontWeight: 600, cursor: "pointer",
-              border: "1px solid rgb(255 255 255 / 0.1)",
-              background: tab === key ? "rgb(65 103 217)" : "transparent",
+              padding: "10px 24px", borderRadius: 100, fontFamily: F_DISPLAY, fontSize: 14, fontWeight: 600, cursor: "pointer",
+              border: "none",
+              background: tab === key ? "linear-gradient(135deg, rgb(65 103 217) 0%, rgb(38 122 240) 100%)" : "transparent",
               color: tab === key ? "#fff" : "rgb(160 165 178)",
               transition: "background 0.2s, color 0.2s",
             }}
@@ -297,6 +363,7 @@ function KeyFeaturesSection() {
             {key === "creators" ? "Creators" : "Sponsors"}
           </button>
         ))}
+        </div>
       </div>
 
       <div style={{ position: "relative", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 24, maxWidth: 1080, margin: "0 auto" }}>
@@ -461,6 +528,7 @@ export default function LandingPage() {
       <style>{`
         @media (max-width: 640px) {
           .hero-nav-pill { display: none !important; }
+          .hero-edge-badge { display: none !important; }
         }
       `}</style>
 
