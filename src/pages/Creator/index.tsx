@@ -41,6 +41,11 @@ const ICON = {
   youtube: "/creator-profile/youtube-icon.svg",
   tiktok: "/creator-profile/tiktok-icon.svg",
   twitter: "/creator-profile/twitter-x.svg",
+  // Creator Highlights row icons, exported from the design
+  hlContent: "/creator-profile/hl-content.svg",
+  hlNiche: "/creator-profile/hl-niche.svg",
+  hlChampion: "/creator-profile/hl-champion.svg",
+  ellipsis: "/creator-profile/ellipsis.svg",
 } as const;
 
 // Per-platform card treatment from the design: brand-tinted radial glow
@@ -155,6 +160,7 @@ function ProfileHeader({
                   <button disabled style={{ background: C.blue, color: "#e0e0e0", border: "none", borderRadius: 100, padding: "8px 16px", fontSize: 14, fontWeight: 500, letterSpacing: "-0.56px", opacity: 0.5, cursor: "not-allowed" }}>
                     Message
                   </button>
+                  <img src={ICON.ellipsis} alt="" style={{ width: 24, height: 24, opacity: 0.5 }} />
                 </>
               )}
             </div>
@@ -454,26 +460,26 @@ function HighlightsCard({ highlights, niche }: { highlights: CreatorProfileRespo
       </p>
       <div className="flex flex-col gap-4">
         <HighlightRow
-          icon={ICON.ranking}
+          icon={ICON.hlContent}
           title="Most Engaging Content"
           sub={highlights.mostEngagingContent
             ? `${highlights.mostEngagingContent.title || "Untitled"} · ${highlights.mostEngagingContent.engagementRate}% ER`
             : "Not enough data yet"}
         />
         <HighlightRow
-          icon={top ? PLATFORM[top]?.icon ?? ICON.ranking : ICON.ranking}
+          icon={top ? PLATFORM[top]?.icon ?? ICON.hlChampion : ICON.hlChampion}
           title="Top Performing Platform"
           sub={top ? PLATFORM[top]?.label ?? top : "Not enough data yet"}
         />
         <HighlightRow
-          icon={ICON.ranking}
+          icon={ICON.hlNiche}
           title="Best Performing Niche"
           sub={niche && highlights.mostEngagingContent
             ? `${niche} · ${highlights.mostEngagingContent.engagementRate}% ER`
             : "Set a niche in Settings"}
         />
         <HighlightRow
-          icon={ICON.ranking}
+          icon={ICON.hlChampion}
           title="Recent Campaigns"
           sub={`${highlights.recentCampaigns.count} completed · $${highlights.recentCampaigns.totalEarnedUsdc.toLocaleString()} earned`}
         />
