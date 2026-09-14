@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Play } from "lucide-react";
 import { cn } from "@/lib/cn";
-import { getCreatorProfile } from "@/lib/api";
+import { getCreatorProfile, getMe } from "@/lib/api";
 import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
+import { useBadges } from "@/hooks/useBadges";
+import { useSocialAccounts } from "@/hooks/useSocialAccounts";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import type { CreatorProfileResponse } from "@/lib/types";
 
@@ -13,11 +15,34 @@ function fmt(n: number) {
   return String(n);
 }
 
-function Card({ className, children }: { className?: string; children: React.ReactNode }) {
+const ICONS = {
+  verify: "/creator-profile/verify-badge.svg",
+  location: "/creator-profile/location-icon.svg",
+  ranking: "/creator-profile/ranking-icon.svg",
+  arrowRight: "/creator-profile/arrow-right.svg",
+  instagram: "/creator-profile/instagram-fill.svg",
+  youtube: "/creator-profile/youtube-icon.svg",
+  tiktok: "/creator-profile/tiktok-icon.svg",
+  twitter: "/creator-profile/twitter-x.svg",
+} as const;
+
+// Real per-platform card treatment, confirmed via Figma design context
+// (node 394:776): a brand-colored radial glow fading to near-black, with a
+// matching border color. Approximated from the design's exact SVG gradients.
+const PLATFORM_STYLE: Record<string, { border: string; bg: string; icon: string }> = {
+  instagram: { border: "rgba(203,58,173,0.35)", bg: "radial-gradient(120% 120% at 15% 15%, rgba(203,58,173,0.35) 0%, rgba(8,10,16,0.9) 60%)", icon: ICONS.instagram },
+  youtube:   { border: "#ff0b0b", bg: "radial-gradient(120% 120% at 15% 15%, rgba(255,18,18,0.35) 0%, rgba(8,10,16,0.9) 60%)", icon: ICONS.youtube },
+  tiktok:    { border: "#0bfdf5", bg: "radial-gradient(120% 120% at 15% 15%, rgba(7,249,241,0.28) 0%, rgba(8,10,16,0.9) 60%)", icon: ICONS.tiktok },
+  twitter:   { border: "#acacac", bg: "radial-gradient(120% 120% at 15% 15%, rgba(255,255,255,0.22) 0%, rgba(8,10,16,0.9) 60%)", icon: ICONS.twitter },
+};
+
+const PLATFORM_LABELS: Record<string, string> = { instagram: "Instagram", tiktok: "TikTok", twitter: "X (Twitter)", youtube: "YouTube" };
+
+function Card({ className, style, children }: { className?: string; style?: React.CSSProperties; children: React.ReactNode }) {
   return (
     <div
       className={cn("relative overflow-hidden rounded-card border border-white/[0.06] p-5", className)}
-      style={{ background: "rgb(var(--bg-card))" }}
+      style={{ background: "rgb(var(--bg-card))", ...style }}
     >
       <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
         style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
@@ -25,26 +50,6 @@ function Card({ className, children }: { className?: string; children: React.Rea
     </div>
   );
 }
-
-const PLATFORM_ICONS: Record<string, React.ReactNode> = {
-  instagram: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-    </svg>
-  ),
-  tiktok: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V9.15a8.16 8.16 0 0 0 4.77 1.52V7.22a4.85 4.85 0 0 1-1-.53z"/>
-    </svg>
-  ),
-  twitter: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M18.9 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/>
-    </svg>
-  ),
-};
-
-const PLATFORM_LABELS: Record<string, string> = { instagram: "Instagram", tiktok: "TikTok", twitter: "X (Twitter)" };
 
 const SCORE_TABS = [
   { key: "influence",      label: "Influence" },
@@ -64,7 +69,11 @@ function ScoreBreakdown({ scorecard }: { scorecard: CreatorProfileResponse["scor
       case "engagement": return scorecard.engagement_score;
       case "contentQuality": return scorecard.content_quality_score;
       case "reliability": return scorecard.reliability_score;
-      case "conversion": return null; // no data source exists anywhere — always locked
+      // The reference design shows a number here, but no conversion-tracking
+      // infrastructure exists anywhere in this app (no click-through /
+      // real-world-action attribution). Showing a number would be fabricated
+      // data, so this stays locked regardless of what the mock shows.
+      case "conversion": return null;
     }
   };
 
@@ -72,14 +81,14 @@ function ScoreBreakdown({ scorecard }: { scorecard: CreatorProfileResponse["scor
 
   return (
     <div>
-      <div className="flex flex-wrap gap-1.5 mb-4">
+      <div className="flex flex-wrap gap-1.5 mb-3">
         {SCORE_TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             className={cn(
               "px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors",
-              tab === t.key ? "bg-brand text-white" : "bg-bg-elevated text-fg-tertiary hover:text-fg-secondary"
+              tab === t.key ? "bg-brand text-white" : "bg-white/[0.04] text-fg-tertiary hover:text-fg-secondary"
             )}
           >
             {t.label}
@@ -93,27 +102,41 @@ function ScoreBreakdown({ scorecard }: { scorecard: CreatorProfileResponse["scor
       ) : value === null ? (
         <p className="text-[12px] text-fg-tertiary leading-relaxed">Not enough data yet for this category.</p>
       ) : (
-        <div>
-          <div className="flex items-center justify-between text-[12px] text-fg-tertiary mb-1.5">
-            <span>{SCORE_TABS.find((t) => t.key === tab)?.label}</span>
-            <span className="text-fg-primary font-medium">{value}%</span>
-          </div>
-          <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-            <div className="h-full rounded-full bg-brand" style={{ width: `${value}%` }} />
-          </div>
+        <div className="flex items-center justify-between text-[13px]">
+          <span className="text-fg-tertiary">{SCORE_TABS.find((t) => t.key === tab)?.label}</span>
+          <span className="text-fg-primary font-medium">{value}</span>
         </div>
       )}
     </div>
   );
 }
 
-export default function CreatorProfilePage() {
-  const { username } = useParams<{ username: string }>();
-  usePageTitle(username ? `Zerra · @${username}` : "Zerra · Creator");
+interface CreatorProfilePageProps {
+  /** Renders the logged-in user's own profile instead of reading :username
+   *  from the route — used to embed this as the Dashboard's Overview tab. */
+  ownProfile?: boolean;
+}
+
+export default function CreatorProfilePage({ ownProfile = false }: CreatorProfilePageProps) {
+  const { username: routeUsername } = useParams<{ username: string }>();
+  const [ownUsername, setOwnUsername] = useState<string | null>(null);
+  const username = ownProfile ? ownUsername : routeUsername;
+
+  const { accounts: socialAccountsRaw } = useSocialAccounts();
+  const tiktokFollowerCount = socialAccountsRaw.find((a) => a.platform === "tiktok")?.follower_count ?? null;
+  const { badges } = useBadges(tiktokFollowerCount);
+  const isVerified = ownProfile && badges.some((b) => b.id === "verified-influencer" && b.attained);
+
+  usePageTitle(username ? `Zerra · @${username}` : ownProfile ? "Zerra · Overview" : "Zerra · Creator");
 
   const [profile, setProfile] = useState<CreatorProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    if (!ownProfile) return;
+    getMe().then((d) => setOwnUsername(d.user?.username ?? null)).catch(() => setOwnUsername(null));
+  }, [ownProfile]);
 
   useEffect(() => {
     if (!username) return;
@@ -135,21 +158,22 @@ export default function CreatorProfilePage() {
     return Array.from(byDate.entries()).map(([month, value]) => ({ month, value: Math.round(value / 1000) })).slice(-12);
   }, [profile]);
 
-  if (loading) {
+  if (loading || (ownProfile && !username)) {
     return <div className="pt-12 text-center text-[13px] text-fg-tertiary">Loading profile...</div>;
   }
 
   if (notFound || !profile) {
     return (
       <div className="pt-12 text-center">
-        <p className="text-[15px] font-medium text-fg-primary mb-1">Creator not found</p>
-        <p className="text-[13px] text-fg-tertiary">No creator with that username exists.</p>
+        <p className="text-[15px] font-medium text-fg-primary mb-1">{ownProfile ? "Couldn't load your profile" : "Creator not found"}</p>
+        <p className="text-[13px] text-fg-tertiary">{ownProfile ? "Try refreshing the page." : "No creator with that username exists."}</p>
       </div>
     );
   }
 
   const { creator, socialAccounts, scorecard, recentContent, highlights } = profile;
   const totalFollowers = socialAccounts.reduce((s, a) => s + (a.follower_count ?? 0), 0);
+  const recentImpressions = recentContent.reduce((s, p) => s + Number(p.view_count || 0), 0);
   const avgEngagement = recentContent.length > 0
     ? (recentContent.reduce((s, p) => s + Number(p.engagement_rate || 0), 0) / recentContent.length).toFixed(1)
     : "0";
@@ -166,41 +190,60 @@ export default function CreatorProfilePage() {
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-3 mb-1">
-              <p className="text-[15px] text-fg-tertiary">@{creator.username}</p>
-              {/* Follow/Message — shown per the reference design, not a real
-                  feature yet (no follow-relationship or messaging system
-                  exists anywhere in the app). */}
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <h1 className="text-[20px] font-display font-medium text-fg-primary">{creator.name}</h1>
+              {isVerified && <img src={ICONS.verify} alt="Verified" className="w-5 h-5" />}
               <div className="flex gap-2 ml-auto">
-                <button disabled className="px-4 py-1.5 rounded-full text-[12.5px] font-medium border border-white/[0.08] bg-bg-elevated text-fg-muted cursor-not-allowed">Follow</button>
-                <button disabled className="px-4 py-1.5 rounded-full text-[12.5px] font-medium bg-brand/40 text-white/60 cursor-not-allowed">Message</button>
+                {ownProfile ? (
+                  <Link to="/settings" className="px-4 py-1.5 rounded-full text-[12.5px] font-medium border border-white/[0.15] text-fg-secondary hover:text-fg-primary hover:border-white/25 transition-colors">
+                    Edit Profile
+                  </Link>
+                ) : (
+                  // Follow/Message — shown per the reference design, not a real
+                  // feature yet (no follow-relationship or messaging system
+                  // exists anywhere in the app).
+                  <>
+                    <button disabled className="px-4 py-1.5 rounded-full text-[12.5px] font-medium border border-white/[0.15] text-fg-muted cursor-not-allowed">Follow</button>
+                    <button disabled className="px-4 py-1.5 rounded-full text-[12.5px] font-medium bg-brand/40 text-white/60 cursor-not-allowed">Message</button>
+                  </>
+                )}
               </div>
             </div>
-            <h1 className="text-[24px] font-display font-medium text-fg-primary">{creator.name}</h1>
+            <p className="text-[14px] text-fg-tertiary">@{creator.username}</p>
             {creator.bio && <p className="text-[13px] text-fg-tertiary mt-1.5 max-w-xl">{creator.bio}</p>}
-            <div className="flex flex-wrap gap-3 mt-1.5 text-[12px] text-fg-muted">
+            <div className="flex flex-wrap items-center gap-3 mt-1.5 text-[12px] text-fg-muted">
               {creator.niche && <span>{creator.niche}</span>}
-              {creator.location && <span>· {creator.location}</span>}
+              {creator.location && (
+                <span className="flex items-center gap-1">
+                  <img src={ICONS.location} alt="" className="w-3.5 h-3.5 opacity-70" />
+                  {creator.location}
+                </span>
+              )}
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-5 max-w-lg">
               <div><p className="text-[18px] font-display font-medium text-fg-primary tabular-nums">{fmt(totalFollowers)}</p><p className="text-[11px] text-fg-tertiary">Total Followers</p></div>
-              <div><p className="text-[18px] font-display font-medium text-fg-primary tabular-nums">{fmt(recentContent.reduce((s, p) => s + Number(p.view_count || 0), 0))}</p><p className="text-[11px] text-fg-tertiary">Recent Impressions</p></div>
+              <div><p className="text-[18px] font-display font-medium text-fg-primary tabular-nums">{fmt(recentImpressions)}</p><p className="text-[11px] text-fg-tertiary">Recent Impressions</p></div>
               <div><p className="text-[18px] font-display font-medium text-fg-primary tabular-nums">{avgEngagement}%</p><p className="text-[11px] text-fg-tertiary">Engagement Rate</p></div>
             </div>
 
             <div className="flex flex-wrap gap-2.5 mt-4">
-              {socialAccounts.map((a) => (
-                <div key={a.platform} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-bg-elevated border border-white/[0.06]">
-                  <span className="text-fg-secondary">{PLATFORM_ICONS[a.platform]}</span>
-                  <span className="text-[12px] text-fg-primary tabular-nums">{fmt(a.follower_count ?? 0)}</span>
-                  <span className="text-[10.5px] text-fg-muted">Followers</span>
-                </div>
-              ))}
+              {socialAccounts.map((a) => {
+                const s = PLATFORM_STYLE[a.platform];
+                return (
+                  <div key={a.platform} className="flex items-center gap-2.5 px-3 py-2 rounded-xl border" style={{ background: s?.bg, borderColor: s?.border ?? "rgb(255 255 255 / 0.08)" }}>
+                    {s && <img src={s.icon} alt="" className="w-5 h-5" />}
+                    <div>
+                      <p className="text-[13px] font-semibold text-fg-primary tabular-nums leading-tight">{fmt(a.follower_count ?? 0)}</p>
+                      <p className="text-[10px] text-fg-muted leading-tight">Total Followers</p>
+                    </div>
+                  </div>
+                );
+              })}
               {/* YouTube — visible per the reference design, not a real
                   integration yet */}
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-bg-elevated border border-white/[0.06] opacity-40 cursor-not-allowed">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4L15.8 12Z"/></svg>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/[0.06] bg-white/[0.02] opacity-40 cursor-not-allowed">
+                <img src={ICONS.youtube} alt="" className="w-5 h-5" />
                 <span className="text-[10.5px] text-fg-muted">Coming soon</span>
               </div>
             </div>
@@ -252,22 +295,38 @@ export default function CreatorProfilePage() {
 
         {/* Right column */}
         <div className="space-y-6">
-          <Card>
+          {/* Creator Score — real gradient confirmed via Figma design context. */}
+          <Card style={{ background: "linear-gradient(180deg, #070c18 27%, #253f7e 142%)" }}>
             {scorecard ? (
               <>
                 {scorecard.niche_percentile != null && creator.niche && (
-                  <p className="text-[12px] text-brand font-medium mb-3">
-                    Top {Math.max(1, 100 - scorecard.niche_percentile)}% in {creator.niche}
-                  </p>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "#22426b" }}>
+                        <img src={ICONS.ranking} alt="" className="w-4 h-4" />
+                      </span>
+                      <div>
+                        <p className="text-[13px] font-medium text-fg-primary leading-tight">Top {Math.max(1, 100 - scorecard.niche_percentile)}%</p>
+                        <p className="text-[11px] text-fg-tertiary leading-tight">in {creator.niche}</p>
+                      </div>
+                    </div>
+                  </div>
                 )}
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[12px] text-fg-tertiary">Creator Score</span>
-                  <span className="text-[14px] font-medium text-fg-primary">{scorecard.overall_score}%</span>
+                <p className="text-[12px] text-fg-tertiary mb-1">Creator Score</p>
+                <div className="flex items-end gap-1.5 mb-3">
+                  <span
+                    className="text-[26px] font-semibold leading-none"
+                    style={{ backgroundImage: "linear-gradient(125deg, #fff 26%, #999 98%)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}
+                  >
+                    {scorecard.overall_score}%
+                  </span>
                 </div>
-                <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden mb-5">
-                  <div className="h-full rounded-full bg-brand" style={{ width: `${scorecard.overall_score}%` }} />
+                <div className="h-2 rounded-full overflow-hidden mb-4" style={{ background: "#111e3b" }}>
+                  <div className="h-full rounded-full" style={{ width: `${scorecard.overall_score}%`, background: "linear-gradient(90deg, #305e99, #509dff)" }} />
                 </div>
-                <ScoreBreakdown scorecard={scorecard} />
+                <div className="border-t border-white/[0.06] pt-3">
+                  <ScoreBreakdown scorecard={scorecard} />
+                </div>
               </>
             ) : (
               <p className="text-[12.5px] text-fg-tertiary">
@@ -276,9 +335,10 @@ export default function CreatorProfilePage() {
             )}
           </Card>
 
-          <Card>
-            <p className="text-[13px] font-medium text-fg-primary mb-4">Creator Highlights</p>
-            <div className="space-y-3 text-[12px]">
+          {/* Creator Highlights — real gradient confirmed via Figma design context. */}
+          <Card style={{ background: "linear-gradient(180deg, #253f7e 65%, #070c18 84%)" }}>
+            <p className="text-[15px] font-medium text-fg-primary mb-4">Creator Highlights</p>
+            <div className="space-y-3.5 text-[12px]">
               <div>
                 <p className="text-fg-tertiary">Most Engaging Content</p>
                 <p className="text-fg-primary mt-0.5">
@@ -291,6 +351,16 @@ export default function CreatorProfilePage() {
                 <p className="text-fg-tertiary">Top Performing Platform</p>
                 <p className="text-fg-primary mt-0.5">{highlights.topPerformingPlatform ? PLATFORM_LABELS[highlights.topPerformingPlatform] ?? highlights.topPerformingPlatform : "Not enough data yet"}</p>
               </div>
+              {/* "Best Performing Niche" from the reference design — shown
+                  using the creator's own declared niche paired with their
+                  real best-engagement figure, since there's no per-post
+                  niche-ranking data to compute a real leaderboard from. */}
+              {creator.niche && highlights.mostEngagingContent && (
+                <div>
+                  <p className="text-fg-tertiary">Best Performing Niche</p>
+                  <p className="text-fg-primary mt-0.5">{creator.niche} · {highlights.mostEngagingContent.engagementRate}% ER</p>
+                </div>
+              )}
               <div>
                 <p className="text-fg-tertiary">Recent Campaigns</p>
                 <p className="text-fg-primary mt-0.5">
@@ -301,15 +371,19 @@ export default function CreatorProfilePage() {
           </Card>
 
           <Card>
-            <p className="text-[13px] font-medium text-fg-primary mb-4">Verified Platforms</p>
-            <div className="space-y-2.5">
+            <p className="text-[15px] font-medium text-fg-primary mb-4">Verified Platforms</p>
+            <div className="space-y-3">
               {["instagram", "tiktok", "twitter"].map((platform) => {
                 const connected = socialAccounts.find((a) => a.platform === platform);
+                const s = PLATFORM_STYLE[platform];
                 return (
                   <div key={platform} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-fg-secondary">
-                      {PLATFORM_ICONS[platform]}
-                      <span className="text-[12.5px] text-fg-primary">{PLATFORM_LABELS[platform]}</span>
+                    <div className="flex items-center gap-2.5">
+                      {s && <img src={s.icon} alt="" className="w-6 h-6" />}
+                      <div>
+                        <p className="text-[13px] text-fg-primary leading-tight">{PLATFORM_LABELS[platform]}</p>
+                        {connected?.username && <p className="text-[11px] text-fg-tertiary leading-tight">@{connected.username}</p>}
+                      </div>
                     </div>
                     {connected
                       ? <span className="text-[11px] text-success">Connected</span>
@@ -318,13 +392,23 @@ export default function CreatorProfilePage() {
                 );
               })}
               <div className="flex items-center justify-between opacity-40">
-                <div className="flex items-center gap-2 text-fg-secondary">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4L15.8 12Z"/></svg>
-                  <span className="text-[12.5px] text-fg-primary">YouTube</span>
+                <div className="flex items-center gap-2.5">
+                  <img src={ICONS.youtube} alt="" className="w-6 h-6" />
+                  <span className="text-[13px] text-fg-primary">YouTube</span>
                 </div>
                 <span className="text-[11px] text-fg-muted">Coming soon</span>
               </div>
             </div>
+
+            {ownProfile && creator.username && (
+              <Link
+                to={`/creator/${creator.username}`}
+                className="mt-5 flex items-center justify-center gap-2 w-full py-2.5 rounded-full text-[13px] font-medium text-white bg-black hover:bg-white/10 transition-colors"
+              >
+                View Full Profile
+                <img src={ICONS.arrowRight} alt="" className="w-4 h-4" />
+              </Link>
+            )}
           </Card>
         </div>
       </div>
