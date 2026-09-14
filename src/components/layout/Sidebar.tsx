@@ -1,16 +1,12 @@
-import { NavLink, useLocation, Link } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Briefcase, MessageSquareText,
-  Compass, TrendingUp, Wallet, ChevronRight, Settings as SettingsIcon,
+  Compass, TrendingUp, Wallet, ChevronRight,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { useSocialAccounts } from "@/hooks/useSocialAccounts";
-import { useBadges } from "@/hooks/useBadges";
 import { useAuth } from "@/contexts/AuthContext";
-import { UserAvatar } from "./UserAvatar";
-import { BadgeGlyph } from "@/components/icons/BadgeIcon";
 
 interface NavItem {
   to: string;
@@ -115,11 +111,6 @@ function NavRow({ item }: { item: NavItem }) {
 
 export function Sidebar() {
   const { user }           = useCurrentUser();
-  const { accounts }       = useSocialAccounts();
-  const tiktokAccount      = accounts.find((a) => a.platform === "tiktok");
-  const followerCount      = tiktokAccount?.follower_count ?? null;
-  const { badges }         = useBadges(followerCount);
-  const attainedBadges     = badges.filter((b) => b.attained);
   const firstName          = user?.name?.split(" ")[0] ?? "Creator";
   const { session }        = useAuth();
   const loginTime          = session?.user?.last_sign_in_at
@@ -130,47 +121,8 @@ export function Sidebar() {
 
   return (
     <aside className="relative w-[320px] shrink-0 h-screen flex flex-col bg-bg-sidebar">
-      {/* User header */}
-      <div className="px-5 pt-6 pb-6 flex items-start gap-3">
-        <Link to="/settings" className="relative shrink-0 group" aria-label="Open settings">
-          <div className="w-12 h-12 rounded-2xl overflow-hidden border border-white/[0.06] bg-bg-elevated transition-all group-hover:border-white/[0.15]">
-            <UserAvatar name={user?.name ?? null} avatar={user?.avatar ?? null} />
-          </div>
-        </Link>
-
-        <div className="flex-1 min-w-0 pt-0.5">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <span className="text-[15px] font-semibold text-fg-primary truncate leading-tight">
-              {user?.name ?? "—"}
-            </span>
-            {attainedBadges.length > 0 && (
-              <span className="flex items-center gap-1 shrink-0" aria-label="Attained badges">
-                {attainedBadges.map((b) => (
-                  <BadgeGlyph key={b.id} theme={b.theme} size={16} glow={false} />
-                ))}
-              </span>
-            )}
-          </div>
-          <div className="text-[12px] text-fg-tertiary mt-1 truncate">
-            TikTok:{" "}
-            <span className={tiktokAccount ? "text-[rgb(var(--success))]" : "text-fg-secondary"}>
-              {tiktokAccount ? `@${tiktokAccount.username ?? "Connected"}` : "Not connected"}
-            </span>
-          </div>
-        </div>
-
-        <Link
-          to="/settings"
-          aria-label="Settings"
-          className="shrink-0 grid place-items-center w-7 h-7 rounded-lg border border-white/[0.06] bg-bg-elevated text-fg-secondary hover:text-fg-primary transition-colors mt-2.5"
-        >
-          <SettingsIcon className="w-3.5 h-3.5" />
-        </Link>
-      </div>
-
-      <div className="px-5">
-        <div className="h-px bg-stroke" />
-      </div>
+      {/* The name / badge / TikTok block that used to sit here was redundant
+          with the dashboard profile header, which now carries all three. */}
 
       {/* Welcome block */}
       <div className="px-5 pt-7 pb-6">

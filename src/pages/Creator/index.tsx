@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { getCreatorProfile, getMe } from "@/lib/api";
 import { AnalyticsOverview } from "@/components/dashboard/AnalyticsOverview";
 import { LockedCard } from "@/components/dashboard/LockedCard";
+import { BadgeGlyph } from "@/components/icons/BadgeIcon";
 import { useBadges } from "@/hooks/useBadges";
 import { useSocialAccounts } from "@/hooks/useSocialAccounts";
 import { usePageTitle } from "@/hooks/usePageTitle";
@@ -103,14 +104,24 @@ function Panel({ children, style }: { children: React.ReactNode; style?: React.C
 
 // ── Header ────────────────────────────────────────────────────────────────
 function ProfileHeader({
-  creator, isVerified, ownProfile, stats, accounts,
+  creator, isVerified, otherBadges, ownProfile, stats, accounts,
 }: {
   creator: CreatorProfileResponse["creator"];
   isVerified: boolean;
+  otherBadges: { id: string; theme: "ember" | "violet" }[];
   ownProfile: boolean;
   stats: { totalFollowers: number; impressions: number; engagement: string; score: number | null };
   accounts: CreatorProfileResponse["socialAccounts"];
 }) {
+  // Name / badge / TikTok handle moved here off the sidebar, which used to
+  // duplicate all three above the nav.
+  const tiktokHandle = accounts.find((a) => a.platform === "tiktok")?.username ?? null;
+  const badgeRow = (
+    <span className="flex items-center gap-1 shrink-0">
+      {isVerified && <img src={ICON.verify} alt="Verified" style={{ width: 24, height: 24 }} />}
+      {otherBadges.map((b) => <BadgeGlyph key={b.id} theme={b.theme} size={18} glow={false} />)}
+    </span>
+  );
   const statItems = [
     { value: fmt(stats.totalFollowers), label: "Total Followers" },
     { value: fmt(stats.impressions), label: "Recent Impressions" },
@@ -155,11 +166,16 @@ function ProfileHeader({
             : <span style={{ fontSize: 22, fontWeight: 600, color: "#fff" }}>{(creator.name ?? "?").charAt(0).toUpperCase()}</span>}
         </div>
 
-        <div className="flex items-center gap-1" style={{ marginTop: 14 }}>
+        <div className="flex items-center gap-1.5" style={{ marginTop: 14 }}>
           <span style={{ fontSize: 20, fontWeight: 500, color: "#fff", letterSpacing: "-0.8px" }}>{creator.name}</span>
-          {isVerified && <img src={ICON.verify} alt="Verified" style={{ width: 24, height: 24 }} />}
+          {badgeRow}
         </div>
-        <p style={{ fontSize: 16, fontWeight: 500, color: C.textMuted, letterSpacing: "-0.64px", margin: 0 }}>
+        {tiktokHandle && (
+          <p style={{ fontSize: 14, color: C.textMuted, letterSpacing: "-0.56px", margin: "2px 0 0" }}>
+            TikTok: <span style={{ color: C.green }}>@{tiktokHandle}</span>
+          </p>
+        )}
+        <p style={{ fontSize: 16, fontWeight: 500, color: C.textMuted, letterSpacing: "-0.64px", margin: "2px 0 0" }}>
           @{creator.username}
         </p>
 
@@ -217,19 +233,23 @@ function ProfileHeader({
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               <h1 style={{ fontSize: 30, fontWeight: 500, letterSpacing: "-1.2px", color: "#fff", margin: 0 }}>
-                @{creator.username}
+                {creator.name}
               </h1>
-              {isVerified && <img src={ICON.verify} alt="Verified" style={{ width: 24, height: 24 }} />}
+              {badgeRow}
               <div className="flex items-center gap-3 ml-3">{actions}</div>
             </div>
 
-            {creator.name && (
-              <p style={{ fontSize: 18, fontWeight: 500, color: "#fff", letterSpacing: "-0.72px", margin: "10px 0 0" }}>
-                {creator.name}
+            {tiktokHandle && (
+              <p style={{ fontSize: 14, color: C.textMuted, letterSpacing: "-0.56px", margin: "8px 0 0" }}>
+                TikTok: <span style={{ color: C.green }}>@{tiktokHandle}</span>
               </p>
             )}
+            <p style={{ fontSize: 16, fontWeight: 500, color: C.textMuted, letterSpacing: "-0.64px", margin: "2px 0 0" }}>
+              @{creator.username}
+            </p>
+
             {creator.bio && (
               <p style={{ fontSize: 14, color: C.textMuted, letterSpacing: "-0.56px", margin: "6px 0 0", maxWidth: 420 }}>
                 {creator.bio}
@@ -634,6 +654,11 @@ export default function CreatorProfilePage({ ownProfile = false }: CreatorProfil
   const tiktokFollowers = ownAccounts.find((a) => a.platform === "tiktok")?.follower_count ?? null;
   const { badges } = useBadges(tiktokFollowers);
   const isVerified = ownProfile && badges.some((b) => b.id === "verified-influencer" && b.attained);
+  // Any other earned badges render as their own glyph next to the name, so
+  // "verified" isn't shown twice (tick + glyph) for the same badge.
+  const otherBadges = ownProfile
+    ? badges.filter((b) => b.attained && b.id !== "verified-influencer").map((b) => ({ id: b.id, theme: b.theme }))
+    : [];
 
   usePageTitle(username ? `Zerra · @${username}` : ownProfile ? "Zerra · Dashboard" : "Zerra · Creator");
 
@@ -705,6 +730,7 @@ export default function CreatorProfilePage({ ownProfile = false }: CreatorProfil
       <ProfileHeader
         creator={creator}
         isVerified={isVerified}
+        otherBadges={otherBadges}
         ownProfile={ownProfile}
         stats={{ totalFollowers, impressions, engagement, score: scorecard?.overall_score ?? null }}
         accounts={socialAccounts}
