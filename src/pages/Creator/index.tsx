@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getCreatorProfile, getMe } from "@/lib/api";
 import { AnalyticsOverview } from "@/components/dashboard/AnalyticsOverview";
+import { LockedCard } from "@/components/dashboard/LockedCard";
 import { useBadges } from "@/hooks/useBadges";
 import { useSocialAccounts } from "@/hooks/useSocialAccounts";
 import { usePageTitle } from "@/hooks/usePageTitle";
@@ -74,8 +75,11 @@ const PLATFORM: Record<string, { label: string; icon: string; border: string; bg
 };
 const PLATFORM_ORDER = ["instagram", "youtube", "tiktok", "twitter"] as const;
 
-const TABS = ["Overview", "Content", "Analytics", "Campaigns", "About"] as const;
-type Tab = (typeof TABS)[number];
+// The two frames genuinely have different tab rows, so each breakpoint gets
+// the set its own design specifies.
+const DESKTOP_TABS = ["Overview", "Content", "Analytics", "Campaigns", "About"] as const;
+const MOBILE_TABS = ["Overview", "Audience", "Content", "Engagement", "Earnings", "Campaigns", "Comparison"] as const;
+type Tab = (typeof DESKTOP_TABS)[number] | (typeof MOBILE_TABS)[number];
 
 function fmt(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -114,96 +118,154 @@ function ProfileHeader({
     { value: stats.score != null ? String(stats.score) : "—", label: "Creator Score" },
   ];
 
+  const actions = ownProfile ? (
+    <Link
+      to="/settings"
+      style={{
+        border: "1px solid #e0e0e0", color: "#e0e0e0", borderRadius: 100,
+        padding: "8px 16px", fontSize: 14, fontWeight: 500, letterSpacing: "-0.56px",
+        textDecoration: "none", whiteSpace: "nowrap",
+      }}
+    >
+      Edit Profile
+    </Link>
+  ) : (
+    <>
+      {/* Follow / Message are in the design but there's no follow or messaging
+          system in the app — rendered disabled rather than faked as working. */}
+      <button disabled style={{ border: "1px solid #e0e0e0", color: "#e0e0e0", borderRadius: 100, padding: "8px 16px", fontSize: 14, fontWeight: 500, letterSpacing: "-0.56px", opacity: 0.5, cursor: "not-allowed", background: "transparent", whiteSpace: "nowrap" }}>
+        Follow
+      </button>
+      <button disabled style={{ background: C.blue, color: "#e0e0e0", border: "none", borderRadius: 100, padding: "8px 16px", fontSize: 14, fontWeight: 500, letterSpacing: "-0.56px", opacity: 0.5, cursor: "not-allowed", whiteSpace: "nowrap" }}>
+        Message
+      </button>
+      <img src={ICON.ellipsis} alt="" style={{ width: 24, height: 24, opacity: 0.5, flexShrink: 0 }} />
+    </>
+  );
+
   return (
     <div style={{ fontFamily: F }}>
-      <div className="flex flex-col md:flex-row md:items-start gap-6 md:gap-10">
-        {/* Avatar */}
-        <div
-          className="shrink-0 rounded-full overflow-hidden grid place-items-center mx-auto md:mx-0"
-          style={{
-            width: 168, height: 168, background: "#0d1322",
-            boxShadow: "0 0 60px rgba(80,157,255,0.18)", border: "1px solid rgba(255,255,255,0.06)",
-          }}
-        >
+      {/* ── MOBILE header (matches Figma 394:776) ──────────────────────────
+          56px avatar, NAME as the heading with @handle beneath it, bio, then
+          the location row with the actions right-aligned on the same line. */}
+      <div className="md:hidden">
+        <div style={{ width: 56, height: 56, borderRadius: "50%", overflow: "hidden", background: "#0d1322", display: "grid", placeItems: "center" }}>
           {creator.avatar
             ? <img src={creator.avatar} alt={creator.name ?? ""} className="w-full h-full object-cover" />
-            : <span style={{ fontSize: 56, fontWeight: 600, color: "#fff" }}>{(creator.name ?? "?").charAt(0).toUpperCase()}</span>}
+            : <span style={{ fontSize: 22, fontWeight: 600, color: "#fff" }}>{(creator.name ?? "?").charAt(0).toUpperCase()}</span>}
         </div>
 
-        {/* Identity */}
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 style={{ fontSize: 30, fontWeight: 500, letterSpacing: "-1.2px", color: "#fff", margin: 0 }}>
-              @{creator.username}
-            </h1>
-            {isVerified && <img src={ICON.verify} alt="Verified" style={{ width: 24, height: 24 }} />}
+        <div className="flex items-center gap-1" style={{ marginTop: 14 }}>
+          <span style={{ fontSize: 20, fontWeight: 500, color: "#fff", letterSpacing: "-0.8px" }}>{creator.name}</span>
+          {isVerified && <img src={ICON.verify} alt="Verified" style={{ width: 24, height: 24 }} />}
+        </div>
+        <p style={{ fontSize: 16, fontWeight: 500, color: C.textMuted, letterSpacing: "-0.64px", margin: 0 }}>
+          @{creator.username}
+        </p>
 
-            <div className="flex items-center gap-3 md:ml-3">
-              {ownProfile ? (
-                <Link
-                  to="/settings"
-                  style={{
-                    border: "1px solid #e0e0e0", color: "#e0e0e0", borderRadius: 100,
-                    padding: "8px 16px", fontSize: 14, fontWeight: 500, letterSpacing: "-0.56px", textDecoration: "none",
-                  }}
-                >
-                  Edit Profile
-                </Link>
-              ) : (
-                <>
-                  {/* Follow / Message are in the design but there's no follow or
-                      messaging system in the app — rendered disabled rather than
-                      faked as working. */}
-                  <button disabled style={{ border: "1px solid #e0e0e0", color: "#e0e0e0", borderRadius: 100, padding: "8px 16px", fontSize: 14, fontWeight: 500, letterSpacing: "-0.56px", opacity: 0.5, cursor: "not-allowed", background: "transparent" }}>
-                    Follow
-                  </button>
-                  <button disabled style={{ background: C.blue, color: "#e0e0e0", border: "none", borderRadius: 100, padding: "8px 16px", fontSize: 14, fontWeight: 500, letterSpacing: "-0.56px", opacity: 0.5, cursor: "not-allowed" }}>
-                    Message
-                  </button>
-                  <img src={ICON.ellipsis} alt="" style={{ width: 24, height: 24, opacity: 0.5 }} />
-                </>
-              )}
+        {creator.bio && (
+          <p style={{ fontSize: 14, color: C.textMuted, letterSpacing: "-0.56px", margin: "14px 0 0", maxWidth: 260 }}>
+            {creator.bio}
+          </p>
+        )}
+        {creator.niche && (
+          <p style={{ fontSize: 14, color: C.textMuted, letterSpacing: "-0.56px", margin: 0, maxWidth: 260 }}>
+            {creator.niche}
+          </p>
+        )}
+
+        <div className="flex items-end justify-between gap-3" style={{ marginTop: 14 }}>
+          {creator.location ? (
+            <div className="flex items-end gap-1.5 min-w-0">
+              <img src={ICON.location} alt="" style={{ width: 16, height: 16, opacity: 0.8, flexShrink: 0 }} />
+              <span style={{ fontSize: 14, fontWeight: 300, color: C.textLoc, letterSpacing: "-0.56px" }} className="truncate">
+                {creator.location}
+              </span>
             </div>
-          </div>
+          ) : <span />}
+          <div className="flex items-center gap-2.5 shrink-0">{actions}</div>
+        </div>
 
-          {creator.name && (
-            <p style={{ fontSize: 18, fontWeight: 500, color: "#fff", letterSpacing: "-0.72px", margin: "10px 0 0" }}>
-              {creator.name}
-            </p>
-          )}
-
-          {creator.bio && (
-            <p style={{ fontSize: 14, color: C.textMuted, letterSpacing: "-0.56px", margin: "6px 0 0", maxWidth: 420 }}>
-              {creator.bio}
-            </p>
-          )}
-          {creator.niche && (
-            <p style={{ fontSize: 14, color: C.textMuted, letterSpacing: "-0.56px", margin: "2px 0 0" }}>
-              {creator.niche}
-            </p>
-          )}
-
-          {creator.location && (
-            <div className="flex items-center gap-1.5" style={{ marginTop: 10 }}>
-              <img src={ICON.location} alt="" style={{ width: 16, height: 16, opacity: 0.8 }} />
-              <span style={{ fontSize: 14, fontWeight: 300, color: C.textLoc, letterSpacing: "-0.56px" }}>{creator.location}</span>
+        {/* Stats: 2x2 inside the gradient card, per the mobile design */}
+        <div
+          className="grid grid-cols-2"
+          style={{ background: GRAD.statsCard, borderRadius: 16, padding: "26px 16px 25px 24px", gap: 24, marginTop: 24 }}
+        >
+          {statItems.map((s) => (
+            <div key={s.label}>
+              <p style={{ fontSize: 24, fontWeight: 600, color: C.textPrimary, letterSpacing: "-0.96px", margin: 0 }}>{s.value}</p>
+              <p style={{ fontSize: 15, color: C.textDim, letterSpacing: "-0.6px", margin: "5px 0 0" }}>{s.label}</p>
             </div>
-          )}
+          ))}
         </div>
       </div>
 
-      {/* Stats row — 4 across on desktop, exactly as laid out in the design */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-4" style={{ marginTop: 32 }}>
-        {statItems.map((s) => (
-          <div key={s.label}>
-            <p style={{ fontSize: 26, fontWeight: 600, color: C.textPrimary, letterSpacing: "-1.04px", margin: 0 }}>{s.value}</p>
-            <p style={{ fontSize: 14, color: C.textDim, letterSpacing: "-0.56px", margin: "4px 0 0" }}>{s.label}</p>
+      {/* ── DESKTOP header ─────────────────────────────────────────────────
+          Large avatar, @handle as the heading with the name beneath. */}
+      <div className="hidden md:block">
+        <div className="flex items-start gap-10">
+          <div
+            className="shrink-0 rounded-full overflow-hidden grid place-items-center"
+            style={{
+              width: 168, height: 168, background: "#0d1322",
+              boxShadow: "0 0 60px rgba(80,157,255,0.18)", border: "1px solid rgba(255,255,255,0.06)",
+            }}
+          >
+            {creator.avatar
+              ? <img src={creator.avatar} alt={creator.name ?? ""} className="w-full h-full object-cover" />
+              : <span style={{ fontSize: 56, fontWeight: 600, color: "#fff" }}>{(creator.name ?? "?").charAt(0).toUpperCase()}</span>}
           </div>
-        ))}
+
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 style={{ fontSize: 30, fontWeight: 500, letterSpacing: "-1.2px", color: "#fff", margin: 0 }}>
+                @{creator.username}
+              </h1>
+              {isVerified && <img src={ICON.verify} alt="Verified" style={{ width: 24, height: 24 }} />}
+              <div className="flex items-center gap-3 ml-3">{actions}</div>
+            </div>
+
+            {creator.name && (
+              <p style={{ fontSize: 18, fontWeight: 500, color: "#fff", letterSpacing: "-0.72px", margin: "10px 0 0" }}>
+                {creator.name}
+              </p>
+            )}
+            {creator.bio && (
+              <p style={{ fontSize: 14, color: C.textMuted, letterSpacing: "-0.56px", margin: "6px 0 0", maxWidth: 420 }}>
+                {creator.bio}
+              </p>
+            )}
+            {creator.niche && (
+              <p style={{ fontSize: 14, color: C.textMuted, letterSpacing: "-0.56px", margin: "2px 0 0" }}>
+                {creator.niche}
+              </p>
+            )}
+            {creator.location && (
+              <div className="flex items-center gap-1.5" style={{ marginTop: 10 }}>
+                <img src={ICON.location} alt="" style={{ width: 16, height: 16, opacity: 0.8 }} />
+                <span style={{ fontSize: 14, fontWeight: 300, color: C.textLoc, letterSpacing: "-0.56px" }}>{creator.location}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Stats: plain 4-across row on desktop */}
+        <div className="grid grid-cols-4 gap-4" style={{ marginTop: 32 }}>
+          {statItems.map((s) => (
+            <div key={s.label}>
+              <p style={{ fontSize: 26, fontWeight: 600, color: C.textPrimary, letterSpacing: "-1.04px", margin: 0 }}>{s.value}</p>
+              <p style={{ fontSize: 14, color: C.textDim, letterSpacing: "-0.56px", margin: "4px 0 0" }}>{s.label}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Per-platform follower cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" style={{ marginTop: 24 }}>
+      {/* Per-platform follower cards — horizontal scroll on mobile (design),
+          4-across grid on desktop. */}
+      <div
+        className="flex md:grid md:grid-cols-4 gap-3 overflow-x-auto md:overflow-visible -mx-4 px-4 md:mx-0 md:px-0"
+        style={{ marginTop: 24, scrollbarWidth: "none" }}
+      >
         {PLATFORM_ORDER.map((key) => {
           const p = PLATFORM[key];
           const acct = accounts.find((a) => a.platform === key);
@@ -211,10 +273,10 @@ function ProfileHeader({
           return (
             <div
               key={key}
-              className="flex items-center gap-3"
+              className="flex items-center gap-3 shrink-0 md:shrink"
               style={{
                 background: p.bg, border: `1px solid ${p.border}`, borderRadius: 8,
-                padding: "7px 8px", opacity: comingSoon || !acct ? 0.45 : 1,
+                padding: "7px 8px", opacity: comingSoon || !acct ? 0.45 : 1, minWidth: 168,
               }}
             >
               <img src={p.icon} alt="" style={{ width: 40, height: 40, flexShrink: 0, objectFit: "contain" }} />
@@ -235,10 +297,15 @@ function ProfileHeader({
 }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────
-function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
+function TabRow({ items, active, onChange, className, gap }: {
+  items: readonly Tab[]; active: Tab; onChange: (t: Tab) => void; className?: string; gap: number;
+}) {
   return (
-    <div className="flex gap-6 md:gap-8 overflow-x-auto" style={{ fontFamily: F, borderBottom: `1px solid rgba(255,255,255,0.05)` }}>
-      {TABS.map((t) => {
+    <div
+      className={`flex overflow-x-auto ${className ?? ""}`}
+      style={{ fontFamily: F, borderBottom: "1px solid rgba(255,255,255,0.05)", gap, scrollbarWidth: "none" }}
+    >
+      {items.map((t) => {
         const on = t === active;
         return (
           <button
@@ -257,6 +324,17 @@ function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void 
         );
       })}
     </div>
+  );
+}
+
+/** The mobile design's tab row differs from desktop's — both are rendered and
+ *  swapped by breakpoint so each matches its own frame. */
+function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
+  return (
+    <>
+      <TabRow items={MOBILE_TABS} active={active} onChange={onChange} className="md:hidden -mx-4 px-4" gap={31} />
+      <TabRow items={DESKTOP_TABS} active={active} onChange={onChange} className="hidden md:flex" gap={32} />
+    </>
   );
 }
 
@@ -692,6 +770,20 @@ export default function CreatorProfilePage({ ownProfile = false }: CreatorProfil
               <div><span style={{ color: C.textMuted }}>Location</span><p style={{ color: "#fff", margin: "2px 0 0" }}>{creator.location || "—"}</p></div>
             </div>
           </Panel>
+        )}
+
+        {/* Mobile-only tabs from that frame. There's no demographics, watch-time
+            or cross-platform comparison data source in the product, so these
+            say so rather than showing invented charts. */}
+        {(tab === "Audience" || tab === "Engagement" || tab === "Earnings" || tab === "Comparison") && (
+          <LockedCard
+            title={tab}
+            note={
+              tab === "Earnings"
+                ? `$${highlights.recentCampaigns.totalEarnedUsdc.toLocaleString()} earned so far — a full earnings breakdown isn't built yet.`
+                : "Coming soon — we don't collect this data from the platform APIs yet."
+            }
+          />
         )}
       </div>
     </div>
