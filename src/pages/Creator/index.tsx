@@ -132,10 +132,20 @@ export default function CreatorProfilePage({ ownProfile = false }: CreatorProfil
   const [profile, setProfile] = useState<CreatorProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  // Distinct from notFound: the account itself loaded fine, it just has no
+  // username set yet — a real, expected state for older accounts, not an
+  // error to hang on indefinitely.
+  const [noUsername, setNoUsername] = useState(false);
 
   useEffect(() => {
     if (!ownProfile) return;
-    getMe().then((d) => setOwnUsername(d.user?.username ?? null)).catch(() => setOwnUsername(null));
+    getMe()
+      .then((d) => {
+        const u = d.user?.username ?? null;
+        setOwnUsername(u);
+        if (!u) { setNoUsername(true); setLoading(false); }
+      })
+      .catch(() => { setOwnUsername(null); setNoUsername(true); setLoading(false); });
   }, [ownProfile]);
 
   useEffect(() => {
@@ -158,8 +168,20 @@ export default function CreatorProfilePage({ ownProfile = false }: CreatorProfil
     return Array.from(byDate.entries()).map(([month, value]) => ({ month, value: Math.round(value / 1000) })).slice(-12);
   }, [profile]);
 
-  if (loading || (ownProfile && !username)) {
+  if (loading || (ownProfile && !username && !noUsername)) {
     return <div className="pt-12 text-center text-[13px] text-fg-tertiary">Loading profile...</div>;
+  }
+
+  if (ownProfile && noUsername) {
+    return (
+      <div className="pt-12 text-center">
+        <p className="text-[15px] font-medium text-fg-primary mb-1">Set a username to see your profile</p>
+        <p className="text-[13px] text-fg-tertiary mb-4">Your profile overview needs a username first.</p>
+        <Link to="/settings" className="inline-block px-4 py-2 rounded-full text-[13px] font-medium bg-brand text-white hover:opacity-90 transition-opacity">
+          Go to Settings
+        </Link>
+      </div>
+    );
   }
 
   if (notFound || !profile) {
