@@ -7,10 +7,14 @@ interface PerformancePoint {
 
 interface PerformanceChartProps {
   data: PerformancePoint[];
+  /** How to render each value — dollars (earnings) or thousands of views. Defaults to dollars. */
+  unit?: "usd" | "views";
 }
 
-/** "Performance Over Time" chart on the analytics overview tab. */
-export function PerformanceChart({ data }: PerformanceChartProps) {
+/** "Performance Over Time" chart on the analytics overview tab. Also reused
+ *  on the Creator Profile page for view-count trends. */
+export function PerformanceChart({ data, unit = "usd" }: PerformanceChartProps) {
+  const formatValue = (v: number) => (unit === "views" ? `${v}k views` : `$${v}k`);
   return (
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart data={data} margin={{ top: 8, right: 4, left: -28, bottom: 0 }}>
@@ -31,7 +35,7 @@ export function PerformanceChart({ data }: PerformanceChartProps) {
           axisLine={false}
           tickLine={false}
           tick={{ fill: "rgb(110 115 128)", fontSize: 11 }}
-          tickFormatter={(v) => `$${v}k`}
+          tickFormatter={formatValue}
           width={50}
         />
         <Tooltip
@@ -43,7 +47,7 @@ export function PerformanceChart({ data }: PerformanceChartProps) {
           }}
           labelStyle={{ color: "rgb(158 162 175)" }}
           itemStyle={{ color: "rgb(245 245 247)" }}
-          formatter={(value: number) => [`$${value}k`, "Value"]}
+          formatter={(value: number) => [formatValue(value), unit === "views" ? "Views" : "Value"]}
         />
         <Area
           type="monotone"

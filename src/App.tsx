@@ -19,6 +19,7 @@ import ReferralDashboardPage from "./pages/Referral/Dashboard";
 import MarketPage from "./pages/Market";
 import WalletPage from "./pages/Wallet";
 import SettingsPage from "./pages/Settings";
+import CreatorProfilePage from "./pages/Creator";
 import NotFoundPage from "./pages/NotFound";
 import LoginPage from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
@@ -172,6 +173,7 @@ export default function App() {
           <Route path="/market"                   element={<MarketPage />} />
           <Route path="/wallet"                   element={<WalletPage />} />
           <Route path="/settings"                 element={<SettingsPage />} />
+          <Route path="/creator/:username"        element={<CreatorProfilePage />} />
           <Route path="*"                         element={<NotFoundPage />} />
         </Route>
 

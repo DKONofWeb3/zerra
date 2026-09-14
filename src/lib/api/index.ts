@@ -1,6 +1,6 @@
 import { apiGet, apiPost, apiGetPublic, apiPut, apiDelete } from "./client";
 import { supabase } from "./supabase";
-import type { InfluenceRatingResponse, AnalyticsInsights } from "../types";
+import type { InfluenceRatingResponse, AnalyticsInsights, CreatorProfileResponse } from "../types";
 
 // ——— Auth / User ———
 export const getMe = () => apiGet<{ user: any }>("/me");
@@ -65,8 +65,23 @@ export const publishToInstagram = (body: {
 }) => apiPost<{ success: boolean; mediaId: string }>("/auth/instagram/publish", body);
 
 // ——— Profile ———
-export const updateProfile = (body: { name?: string; username?: string }) =>
+export const updateProfile = (body: { name?: string; username?: string; bio?: string; location?: string; niche?: string }) =>
   apiPut<{ user: any }>("/me/profile", body);
+
+// ——— Creator Profile ———
+export const getCreatorProfile = (username: string) =>
+  apiGet<CreatorProfileResponse>(`/creators/${encodeURIComponent(username)}`);
+
+// ——— Twitter / X ———
+// Same shape as connectInstagram — needs a real X Developer App registered
+// (TWITTER_CLIENT_ID/SECRET/REDIRECT_URI in the backend env) before this
+// actually completes; the redirect itself always works.
+export async function connectTwitter() {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Not authenticated");
+  window.location.href = `${import.meta.env.VITE_API_URL}/auth/twitter?token=${token}`;
+}
 
 // ——— Notifications ———
 export const updateNotifications = (body: { email: boolean; push: boolean; campaigns: boolean }) =>

@@ -281,6 +281,49 @@ export type InfluenceRatingResponse =
     };
 
 /* ============================================================
+   CREATOR PROFILE + SCORECARD — the public-style profile page. Scorecard
+   is null until the creator has an Influence Rating to build one from
+   (see zerra-backend/src/lib/creatorScorecard.ts). Conversion is
+   intentionally not a field here — no data source exists for it anywhere,
+   so it's a frontend-only "coming soon" tab, never a real number.
+   Backend: GET /creators/:username.
+   ============================================================ */
+export interface CreatorScorecard {
+  overall_score: number;
+  influence_score: number;
+  engagement_score: number;
+  content_quality_score: number | null;
+  reliability_score: number | null;
+  niche_percentile: number | null;
+}
+
+export interface CreatorSocialAccount {
+  platform: string;
+  username: string | null;
+  follower_count: number | null;
+}
+
+export interface CreatorProfileResponse {
+  creator: {
+    id: string;
+    name: string | null;
+    username: string | null;
+    avatar: string | null;
+    bio: string | null;
+    location: string | null;
+    niche: string | null;
+  };
+  socialAccounts: CreatorSocialAccount[];
+  scorecard: CreatorScorecard | null;
+  recentContent: TikTokPost[];
+  highlights: {
+    mostEngagingContent: { title: string | null; engagementRate: number } | null;
+    topPerformingPlatform: string | null;
+    recentCampaigns: { count: number; totalEarnedUsdc: number };
+  };
+}
+
+/* ============================================================
    BADGES — "Early Creators" + "Influencer Badge" claim flow.
    Backend contract (expected, not yet implemented):
      GET  /me/badges            -> { badges: BadgeState[] }
