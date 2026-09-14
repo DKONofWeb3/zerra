@@ -275,12 +275,18 @@ function StatCounter({ target, prefix = "", suffix, label }: { target: number; p
   }, [inView, target]);
 
   return (
-    <div ref={ref} style={{ textAlign: "center" }}>
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 54 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.6, ease: REVEAL_EASE }}
+      style={{ textAlign: "center" }}
+    >
       <p style={{ margin: "0 0 8px", fontFamily: F_BODY, fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 600, color: "#fff", letterSpacing: "-0.02em" }}>
         {prefix}{value}{suffix}
       </p>
       <p style={{ margin: 0, fontFamily: F_BODY, fontSize: 15, color: "rgba(255,255,255,0.7)" }}>{label}</p>
-    </div>
+    </motion.div>
   );
 }
 
@@ -299,15 +305,15 @@ function StatsSection() {
 // icon isn't downloadable in the same clean form, so it falls back to a
 // plain check-badge glyph rather than a guessed 3D render.
 const CREATOR_FEATURES = [
-  { title: "Seamless Social Verification", description: "Link TikTok or YouTube in two clicks.", icon: null },
-  { title: "Zero Volatility Risk", description: "Earn directly in USDC, keeping your revenue safe from crypto fluctuations.", icon: "/landing/icon-stability.png" },
-  { title: "Curated Bounties", description: "Browse active campaigns managed by Zerra, post content, and cash out.", icon: "/landing/icon-bounties.png" },
+  { title: "Seamless Social Verification", description: "Link TikTok or YouTube in two clicks.", smallIcon: "link" as const, illustration: null },
+  { title: "Zero Volatility Risk", description: "Earn directly in USDC, keeping your revenue safe from crypto fluctuations.", smallIcon: "shield" as const, illustration: "/landing/icon-stability.png" },
+  { title: "Curated Bounties", description: "Browse active campaigns managed by Zerra, post content, and cash out.", smallIcon: "sparkle" as const, illustration: "/landing/icon-bounties.png" },
 ];
 
 const SPONSOR_FEATURES = [
-  { title: "Dedicated Business Dashboard", description: "Monitor real-time impressions, view engagement rates, and track verified campaign ROI.", icon: null },
-  { title: "End-to-End Campaign Management", description: "Zerra handles creator sourcing, brief guidelines, and payout logistics.", icon: "/landing/icon-bounties.png" },
-  { title: "Guaranteed Quality Reach", description: "Access pre-vetted creators across TikTok, X, and YouTube with zero bot traffic.", icon: "/landing/icon-stability.png" },
+  { title: "Dedicated Business Dashboard", description: "Monitor real-time impressions, view engagement rates, and track verified campaign ROI.", smallIcon: "shield" as const, illustration: null },
+  { title: "End-to-End Campaign Management", description: "Zerra handles creator sourcing, brief guidelines, and payout logistics.", smallIcon: "link" as const, illustration: "/landing/icon-bounties.png" },
+  { title: "Guaranteed Quality Reach", description: "Access pre-vetted creators across TikTok, X, and YouTube with zero bot traffic.", smallIcon: "sparkle" as const, illustration: "/landing/icon-stability.png" },
 ];
 
 function SectionEyebrow({ children }: { children: React.ReactNode }) {
@@ -318,12 +324,14 @@ function SectionEyebrow({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Real h2 style, confirmed on both "How Zerra Works" and "Frequently Asked
-// Questions": DM Sans, 500 weight, 38px, -1.9px letter-spacing, centered.
+// Real h2 style, confirmed on "Powerful Features...", "How Zerra Works" and
+// "Frequently Asked Questions" at DESKTOP width: DM Sans, 500 weight, 60px,
+// -3px letter-spacing, centered. (38px was the real mobile-width value —
+// this was wrongly used as the desktop cap before.)
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
     <h2 style={{
-      margin: "0 0 16px", fontFamily: F_BODY, fontWeight: 500, fontSize: "clamp(28px, 4vw, 38px)",
+      margin: "0 0 16px", fontFamily: F_BODY, fontWeight: 500, fontSize: "clamp(32px, 6vw, 60px)",
       letterSpacing: "-0.05em", lineHeight: 1.19, color: "#fff",
     }}>
       {children}
@@ -331,20 +339,50 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
-function FeatureIcon({ src }: { src: string | null }) {
-  if (!src) {
-    return (
-      <div style={{
-        width: 56, height: 56, borderRadius: 16, background: "rgb(38 122 240 / 0.15)",
-        border: "1px solid rgb(110 182 255 / 0.3)", display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgb(110 182 255)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="9" />
-        </svg>
-      </div>
-    );
-  }
-  return <img src={src} alt="" style={{ width: 56, height: 56, objectFit: "contain" }} />;
+// Small line-icon badges, confirmed real structure: a plain 34x34 box (no
+// background) holding a single-color glyph, sitting above the title —
+// separate from the bigger illustration lower in the card.
+const SMALL_ICONS = {
+  link: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgb(230 235 245)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+    </svg>
+  ),
+  shield: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgb(230 235 245)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+    </svg>
+  ),
+  sparkle: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgb(230 235 245)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18" />
+    </svg>
+  ),
+} as const;
+
+function SmallIconBadge({ name }: { name: keyof typeof SMALL_ICONS }) {
+  return (
+    <div style={{ width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      {SMALL_ICONS[name]}
+    </div>
+  );
+}
+
+// Real nested structure: a solid-black (#000), 20px-radius box sits inside
+// the card below the title/description, holding the actual illustration —
+// not the icon floating loose on the card's own translucent background.
+function IllustrationBox({ src }: { src: string | null }) {
+  return (
+    <div style={{
+      background: "#000", borderRadius: 20, minHeight: 159, flex: 1,
+      display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
+    }}>
+      {src
+        ? <img src={src} alt="" style={{ width: 80, height: 80, objectFit: "contain" }} />
+        : <span style={{ fontFamily: F_DISPLAY, fontWeight: 700, fontSize: 22, color: "rgb(160 165 178)" }}>Z</span>}
+    </div>
+  );
 }
 
 // Real blob colors sampled directly off the live site (large solid circles
@@ -354,23 +392,27 @@ function FeatureIcon({ src }: { src: string | null }) {
 // Real technique + real colors, confirmed on the live site: a duller navy
 // base blob (normal blend) plus two brighter plus-lighter blobs on top,
 // drifting slowly — not a static, dim, normal-blend glow.
+// The section reads as predominantly DARK on the real site — the blobs are
+// there but heavily diffused (huge blur relative to their own size) and
+// low-opacity, a hint of color rather than a wash. Matched that ratio here
+// instead of the much-too-bright first pass.
 function SwirlingGlow() {
   return (
     <div aria-hidden style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
       <motion.div
         animate={{ y: [-60, 60, -60], x: [-30, 20, -30] }}
         transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-        style={{ position: "absolute", top: "-10%", left: "50%", marginLeft: -480, width: 960, height: 960, borderRadius: "50%", background: "rgb(34 66 107)", mixBlendMode: "normal", filter: "blur(150px)" }}
+        style={{ position: "absolute", top: "-10%", left: "50%", marginLeft: -480, width: 960, height: 960, borderRadius: "50%", background: "rgb(34 66 107)", mixBlendMode: "normal", opacity: 0.5, filter: "blur(320px)" }}
       />
       <motion.div
         animate={{ y: [40, -50, 40], x: [20, -25, 20] }}
         transition={{ duration: 24, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-        style={{ position: "absolute", top: "10%", left: "50%", marginLeft: -460, width: 926, height: 926, borderRadius: "50%", background: "rgb(73 143 232)", mixBlendMode: "plus-lighter", filter: "blur(150px)" }}
+        style={{ position: "absolute", top: "10%", left: "50%", marginLeft: -460, width: 926, height: 926, borderRadius: "50%", background: "rgb(73 143 232)", mixBlendMode: "plus-lighter", opacity: 0.18, filter: "blur(320px)" }}
       />
       <motion.div
         animate={{ y: [-30, 40, -30] }}
         transition={{ duration: 26, repeat: Infinity, ease: "easeInOut", delay: 3 }}
-        style={{ position: "absolute", top: "15%", left: 0, right: 0, height: 700, background: "rgb(73 143 232)", mixBlendMode: "plus-lighter", filter: "blur(180px)" }}
+        style={{ position: "absolute", top: "15%", left: 0, right: 0, height: 700, background: "rgb(73 143 232)", mixBlendMode: "plus-lighter", opacity: 0.12, filter: "blur(380px)" }}
       />
     </div>
   );
@@ -422,13 +464,14 @@ function KeyFeaturesSection() {
         {features.map((f) => (
           <div key={f.title} style={{
             background: "rgba(28,28,28,0.73)", backdropFilter: "blur(41px)", WebkitBackdropFilter: "blur(41px)",
-            borderRadius: 32, padding: "40px 28px 32px", display: "flex", flexDirection: "column", gap: 20,
+            borderRadius: 32, padding: 12, display: "flex", flexDirection: "column", gap: 12, minHeight: 381,
           }}>
-            <FeatureIcon src={f.icon} />
-            <div>
-              <p style={{ margin: "0 0 8px", fontFamily: F_BODY, fontSize: 24, fontWeight: 500, lineHeight: 1.2, color: "#fff" }}>{f.title}</p>
+            <div style={{ padding: "28px 16px 0" }}>
+              <SmallIconBadge name={f.smallIcon} />
+              <p style={{ margin: "12px 0 6px", fontFamily: F_BODY, fontSize: 24, fontWeight: 500, lineHeight: 1.2, color: "#fff" }}>{f.title}</p>
               <p style={{ margin: 0, fontFamily: F_BODY, fontSize: 16, fontWeight: 400, color: "rgb(110 110 110)", lineHeight: 1.5 }}>{f.description}</p>
             </div>
+            <IllustrationBox src={f.illustration} />
           </div>
         ))}
       </div>
