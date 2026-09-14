@@ -40,13 +40,10 @@ function useTabConfig(): TabConfig {
       onTabClick: (tab) => tab === "Payments" ? setSearchParams({ tab: "payments" }) : setSearchParams({}),
     };
   }
+  // Dashboard has no top-bar tabs — it renders the creator profile in full,
+  // and the profile's own section tabs live inside the page.
   if (pathname.startsWith("/dashboard")) {
-    const activeTab = searchParams.get("tab") === "analytics" ? "Analytics" : "Overview";
-    return {
-      tabs: ["Overview", "Analytics"],
-      activeTab,
-      onTabClick: (tab) => tab === "Analytics" ? setSearchParams({ tab: "analytics" }) : setSearchParams({}),
-    };
+    return { tabs: [], activeTab: "", onTabClick: () => {} };
   }
   if (pathname.startsWith("/market"))   return { tabs: ["Market"],   activeTab: "Market",   onTabClick: () => {} };
   if (pathname.startsWith("/wallet"))   return { tabs: ["Wallet"],   activeTab: "Wallet",   onTabClick: () => {} };
