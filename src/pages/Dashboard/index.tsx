@@ -1,16 +1,9 @@
-import { useSearchParams } from "react-router-dom";
-import { AnalyticsOverview } from "@/components/dashboard/AnalyticsOverview";
 import CreatorProfilePage from "@/pages/Creator";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
 export default function DashboardPage() {
-  usePageTitle("Zerra · Overview");
-  const [searchParams] = useSearchParams();
-  const tab = searchParams.get("tab") === "analytics" ? "analytics" : "overview";
-
-  return (
-    <div>
-      {tab === "overview" ? <CreatorProfilePage ownProfile /> : <AnalyticsOverview />}
-    </div>
-  );
+  usePageTitle("Zerra · Dashboard");
+  // No Overview/Analytics split any more — the dashboard IS the creator
+  // profile, shown in full. The profile's own section tabs live inside it.
+  return <CreatorProfilePage ownProfile />;
 }
