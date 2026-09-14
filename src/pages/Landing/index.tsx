@@ -73,24 +73,26 @@ const EDGE_BADGES = [
 // mix-blend-mode: plus-lighter (additive, like real light), which is what
 // makes it read so much brighter/more vivid than a normal-blend glow.
 // Confirmed via getComputedStyle on the live site's own glow elements.
-function GlowBlob({ top, left, size, color, blur, blend = "plus-lighter" }: {
-  top: string; left: string; size: string; color: string; blur: number; blend?: "plus-lighter" | "normal";
+function GlowBlob({ top, left, size, color, blur, blend = "plus-lighter", opacity = 1 }: {
+  top: string; left: string; size: string; color: string; blur: number; blend?: "plus-lighter" | "normal"; opacity?: number;
 }) {
   return (
     <div aria-hidden style={{
       position: "absolute", top, left, width: size, height: size, borderRadius: "50%",
-      background: color, filter: `blur(${blur}px)`, mixBlendMode: blend, pointerEvents: "none",
+      background: color, filter: `blur(${blur}px)`, mixBlendMode: blend, opacity, pointerEvents: "none",
     }} />
   );
 }
 
 // Real splash-section glow blobs, positions confirmed on the live site at a
-// 1440×900 viewport and converted to percentages.
-const WELCOME_GLOWS: { top: string; left: string; size: string; color: string; blur: number; blend?: "plus-lighter" | "normal" }[] = [
-  { top: "-75.7%", left: "7.8%",   size: "79.9vw", color: "rgb(0 128 255)", blur: 160, blend: "plus-lighter" },
-  { top: "-75.9%", left: "25%",    size: "50vw",   color: "rgb(0 113 255)", blur: 220, blend: "normal" },
-  { top: "-68.8%", left: "16.6%",  size: "65.9vw", color: "rgb(255 255 255)", blur: 140, blend: "plus-lighter" },
-  { top: "-40.9%", left: "21.25%", size: "57.5vw", color: "rgb(255 255 255)", blur: 60,  blend: "plus-lighter" },
+// 1440×900 viewport. Scaled down from the raw measurement and capped on
+// opacity here — at their literal real size the halo reads as a giant wash
+// that swallows the badge instead of sitting behind it as ambient light.
+const WELCOME_GLOWS: { top: string; left: string; size: string; color: string; blur: number; blend?: "plus-lighter" | "normal"; opacity?: number }[] = [
+  { top: "-40%", left: "10%",  size: "48vw", color: "rgb(0 128 255)",   blur: 140, blend: "plus-lighter", opacity: 0.7 },
+  { top: "-38%", left: "28%",  size: "34vw", color: "rgb(0 113 255)",   blur: 160, blend: "normal",       opacity: 0.6 },
+  { top: "-32%", left: "22%",  size: "40vw", color: "rgb(255 255 255)", blur: 120, blend: "plus-lighter", opacity: 0.35 },
+  { top: "-14%", left: "27%",  size: "34vw", color: "rgb(255 255 255)", blur: 60,  blend: "plus-lighter", opacity: 0.3 },
 ];
 
 /**
@@ -119,18 +121,22 @@ function WelcomeSection() {
         <source src="/landing/hero-badge.mp4" type="video/mp4" />
       </motion.video>
 
-      {/* Real ambient glow — solid colors + plus-lighter blend, not a soft gradient. */}
-      <div aria-hidden style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
+      {/* Real ambient glow — solid colors + plus-lighter blend, not a soft gradient.
+          Explicit z-index 0 so the badge (z-index 1 below) is unambiguously in
+          front of it, not just relying on DOM order. */}
+      <div aria-hidden style={{ position: "absolute", inset: 0, zIndex: 0, overflow: "hidden", pointerEvents: "none" }}>
         {WELCOME_GLOWS.map((g, i) => <GlowBlob key={i} {...g} />)}
       </div>
 
-      {/* Real badge composite — hidden until the video finishes, then fades/scales in. */}
+      {/* Real badge composite — hidden until the video finishes, then fades/scales in.
+          zIndex 1: explicitly above the glow layer, so the badge always reads
+          as sitting in front of the light, not washed out by it. */}
       <motion.div
         aria-hidden
         initial={{ opacity: 0 }}
         animate={{ opacity: videoDone ? 1 : 0 }}
         transition={{ duration: 1.2, delay: 0.3, ease: REVEAL_EASE }}
-        style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }}
+        style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none" }}
       >
         <img src={LIGHT_RAY.src} alt="" style={{ position: "absolute", ...LIGHT_RAY }} />
         {EDGE_BADGES.map((b, i) => (
