@@ -68,6 +68,31 @@ const EDGE_BADGES = [
   { src: "/landing/hero/edge-right.png", left: "71.1%",  top: "-81.8%", width: "55.7%", height: "134.7%" },
 ];
 
+// The real site's "lighting" isn't a soft alpha-blended radial-gradient — it's
+// solid-color circles with huge blur radii composited with
+// mix-blend-mode: plus-lighter (additive, like real light), which is what
+// makes it read so much brighter/more vivid than a normal-blend glow.
+// Confirmed via getComputedStyle on the live site's own glow elements.
+function GlowBlob({ top, left, size, color, blur, blend = "plus-lighter" }: {
+  top: string; left: string; size: string; color: string; blur: number; blend?: "plus-lighter" | "normal";
+}) {
+  return (
+    <div aria-hidden style={{
+      position: "absolute", top, left, width: size, height: size, borderRadius: "50%",
+      background: color, filter: `blur(${blur}px)`, mixBlendMode: blend, pointerEvents: "none",
+    }} />
+  );
+}
+
+// Real splash-section glow blobs, positions confirmed on the live site at a
+// 1440×900 viewport and converted to percentages.
+const WELCOME_GLOWS: { top: string; left: string; size: string; color: string; blur: number; blend?: "plus-lighter" | "normal" }[] = [
+  { top: "-75.7%", left: "7.8%",   size: "79.9vw", color: "rgb(0 128 255)", blur: 160, blend: "plus-lighter" },
+  { top: "-75.9%", left: "25%",    size: "50vw",   color: "rgb(0 113 255)", blur: 220, blend: "normal" },
+  { top: "-68.8%", left: "16.6%",  size: "65.9vw", color: "rgb(255 255 255)", blur: 140, blend: "plus-lighter" },
+  { top: "-40.9%", left: "21.25%", size: "57.5vw", color: "rgb(255 255 255)", blur: 60,  blend: "plus-lighter" },
+];
+
 /**
  * "Welcome to Zerra" splash — the real exported reveal video plays once
  * (framerusercontent.com/assets/OQFDkIw64Cz13Mr1o3ZPcgdWQ.mp4), then dims
@@ -93,6 +118,11 @@ function WelcomeSection() {
       >
         <source src="/landing/hero-badge.mp4" type="video/mp4" />
       </motion.video>
+
+      {/* Real ambient glow — solid colors + plus-lighter blend, not a soft gradient. */}
+      <div aria-hidden style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
+        {WELCOME_GLOWS.map((g, i) => <GlowBlob key={i} {...g} />)}
+      </div>
 
       {/* Real badge composite — hidden until the video finishes, then fades/scales in. */}
       <motion.div
@@ -154,11 +184,14 @@ function WelcomeSection() {
 function Hero() {
   return (
     <section style={{ position: "relative", overflow: "hidden", background: "#06080e" }}>
-      {/* real accent-blue glow, sampled from the live site's own palette
-          (rgb(38,122,240) / rgb(110,182,255)) — the real site's glow is much
-          brighter/larger than a subtle accent touch, washing over most of
-          the section behind the dashboard mockup. */}
-      <div aria-hidden style={{ position: "absolute", top: -100, left: "50%", transform: "translateX(-50%)", width: 1600, height: 1100, background: "radial-gradient(ellipse, rgb(38 122 240 / 0.55) 0%, rgb(65 103 217 / 0.28) 40%, rgb(38 122 240 / 0.08) 65%, transparent 80%)", filter: "blur(20px)", pointerEvents: "none" }} />
+      {/* Same real technique as the splash glow (solid color + huge blur +
+          plus-lighter), applied here since this section washes in the
+          same bright blue/white light in the reference design. */}
+      <div aria-hidden style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
+        <GlowBlob top="-45%" left="10%"  size="60vw" color="rgb(0 128 255)"   blur={150} blend="plus-lighter" />
+        <GlowBlob top="-30%" left="45%"  size="55vw" color="rgb(255 255 255)" blur={130} blend="plus-lighter" />
+        <GlowBlob top="-50%" left="55%"  size="48vw" color="rgb(0 113 255)"   blur={190} blend="normal" />
+      </div>
 
       <div style={{ position: "relative", zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "100px 24px 0" }}>
         <h1 style={{
@@ -312,18 +345,26 @@ function FeatureIcon({ src }: { src: string | null }) {
 // behind the Key Features / How It Works area: rgb(73,143,232) and
 // rgb(34,66,107)). The site drifts these slowly top-to-bottom; framer-motion
 // reproduces that rather than a static glow.
+// Real technique + real colors, confirmed on the live site: a duller navy
+// base blob (normal blend) plus two brighter plus-lighter blobs on top,
+// drifting slowly — not a static, dim, normal-blend glow.
 function SwirlingGlow() {
   return (
     <div aria-hidden style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
       <motion.div
-        animate={{ y: [-80, 80, -80], x: [-40, 30, -40] }}
-        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-        style={{ position: "absolute", top: "-15%", left: "50%", marginLeft: -480, width: 960, height: 960, borderRadius: "50%", background: "rgb(73 143 232)", opacity: 0.22, filter: "blur(120px)" }}
+        animate={{ y: [-60, 60, -60], x: [-30, 20, -30] }}
+        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+        style={{ position: "absolute", top: "-10%", left: "50%", marginLeft: -480, width: 960, height: 960, borderRadius: "50%", background: "rgb(34 66 107)", mixBlendMode: "normal", filter: "blur(150px)" }}
       />
       <motion.div
-        animate={{ y: [60, -60, 60], x: [20, -30, 20] }}
-        transition={{ duration: 22, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-        style={{ position: "absolute", top: "35%", left: "50%", marginLeft: -280, width: 700, height: 700, borderRadius: "50%", background: "rgb(34 66 107)", opacity: 0.3, filter: "blur(100px)" }}
+        animate={{ y: [40, -50, 40], x: [20, -25, 20] }}
+        transition={{ duration: 24, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+        style={{ position: "absolute", top: "10%", left: "50%", marginLeft: -460, width: 926, height: 926, borderRadius: "50%", background: "rgb(73 143 232)", mixBlendMode: "plus-lighter", filter: "blur(150px)" }}
+      />
+      <motion.div
+        animate={{ y: [-30, 40, -30] }}
+        transition={{ duration: 26, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+        style={{ position: "absolute", top: "15%", left: 0, right: 0, height: 700, background: "rgb(73 143 232)", mixBlendMode: "plus-lighter", filter: "blur(180px)" }}
       />
     </div>
   );
@@ -353,14 +394,19 @@ function KeyFeaturesSection() {
             key={key}
             onClick={() => setTab(key)}
             style={{
-              padding: "10px 24px", borderRadius: 100, fontFamily: F_DISPLAY, fontSize: 14, fontWeight: 600, cursor: "pointer",
-              border: "none",
-              background: tab === key ? "linear-gradient(135deg, rgb(65 103 217) 0%, rgb(38 122 240) 100%)" : "transparent",
+              position: "relative", overflow: "hidden", padding: "10px 24px", borderRadius: 100,
+              fontFamily: F_DISPLAY, fontSize: 14, fontWeight: 600, cursor: "pointer", border: "none",
+              background: tab === key ? "#000" : "transparent",
               color: tab === key ? "#fff" : "rgb(160 165 178)",
               transition: "background 0.2s, color 0.2s",
             }}
           >
-            {key === "creators" ? "Creators" : "Sponsors"}
+            {/* Real active-tab treatment: black pill with a blurred blue blob
+                glowing from inside it, not a flat gradient fill. */}
+            {tab === key && (
+              <span aria-hidden style={{ position: "absolute", inset: "-40%", background: "rgb(38 122 240)", filter: "blur(15px)", zIndex: 0 }} />
+            )}
+            <span style={{ position: "relative", zIndex: 1 }}>{key === "creators" ? "Creators" : "Sponsors"}</span>
           </button>
         ))}
         </div>
