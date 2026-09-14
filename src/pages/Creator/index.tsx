@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { getCreatorProfile, getMe } from "@/lib/api";
+import { getCreatorProfile, getMe, getTopCreators } from "@/lib/api";
+import { BadgeClaimModal } from "@/components/dashboard/BadgeClaimModal";
 import { AnalyticsOverview } from "@/components/dashboard/AnalyticsOverview";
 import { LockedCard } from "@/components/dashboard/LockedCard";
 import { BadgeGlyph } from "@/components/icons/BadgeIcon";
 import { useBadges } from "@/hooks/useBadges";
 import { useSocialAccounts } from "@/hooks/useSocialAccounts";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import type { CreatorProfileResponse, TikTokPost } from "@/lib/types";
+import type { CreatorProfileResponse, TikTokPost, BadgeState } from "@/lib/types";
 
 // Design tokens taken from the real Figma node (nAllTZdIEQt2sfhrTgtcAQ,
 // 394:776) — DM Sans throughout, with the exact greys/blues the design uses.
@@ -78,8 +79,8 @@ const PLATFORM_ORDER = ["instagram", "youtube", "tiktok", "twitter"] as const;
 
 // The two frames genuinely have different tab rows, so each breakpoint gets
 // the set its own design specifies.
-const DESKTOP_TABS = ["Overview", "Content", "Analytics", "Campaigns", "About"] as const;
-const MOBILE_TABS = ["Overview", "Audience", "Content", "Engagement", "Earnings", "Campaigns", "Comparison"] as const;
+const DESKTOP_TABS = ["Overview", "Content", "Analytics", "Leaderboard", "Campaigns", "About"] as const;
+const MOBILE_TABS = ["Overview", "Audience", "Content", "Engagement", "Earnings", "Leaderboard", "Campaigns", "Comparison"] as const;
 type Tab = (typeof DESKTOP_TABS)[number] | (typeof MOBILE_TABS)[number];
 
 function fmt(n: number) {
@@ -94,9 +95,9 @@ function dateLabel(iso: string | null) {
 }
 
 /** Rounded panel matching the design's chart/content cards. */
-function Panel({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+function Panel({ children, style, className }: { children: React.ReactNode; style?: React.CSSProperties; className?: string }) {
   return (
-    <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24, ...style }}>
+    <div className={className} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24, ...style }}>
       {children}
     </div>
   );
@@ -586,6 +587,151 @@ function HighlightsCard({ highlights, niche }: { highlights: CreatorProfileRespo
   );
 }
 
+/** Somewhere to actually claim earned badges — this had no home after the old
+ *  dashboard Overview was replaced. Own profile only; eligibility and claiming
+ *  both go through the real /me/badges endpoints via useBadges. */
+function BadgesCard({
+  badges, claimingId, onClaim,
+}: {
+  badges: BadgeState[];
+  claimingId: string | null;
+  onClaim: (id: string) => void;
+}) {
+  return (
+    <div style={{ background: "#070c18", borderRadius: 24, padding: "16px 19px 18px", fontFamily: F }}>
+      <p style={{ fontSize: 20, fontWeight: 500, color: C.textPrimary, letterSpacing: "-0.8px", margin: "0 0 20px" }}>
+        Badges
+      </p>
+      <div className="flex flex-col gap-4">
+        {badges.map((b) => {
+          const claiming = claimingId === b.id;
+          return (
+            <div key={b.id} className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span style={{ opacity: b.attained ? 1 : 0.35, flexShrink: 0, display: "grid", placeItems: "center" }}>
+                  <BadgeGlyph theme={b.theme} size={34} glow={b.attained} />
+                </span>
+                <div className="min-w-0">
+                  <p style={{ fontSize: 15, fontWeight: 500, color: C.textPrimary, letterSpacing: "-0.6px", margin: 0 }}>
+                    {b.shortLabel}
+                  </p>
+                  <p style={{ fontSize: 13, color: C.textMuted, letterSpacing: "-0.52px", margin: 0 }}>
+                    {b.attained ? (b.attainedDescription ?? b.description) : b.description}
+                  </p>
+                </div>
+              </div>
+
+              {b.attained ? (
+                <span style={{ fontSize: 13, color: C.green, whiteSpace: "nowrap" }}>Claimed</span>
+              ) : b.eligible ? (
+                <button
+                  onClick={() => onClaim(b.id)}
+                  disabled={claiming}
+                  style={{
+                    background: C.blue, color: "#fff", border: "none", borderRadius: 100,
+                    padding: "7px 16px", fontSize: 13, fontWeight: 500, whiteSpace: "nowrap",
+                    cursor: claiming ? "default" : "pointer", opacity: claiming ? 0.6 : 1,
+                  }}
+                >
+                  {claiming ? "Claiming..." : "Claim"}
+                </button>
+              ) : (
+                <span style={{ fontSize: 13, color: C.tabIdle, whiteSpace: "nowrap" }}>Locked</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+interface LeaderboardCreator {
+  user_id: string;
+  name: string | null;
+  avatar: string | null;
+  username: string | null;
+  total_views: number;
+  avg_engagement_rate: number;
+  verified_score: number;
+}
+
+/** Real ranking from GET /analytics/top-creators. */
+function LeaderboardPanel({ meUsername }: { meUsername: string | null }) {
+  const [rows, setRows] = useState<LeaderboardCreator[] | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    getTopCreators()
+      .then((d) => setRows((d.creators ?? []) as LeaderboardCreator[]))
+      .catch(() => setFailed(true));
+  }, []);
+
+  if (failed) {
+    return <Panel><p style={{ fontSize: 14, color: C.textMuted, margin: 0 }}>Couldn't load the leaderboard. Try again shortly.</p></Panel>;
+  }
+  if (!rows) {
+    return <Panel><p style={{ fontSize: 14, color: C.textMuted, margin: 0 }}>Loading leaderboard...</p></Panel>;
+  }
+  if (rows.length === 0) {
+    return <Panel><p style={{ fontSize: 14, color: C.textMuted, margin: 0 }}>No ranked creators yet — the leaderboard fills in as creators sync content.</p></Panel>;
+  }
+
+  return (
+    <Panel style={{ padding: 0, overflow: "hidden" }}>
+      <div className="flex items-center justify-between" style={{ padding: "20px 24px 12px" }}>
+        <p style={{ fontSize: 20, fontWeight: 500, color: "#fff", letterSpacing: "-0.8px", margin: 0 }}>Leaderboard</p>
+        <span style={{ fontSize: 13, color: C.textMuted }}>{rows.length} creators</span>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: F, minWidth: 520 }}>
+          <thead>
+            <tr style={{ borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }}>
+              {["#", "Creator", "Views", "Avg ER", "Score"].map((h, i) => (
+                <th key={h} style={{
+                  textAlign: i === 0 || i === 1 ? "left" : "right", padding: "10px 24px",
+                  fontSize: 12, fontWeight: 500, color: C.textMuted, letterSpacing: "-0.48px", whiteSpace: "nowrap",
+                }}>
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((c, i) => {
+              const isMe = !!meUsername && c.username === meUsername;
+              return (
+                <tr key={c.user_id} style={{ borderBottom: `1px solid rgba(255,255,255,0.04)`, background: isMe ? "rgba(80,157,255,0.10)" : "transparent" }}>
+                  <td style={{ padding: "12px 24px", fontSize: 14, color: i < 3 ? C.blue : C.textMuted, fontWeight: i < 3 ? 600 : 400 }}>{i + 1}</td>
+                  <td style={{ padding: "12px 24px" }}>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="shrink-0 rounded-full overflow-hidden grid place-items-center" style={{ width: 28, height: 28, background: "#0d1322" }}>
+                        {c.avatar
+                          ? <img src={c.avatar} alt="" className="w-full h-full object-cover" />
+                          : <span style={{ fontSize: 12, color: "#fff" }}>{(c.name ?? "?").charAt(0).toUpperCase()}</span>}
+                      </span>
+                      <div className="min-w-0">
+                        <p style={{ fontSize: 14, color: "#fff", margin: 0 }} className="truncate">{c.name ?? "Unnamed"}</p>
+                        {c.username && <p style={{ fontSize: 12, color: C.textMuted, margin: 0 }} className="truncate">@{c.username}</p>}
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ padding: "12px 24px", textAlign: "right", fontSize: 14, color: "#fff" }}>{fmt(c.total_views)}</td>
+                  <td style={{ padding: "12px 24px", textAlign: "right", fontSize: 14, color: "#fff" }}>{c.avg_engagement_rate}%</td>
+                  <td style={{ padding: "12px 24px", textAlign: "right", fontSize: 14, color: c.verified_score > 0 ? "#fff" : C.tabIdle }}>
+                    {c.verified_score > 0 ? c.verified_score : "—"}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </Panel>
+  );
+}
+
 function VerifiedPlatformsCard({
   accounts, ownProfile, username,
 }: {
@@ -652,7 +798,12 @@ export default function CreatorProfilePage({ ownProfile = false }: CreatorProfil
 
   const { accounts: ownAccounts } = useSocialAccounts();
   const tiktokFollowers = ownAccounts.find((a) => a.platform === "tiktok")?.follower_count ?? null;
-  const { badges } = useBadges(tiktokFollowers);
+  const { badges, claim, claimingId } = useBadges(tiktokFollowers);
+  const [claimModalId, setClaimModalId] = useState<string | null>(null);
+  const handleClaim = async (id: string) => {
+    await claim(id);
+    setClaimModalId(id);
+  };
   const isVerified = ownProfile && badges.some((b) => b.id === "verified-influencer" && b.attained);
   // Any other earned badges render as their own glyph next to the name, so
   // "verified" isn't shown twice (tick + glyph) for the same badge.
@@ -742,10 +893,17 @@ export default function CreatorProfilePage({ ownProfile = false }: CreatorProfil
 
       <div style={{ marginTop: 24 }}>
         {tab === "Overview" && (
-          <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-6">
-            <div className="flex flex-col gap-6 min-w-0">
-              <PerformancePanel posts={recentContent} />
-              <Panel style={{ background: "linear-gradient(180deg, #06080e 30%, rgba(61,114,255,0.12) 220%)" }}>
+          // Mobile stacks in the order the mobile frame uses — Score and
+          // Highlights come straight after the tabs, then the chart, content
+          // and platforms. `display: contents` lets the column wrappers
+          // collapse on mobile so `order` can do that, while desktop keeps the
+          // real two-column split.
+          <div className="flex flex-col xl:grid xl:grid-cols-[1fr_340px] gap-6">
+            <div className="contents xl:flex xl:flex-col xl:gap-6 min-w-0">
+              <div className="order-3 xl:order-none">
+                <PerformancePanel posts={recentContent} />
+              </div>
+              <Panel className="order-4 xl:order-none" style={{ background: "linear-gradient(180deg, #06080e 30%, rgba(61,114,255,0.12) 220%)" }}>
                 <div className="flex items-center justify-between" style={{ marginBottom: 24 }}>
                   <p style={{ fontSize: 26, fontWeight: 500, color: "#fff", letterSpacing: "-0.96px", margin: 0 }}>Recent Content</p>
                   <button onClick={() => setTab("Content")} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: C.textMuted }}>
@@ -756,13 +914,26 @@ export default function CreatorProfilePage({ ownProfile = false }: CreatorProfil
               </Panel>
             </div>
 
-            <div className="flex flex-col gap-6">
-              <ScoreCard scorecard={scorecard} niche={creator.niche} />
-              <HighlightsCard highlights={highlights} niche={creator.niche} />
-              <VerifiedPlatformsCard accounts={socialAccounts} ownProfile={ownProfile} username={creator.username} />
+            <div className="contents xl:flex xl:flex-col xl:gap-6">
+              <div className="order-1 xl:order-none">
+                <ScoreCard scorecard={scorecard} niche={creator.niche} />
+              </div>
+              <div className="order-2 xl:order-none">
+                <HighlightsCard highlights={highlights} niche={creator.niche} />
+              </div>
+              <div className="order-5 xl:order-none">
+                <VerifiedPlatformsCard accounts={socialAccounts} ownProfile={ownProfile} username={creator.username} />
+              </div>
+              {ownProfile && (
+                <div className="order-6 xl:order-none">
+                  <BadgesCard badges={badges} claimingId={claimingId} onClaim={handleClaim} />
+                </div>
+              )}
             </div>
           </div>
         )}
+
+        {tab === "Leaderboard" && <LeaderboardPanel meUsername={creator.username} />}
 
         {tab === "Content" && (
           <Panel>
@@ -812,6 +983,13 @@ export default function CreatorProfilePage({ ownProfile = false }: CreatorProfil
           />
         )}
       </div>
+
+      {ownProfile && (
+        <BadgeClaimModal
+          badge={badges.find((b) => b.id === claimModalId) ?? null}
+          onClose={() => setClaimModalId(null)}
+        />
+      )}
     </div>
   );
 }
