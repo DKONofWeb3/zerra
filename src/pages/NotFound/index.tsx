@@ -13,7 +13,7 @@ export default function NotFoundPage() {
         The page you're looking for has been moved, deleted, or never existed.
       </p>
       <Link
-        to="/"
+        to="/dashboard"
         className="inline-block mt-8 pill-surface px-5 h-11 grid place-items-center text-[14px] hover:border-stroke-strong transition-colors"
       >
         ← Back to Dashboard

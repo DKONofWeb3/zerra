@@ -1,5 +1,4 @@
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { Link } from "react-router-dom";
 
 export default function PrivacyPage() {
   usePageTitle("Privacy Policy · Zerra");
@@ -15,10 +14,12 @@ export default function PrivacyPage() {
     }}>
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
 
-        {/* Back */}
-        <Link to="/" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "rgb(74 125 255)", textDecoration: "none", marginBottom: 48 }}>
+        {/* Plain <a>, not a router <Link> — "/" is now proxied to the real
+            Framer homepage at the edge, which only fires on an actual page
+            load, not client-side SPA navigation. */}
+        <a href="/" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "rgb(74 125 255)", textDecoration: "none", marginBottom: 48 }}>
           ← Back to Zerra
-        </Link>
+        </a>
 
         {/* Header */}
         <h1 style={{ fontSize: 48, fontWeight: 700, letterSpacing: "-0.5px", marginBottom: 12, lineHeight: 1.1 }}>
