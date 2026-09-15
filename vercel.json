@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/home", "destination": "https://valuable-guest-578488.framer.app/home" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
