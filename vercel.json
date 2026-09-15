@@ -1,6 +1,8 @@
 {
+  "redirects": [
+    { "source": "/", "destination": "/home", "permanent": false }
+  ],
   "rewrites": [
-    { "source": "/", "destination": "https://valuable-guest-578488.framer.app/home" },
     { "source": "/home", "destination": "https://valuable-guest-578488.framer.app/home" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
