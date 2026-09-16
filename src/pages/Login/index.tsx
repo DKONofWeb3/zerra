@@ -36,7 +36,14 @@ export default function LoginPage() {
           return;
         }
 
-        const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+        // Explicit emailRedirectTo matters now: "/" itself redirects to the
+        // external Framer homepage (see vercel.json), so without this the
+        // confirmation link would land there instead of processing the
+        // session and never reach the dashboard.
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email, password,
+          options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        });
 
         if (signUpError) {
           if (
