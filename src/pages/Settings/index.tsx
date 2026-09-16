@@ -488,15 +488,22 @@ function ConnectedAccountsSection() {
   const { accounts, connectTikTok, disconnect } = useSocialAccounts();
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [igError, setIgError] = useState<string | null>(null);
+  const [tiktokError, setTiktokError] = useState<string | null>(null);
 
-  // Check for Instagram-specific error from OAuth redirect
+  // Check for connect errors coming back from the OAuth redirect
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const error = params.get("error");
     if (error === "instagram_not_professional") {
       setIgError("Your Instagram account needs to be a Professional (Business or Creator) account. Switch to one in the Instagram app, then try again.");
+    } else if (error === "instagram_already_linked") {
+      setIgError("That Instagram account is already connected to a different Zerra account.");
     } else if (error === "instagram_failed") {
       setIgError("Instagram connection failed. Please try again.");
+    } else if (error === "tiktok_already_linked") {
+      setTiktokError("That TikTok account is already connected to a different Zerra account.");
+    } else if (error === "tiktok_failed" || error === "tiktok_denied") {
+      setTiktokError("TikTok connection failed. Please try again.");
     }
   }, []);
 
@@ -529,7 +536,7 @@ function ConnectedAccountsSection() {
         </svg>
       ),
       onConnect: connectTikTok,
-      error: null,
+      error: tiktokError,
     },
     {
       key: "instagram", label: "Instagram",
