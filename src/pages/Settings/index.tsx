@@ -243,7 +243,7 @@ function ProfileSection() {
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g. Abuja, Nigeria"
+              placeholder="e.g. New York, United States"
               className="w-full px-4 py-3 rounded-xl border border-white/[0.06] bg-bg-base/60 text-[14px] text-fg-primary placeholder:text-fg-muted focus:outline-none focus:border-white/[0.15] transition-colors"
             />
           </div>
