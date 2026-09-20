@@ -3,6 +3,7 @@ import { Star, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { apiGetPublic } from "@/lib/api/client";
+import { rankGeneral, avgEngagementPerPost } from "@/lib/generalScore";
 
 interface Creator {
   user_id: string;
@@ -15,6 +16,9 @@ interface Creator {
   total_shares: number;
   post_count: number;
   avg_engagement_rate: number;
+  /** Real, summed across connected platforms. Absent on the hardcoded showcase creators. */
+  followers?: number | null;
+  avg_engagement_per_post?: number | null;
   niche?: string;
 }
 
@@ -121,12 +125,20 @@ function CreatorRow({ creator, rank }: { creator: Creator; rank: number }) {
         <p className="text-[10px] md:text-[11px] text-fg-tertiary">Engagement</p>
       </div>
       <div className="hidden sm:block text-right shrink-0 w-16 md:w-20">
-        <p className="text-[12px] md:text-[13px] text-fg-secondary tabular-nums">{fmt(creator.total_views)}</p>
-        <p className="text-[10px] md:text-[11px] text-fg-tertiary">Views</p>
+        <p className="text-[12px] md:text-[13px] text-fg-secondary tabular-nums">
+          {creator.followers != null ? fmt(creator.followers) : "—"}
+        </p>
+        <p className="text-[10px] md:text-[11px] text-fg-tertiary">Followers</p>
       </div>
-      <div className="hidden md:block text-right shrink-0 w-14">
-        <p className="text-[13px] text-fg-secondary tabular-nums">{creator.post_count}</p>
-        <p className="text-[11px] text-fg-tertiary">Posts</p>
+      <div className="hidden md:block text-right shrink-0 w-16 md:w-20">
+        <p className="text-[13px] text-fg-secondary tabular-nums">
+          {avgEngagementPerPost(creator) != null ? fmt(avgEngagementPerPost(creator) as number) : "—"}
+        </p>
+        <p className="text-[11px] text-fg-tertiary">Avg / post</p>
+      </div>
+      <div className="hidden lg:block text-right shrink-0 w-16 md:w-20">
+        <p className="text-[13px] text-fg-secondary tabular-nums">{fmt(creator.total_views)}</p>
+        <p className="text-[11px] text-fg-tertiary">Views</p>
       </div>
     </div>
   );
@@ -167,7 +179,9 @@ export default function TopCreatorsPage() {
         (c.username ?? "").toLowerCase().includes(query.toLowerCase())
       )
     : byNiche;
-  const sorted = [...filtered].sort((a, b) => b.avg_engagement_rate - a.avg_engagement_rate);
+  // Ranked on followers + engagement rate + avg engagement per post (+ views), not
+  // engagement rate alone - see lib/generalScore.ts for why.
+  const sorted = rankGeneral(filtered);
 
   return (
     <div className="pb-12 space-y-6 md:space-y-8">
