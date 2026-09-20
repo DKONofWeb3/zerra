@@ -38,6 +38,11 @@ export const getTikTokAnalytics = () =>
 export const getTopCreators = () =>
   apiGetPublic<{ creators: any[] }>("/analytics/top-creators");
 
+// Zerra leaderboard: points accumulated across campaigns (the general reach/
+// engagement board is getTopCreators above).
+export const getZerraLeaderboard = () =>
+  apiGetPublic<{ leaderboard: any[] }>("/bounties/leaderboard");
+
 export const getAnalyticsInsights = () =>
   apiGet<AnalyticsInsights>("/analytics/tiktok/insights");
 

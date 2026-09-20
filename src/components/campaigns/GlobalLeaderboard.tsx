@@ -18,7 +18,9 @@ export function GlobalLeaderboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiGet<{ leaderboard: LeaderboardEntry[] }>("/leaderboard")
+    // Backend route is /bounties/leaderboard. This used to call /leaderboard, which
+    // has never existed, so the board always fell through to its empty state.
+    apiGet<{ leaderboard: LeaderboardEntry[] }>("/bounties/leaderboard")
       .then((d) => setEntries(d.leaderboard ?? []))
       .catch(console.error)
       .finally(() => setLoading(false));

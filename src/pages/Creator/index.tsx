@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { getCreatorProfile, getMe, getTopCreators } from "@/lib/api";
+import { getCreatorProfile, getMe, getTopCreators, getZerraLeaderboard } from "@/lib/api";
+import { rankGeneral } from "@/lib/generalScore";
 import { BadgeClaimModal } from "@/components/dashboard/BadgeClaimModal";
 import { AnalyticsOverview } from "@/components/dashboard/AnalyticsOverview";
 import { LockedCard } from "@/components/dashboard/LockedCard";
@@ -646,88 +647,187 @@ function BadgesCard({
   );
 }
 
-interface LeaderboardCreator {
+interface GeneralRow {
   user_id: string;
   name: string | null;
   avatar: string | null;
   username: string | null;
+  zerra_username: string | null;
+  followers: number | null;
   total_views: number;
   avg_engagement_rate: number;
-  verified_score: number;
+  avg_engagement_per_post: number | null;
 }
 
-/** Real ranking from GET /analytics/top-creators. */
-function LeaderboardPanel({ meUsername }: { meUsername: string | null }) {
-  const [rows, setRows] = useState<LeaderboardCreator[] | null>(null);
-  const [failed, setFailed] = useState(false);
+interface ZerraRow {
+  creator_id: string;
+  name: string | null;
+  avatar: string | null;
+  username: string | null;
+  total_score: number;
+  campaigns_count: number;
+}
+
+type Board = "general" | "zerra";
+
+// The two boards deliberately rank on different things — say which, on screen.
+const BOARDS: { key: Board; label: string; blurb: string }[] = [
+  { key: "general", label: "General", blurb: "Ranked by followers, engagement rate and average engagement per post." },
+  { key: "zerra",   label: "Zerra",   blurb: "Ranked by points accumulated across Zerra campaigns." },
+];
+
+interface BoardRow {
+  key: string;
+  highlight: boolean;
+  name: string | null;
+  avatar: string | null;
+  handle: string | null;
+  cells: React.ReactNode[];
+}
+
+function BoardTable({ headers, rows }: { headers: string[]; rows: BoardRow[] }) {
+  return (
+    <div className="overflow-x-auto">
+      <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: F, minWidth: 480 }}>
+        <thead>
+          <tr style={{ borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }}>
+            {headers.map((h, i) => (
+              <th key={h} style={{
+                textAlign: i < 2 ? "left" : "right", padding: "10px 24px",
+                fontSize: 12, fontWeight: 500, color: C.textMuted, letterSpacing: "-0.48px", whiteSpace: "nowrap",
+              }}>
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={r.key} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: r.highlight ? "rgba(80,157,255,0.10)" : "transparent" }}>
+              <td style={{ padding: "12px 24px", fontSize: 14, color: i < 3 ? C.blue : C.textMuted, fontWeight: i < 3 ? 600 : 400 }}>{i + 1}</td>
+              <td style={{ padding: "12px 24px" }}>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="shrink-0 rounded-full overflow-hidden grid place-items-center" style={{ width: 28, height: 28, background: "#0d1322" }}>
+                    {r.avatar
+                      ? <img src={r.avatar} alt="" className="w-full h-full object-cover" />
+                      : <span style={{ fontSize: 12, color: "#fff" }}>{(r.name ?? "?").charAt(0).toUpperCase()}</span>}
+                  </span>
+                  <div className="min-w-0">
+                    <p style={{ fontSize: 14, color: "#fff", margin: 0 }} className="truncate">{r.name ?? "Unnamed"}</p>
+                    {r.handle && <p style={{ fontSize: 12, color: C.textMuted, margin: 0 }} className="truncate">@{r.handle}</p>}
+                  </div>
+                </div>
+              </td>
+              {r.cells.map((cell, j) => (
+                <td key={j} style={{ padding: "12px 24px", textAlign: "right", fontSize: 14, color: "#fff", whiteSpace: "nowrap" }}>{cell}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** General board (real reach + engagement) and Zerra board (points), one toggle. */
+function LeaderboardPanel({ highlightId }: { highlightId: string | null }) {
+  const [board, setBoard] = useState<Board>("general");
+  const [general, setGeneral] = useState<GeneralRow[] | null>(null);
+  const [zerra, setZerra] = useState<ZerraRow[] | null>(null);
+  const [failed, setFailed] = useState<Record<Board, boolean>>({ general: false, zerra: false });
 
   useEffect(() => {
-    getTopCreators()
-      .then((d) => setRows((d.creators ?? []) as LeaderboardCreator[]))
-      .catch(() => setFailed(true));
-  }, []);
+    if (board === "general" && general === null && !failed.general) {
+      getTopCreators()
+        .then((d) => setGeneral((d.creators ?? []) as GeneralRow[]))
+        .catch(() => setFailed((f) => ({ ...f, general: true })));
+    }
+    if (board === "zerra" && zerra === null && !failed.zerra) {
+      getZerraLeaderboard()
+        .then((d) => setZerra((d.leaderboard ?? []) as ZerraRow[]))
+        .catch(() => setFailed((f) => ({ ...f, zerra: true })));
+    }
+  }, [board, general, zerra, failed]);
 
-  if (failed) {
-    return <Panel><p style={{ fontSize: 14, color: C.textMuted, margin: 0 }}>Couldn't load the leaderboard. Try again shortly.</p></Panel>;
-  }
-  if (!rows) {
-    return <Panel><p style={{ fontSize: 14, color: C.textMuted, margin: 0 }}>Loading leaderboard...</p></Panel>;
-  }
-  if (rows.length === 0) {
-    return <Panel><p style={{ fontSize: 14, color: C.textMuted, margin: 0 }}>No ranked creators yet — the leaderboard fills in as creators sync content.</p></Panel>;
+  const rankedGeneral = useMemo(() => (general ? rankGeneral(general) : null), [general]);
+
+  const active = BOARDS.find((b) => b.key === board)!;
+  const data = board === "general" ? rankedGeneral : zerra;
+  const note = { fontSize: 14, color: C.textMuted, margin: 0, padding: "20px 24px" } as const;
+
+  let body: React.ReactNode;
+  if (failed[board]) {
+    body = <p style={note}>Couldn't load this leaderboard. Try again shortly.</p>;
+  } else if (!data) {
+    body = <p style={note}>Loading leaderboard...</p>;
+  } else if (data.length === 0) {
+    body = (
+      <p style={note}>
+        {board === "zerra"
+          ? "No points yet — creators show up here once their campaign content is verified and scored."
+          : "No ranked creators yet — this fills in as creators sync content."}
+      </p>
+    );
+  } else if (board === "general") {
+    body = (
+      <BoardTable
+        headers={["#", "Creator", "Followers", "Eng. rate", "Avg / post", "Views"]}
+        rows={(rankedGeneral as GeneralRow[]).map((c) => ({
+          key: c.user_id,
+          highlight: c.user_id === highlightId,
+          name: c.name,
+          avatar: c.avatar,
+          handle: c.zerra_username ?? c.username,
+          cells: [
+            c.followers != null ? fmt(c.followers) : "—",
+            `${c.avg_engagement_rate}%`,
+            c.avg_engagement_per_post != null ? fmt(c.avg_engagement_per_post) : "—",
+            fmt(c.total_views),
+          ],
+        }))}
+      />
+    );
+  } else {
+    body = (
+      <BoardTable
+        headers={["#", "Creator", "Campaigns", "Points"]}
+        rows={(zerra as ZerraRow[]).map((c) => ({
+          key: c.creator_id,
+          highlight: c.creator_id === highlightId,
+          name: c.name,
+          avatar: c.avatar,
+          handle: c.username,
+          cells: [String(c.campaigns_count), c.total_score.toLocaleString()],
+        }))}
+      />
+    );
   }
 
   return (
     <Panel style={{ padding: 0, overflow: "hidden" }}>
-      <div className="flex items-center justify-between" style={{ padding: "20px 24px 12px" }}>
-        <p style={{ fontSize: 20, fontWeight: 500, color: "#fff", letterSpacing: "-0.8px", margin: 0 }}>Leaderboard</p>
-        <span style={{ fontSize: 13, color: C.textMuted }}>{rows.length} creators</span>
+      <div style={{ padding: "20px 24px 14px" }}>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <p style={{ fontSize: 20, fontWeight: 500, color: "#fff", letterSpacing: "-0.8px", margin: 0 }}>Leaderboard</p>
+          <div className="flex gap-1.5">
+            {BOARDS.map((b) => (
+              <button
+                key={b.key}
+                onClick={() => setBoard(b.key)}
+                style={{
+                  padding: "6px 14px", borderRadius: 100, fontSize: 13, fontWeight: 500, cursor: "pointer",
+                  border: `1px solid ${board === b.key ? C.blue : C.border}`,
+                  background: board === b.key ? C.blue : "transparent",
+                  color: board === b.key ? "#fff" : C.textMuted,
+                }}
+              >
+                {b.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <p style={{ fontSize: 13, color: C.textMuted, margin: "8px 0 0" }}>{active.blurb}</p>
       </div>
-
-      <div className="overflow-x-auto">
-        <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: F, minWidth: 520 }}>
-          <thead>
-            <tr style={{ borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }}>
-              {["#", "Creator", "Views", "Avg ER", "Score"].map((h, i) => (
-                <th key={h} style={{
-                  textAlign: i === 0 || i === 1 ? "left" : "right", padding: "10px 24px",
-                  fontSize: 12, fontWeight: 500, color: C.textMuted, letterSpacing: "-0.48px", whiteSpace: "nowrap",
-                }}>
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((c, i) => {
-              const isMe = !!meUsername && c.username === meUsername;
-              return (
-                <tr key={c.user_id} style={{ borderBottom: `1px solid rgba(255,255,255,0.04)`, background: isMe ? "rgba(80,157,255,0.10)" : "transparent" }}>
-                  <td style={{ padding: "12px 24px", fontSize: 14, color: i < 3 ? C.blue : C.textMuted, fontWeight: i < 3 ? 600 : 400 }}>{i + 1}</td>
-                  <td style={{ padding: "12px 24px" }}>
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="shrink-0 rounded-full overflow-hidden grid place-items-center" style={{ width: 28, height: 28, background: "#0d1322" }}>
-                        {c.avatar
-                          ? <img src={c.avatar} alt="" className="w-full h-full object-cover" />
-                          : <span style={{ fontSize: 12, color: "#fff" }}>{(c.name ?? "?").charAt(0).toUpperCase()}</span>}
-                      </span>
-                      <div className="min-w-0">
-                        <p style={{ fontSize: 14, color: "#fff", margin: 0 }} className="truncate">{c.name ?? "Unnamed"}</p>
-                        {c.username && <p style={{ fontSize: 12, color: C.textMuted, margin: 0 }} className="truncate">@{c.username}</p>}
-                      </div>
-                    </div>
-                  </td>
-                  <td style={{ padding: "12px 24px", textAlign: "right", fontSize: 14, color: "#fff" }}>{fmt(c.total_views)}</td>
-                  <td style={{ padding: "12px 24px", textAlign: "right", fontSize: 14, color: "#fff" }}>{c.avg_engagement_rate}%</td>
-                  <td style={{ padding: "12px 24px", textAlign: "right", fontSize: 14, color: c.verified_score > 0 ? "#fff" : C.tabIdle }}>
-                    {c.verified_score > 0 ? c.verified_score : "—"}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      {body}
     </Panel>
   );
 }
@@ -933,7 +1033,7 @@ export default function CreatorProfilePage({ ownProfile = false }: CreatorProfil
           </div>
         )}
 
-        {tab === "Leaderboard" && <LeaderboardPanel meUsername={creator.username} />}
+        {tab === "Leaderboard" && <LeaderboardPanel highlightId={creator.id} />}
 
         {tab === "Content" && (
           <Panel>
