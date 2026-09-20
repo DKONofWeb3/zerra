@@ -15,6 +15,8 @@
  * Loaded on demand (dynamic import) so it stays out of the main bundle.
  */
 
+import { NICHES, type Niche } from "@/lib/niches";
+
 export interface FeaturedCreator {
   name: string;
   handle: string;
@@ -26,7 +28,9 @@ export interface FeaturedCreator {
 
 type Row = [name: string, handle: string, country: string];
 
-const BY_NICHE: Record<string, Row[]> = {
+// Keyed by the shared niche list (lib/niches.ts): a niche missing here, or an
+// extra one, is a type error.
+const BY_NICHE: Record<Niche, Row[]> = {
   "AI & Technology": [
     ["Zach King", "zachking", "United States"],
     ["Marques Brownlee", "mkbhd", "United States"],
@@ -668,8 +672,8 @@ const BY_NICHE: Record<string, Row[]> = {
   ],
 };
 
-export const FEATURED_NICHES: string[] = Object.keys(BY_NICHE);
+export const FEATURED_NICHES: string[] = [...NICHES];
 
-export const FEATURED_CREATORS: FeaturedCreator[] = FEATURED_NICHES.flatMap((niche) =>
+export const FEATURED_CREATORS: FeaturedCreator[] = NICHES.flatMap((niche) =>
   BY_NICHE[niche].map(([name, handle, country], i) => ({ name, handle, country, niche, rank: i + 1 })),
 );

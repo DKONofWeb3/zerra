@@ -4,6 +4,7 @@ import { cn } from "@/lib/cn";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { apiGetPublic } from "@/lib/api/client";
 import { rankGeneral, avgEngagementPerPost } from "@/lib/generalScore";
+import { sameNiche } from "@/lib/niches";
 // Type-only: the 579-row data file itself is loaded on demand below so it stays
 // out of the main bundle.
 import type { FeaturedCreator } from "@/data/featuredCreators";
@@ -17,6 +18,8 @@ interface Creator {
   username: string | null;
   /** Zerra username; the only handle some creators have (no TikTok connected). */
   zerra_username?: string | null;
+  /** Niche picked in Settings (one of lib/niches.ts, or older free text). */
+  niche?: string | null;
   total_views: number;
   total_likes: number;
   total_comments: number;
@@ -202,12 +205,15 @@ export default function TopCreatorsPage() {
   const matches = (name: string | null, handle: string | null) =>
     !q || (name ?? "").toLowerCase().includes(q) || (handle ?? "").toLowerCase().includes(q);
 
-  // Real Zerra creators have no niche on record, so they only appear under "All".
-  // Ranked on followers + engagement rate + avg engagement per post (+ views), not
+  // Real Zerra creators are filtered by the niche they picked in Settings. Ranked on followers + engagement rate + avg engagement per post (+ views), not
   // engagement rate alone - see lib/generalScore.ts for why.
-  const live = niche === "All"
-    ? rankGeneral(dbCreators.filter((c) => matches(c.name, c.username) || matches(null, c.zerra_username ?? null)))
-    : [];
+  const live = rankGeneral(
+    dbCreators
+      .filter((c) => niche === "All" || sameNiche(c.niche, niche))
+      .filter((c) => matches(c.name, c.username) || matches(null, c.zerra_username ?? null))
+  );
+  // Under a niche filter, only show the section if someone is actually in it (no skeleton flash).
+  const showLive = live.length > 0 || (niche === "All" && dbLoading);
 
   let featuredList: FeaturedCreator[] = [];
   if (featured) {
@@ -295,11 +301,11 @@ export default function TopCreatorsPage() {
         </div>
       )}
 
-      {niche === "All" && (dbLoading || live.length > 0) && (
+      {showLive && (
         <section>
           <SectionHeading
             title="On Zerra"
-            caption="Creators on Zerra, ranked by followers, engagement rate and average engagement per post."
+            caption={`${niche === "All" ? "Creators on Zerra" : `Creators on Zerra in ${niche}`}, ranked by followers, engagement rate and average engagement per post.`}
           />
           {dbLoading ? <SkeletonRows count={2} /> : (
             <ListCard>

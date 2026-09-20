@@ -5,6 +5,8 @@ import {
   Eye, EyeOff, ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { NicheSelect } from "@/components/settings/NicheSelect";
+import { canonicalNiche } from "@/lib/niches";
 import { DiamondIcon } from "@/components/icons/DiamondIcon";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useSocialAccounts } from "@/hooks/useSocialAccounts";
@@ -168,7 +170,8 @@ function ProfileSection() {
       setUsername((user as any).username ?? "");
       setBio((user as any).bio ?? "");
       setLocation((user as any).location ?? "");
-      setNiche((user as any).niche ?? "");
+      const saved: string = (user as any).niche ?? "";
+      setNiche(canonicalNiche(saved) ?? saved);
     }
   }, [user]);
 
@@ -249,14 +252,8 @@ function ProfileSection() {
           </div>
           <div>
             <label className="block text-[12.5px] text-fg-tertiary mb-2">Niche</label>
-            <input
-              type="text"
-              value={niche}
-              onChange={(e) => setNiche(e.target.value)}
-              placeholder="e.g. Lifestyle, Tech, Crypto"
-              className="w-full px-4 py-3 rounded-xl border border-white/[0.06] bg-bg-base/60 text-[14px] text-fg-primary placeholder:text-fg-muted focus:outline-none focus:border-white/[0.15] transition-colors"
-            />
-            <p className="mt-1.5 text-[11.5px] text-fg-muted">Used for your "Top X% in {niche || "your niche"}" ranking on your profile.</p>
+            <NicheSelect value={niche} onChange={setNiche} />
+            <p className="mt-1.5 text-[11.5px] text-fg-muted">Used for your "Top X% in {niche || "your niche"}" ranking, and to list you under that niche on Top Creators.</p>
           </div>
         </div>
       </div>
