@@ -1,360 +1,593 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { saveWallet, clearWallet } from "@/lib/api";
-import { cn } from "@/lib/cn";
-import { DiamondIcon } from "@/components/icons/DiamondIcon";
+import { getWalletBalance, getWalletTransactions, requestWithdrawal, saveWallet } from "@/lib/api";
+import type { WalletBalance, WalletTransaction } from "@/lib/types";
 
-const CHAINS = [
-  { id: "ethereum", label: "Ethereum", symbol: "ETH", color: "rgb(98 126 234)", prefix: "0x" },
-  { id: "solana",   label: "Solana",   symbol: "SOL", color: "rgb(153 69 255)", prefix: "" },
-  { id: "base",     label: "Base",     symbol: "ETH", color: "rgb(0 82 255)",   prefix: "0x" },
-];
+// Design tokens taken from the real Figma node (nAllTZdIEQt2sfhrTgtcAQ,
+// 456:1379 desktop / 456:1250 + 456:1202 mobile) — DM Sans throughout, same
+// system as the Creator Profile page (src/pages/Creator/index.tsx).
+const F = '"DM Sans", ui-sans-serif, system-ui, sans-serif';
+const C = {
+  text: "#f5f7fc",
+  muted: "#a6b5cb",
+  accent: "#79b8ff",
+  success: "#10b981",
+  successBg: "#102e29",
+  warning: "#f5c66c",
+  warningBg: "#30291c",
+  danger: "#f87171",
+  dangerBg: "#301414",
+  canvas: "#06080e",
+  elevated: "#161c2a",
+  cardBorder: "rgba(184,199,229,0.32)",
+  divider: "#1f2430",
+};
+const GRAD = {
+  balanceCard: "linear-gradient(147deg, rgba(99,134,208,0.6) 10.714%, rgba(32,59,112,0.8) 40.714%, rgb(8,12,22) 82.143%)",
+  glassPanel: "linear-gradient(135deg, rgba(68,72,81,0.7) 10.714%, rgba(17,21,29,0.6) 46.429%, rgb(7,10,16) 82.143%)",
+  button: "linear-gradient(169deg, rgb(50,104,220) 10.714%, rgb(36,76,187) 82.143%)",
+};
+const ICON = {
+  eye: "/wallet/eye.svg",
+  clock: "/wallet/clock.svg",
+  arrow: "/wallet/arrow.svg",
+  wallet: "/wallet/wallet-icon.svg",
+} as const;
 
+function fmtUsdc(n: number) {
+  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 function truncateAddress(addr: string) {
-  if (addr.length < 12) return addr;
-  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  return addr.length < 12 ? addr : `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+}
+function fmtTxDate(iso: string | null) {
+  if (!iso) return "";
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-function WalletCard({
-  address,
-  chain,
-  onDisconnect,
-}: {
-  address: string;
-  chain: string;
-  onDisconnect: () => Promise<void>;
-}) {
-  const chainInfo = CHAINS.find((c) => c.id === chain) ?? CHAINS[0];
-  const [copied, setCopied] = useState(false);
-  const [disconnecting, setDisconnecting] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(address);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleDisconnect = async () => {
-    setDisconnecting(true);
-    try {
-      await onDisconnect();
-    } finally {
-      setDisconnecting(false);
-    }
-  };
-
+function Panel({
+  children, gradient, style, className,
+}: { children: React.ReactNode; gradient?: string; style?: React.CSSProperties; className?: string }) {
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-6"
-      style={{ background: "rgb(var(--bg-card))" }}
+      className={className}
+      style={{
+        background: gradient ?? "transparent",
+        border: `1px solid ${C.cardBorder}`,
+        borderRadius: 24,
+        fontFamily: F,
+        ...style,
+      }}
     >
-      <div
-        aria-hidden
-        className="absolute inset-x-0 top-0 h-px pointer-events-none"
-        style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }}
-      />
-      <div
-        aria-hidden
-        className="absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none"
-        style={{ background: `radial-gradient(circle, ${chainInfo.color}20 0%, transparent 70%)` }}
-      />
+      {children}
+    </div>
+  );
+}
 
-      <div className="relative flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div
-            className="w-12 h-12 rounded-2xl border border-white/[0.08] flex items-center justify-center text-[13px] font-bold"
-            style={{ background: `${chainInfo.color}18`, color: chainInfo.color }}
-          >
-            {chainInfo.symbol}
-          </div>
-          <div>
-            <p className="text-[15px] font-semibold text-fg-primary">{chainInfo.label} Wallet</p>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-success" />
-              <span className="text-[12px] text-success">Connected</span>
-            </div>
-          </div>
-        </div>
-        <button
-          onClick={handleDisconnect}
-          disabled={disconnecting}
-          className="text-[12.5px] text-danger hover:opacity-80 transition-opacity disabled:opacity-40 flex items-center gap-1.5"
-        >
-          {disconnecting ? (
-            <>
-              <span className="w-3 h-3 rounded-full border border-danger/40 border-t-danger animate-spin" />
-              Disconnecting...
-            </>
-          ) : (
-            "Disconnect"
-          )}
-        </button>
-      </div>
+function StatusPill({ status }: { status: WalletTransaction["status"] }) {
+  const map = {
+    completed: { bg: C.successBg, fg: C.success, label: "Completed" },
+    pending: { bg: C.warningBg, fg: C.warning, label: "Pending" },
+    failed: { bg: C.dangerBg, fg: C.danger, label: "Failed" },
+  }[status];
+  return (
+    <span style={{
+      display: "inline-flex", padding: "4px 8px", borderRadius: 999,
+      background: map.bg, color: map.fg, fontSize: 10, fontWeight: 500, lineHeight: "14px",
+    }}>
+      {map.label}
+    </span>
+  );
+}
 
-      <div className="relative mt-6 p-4 rounded-xl border border-white/[0.05] bg-bg-base/60">
-        <p className="text-[11px] text-fg-tertiary mb-1.5">Wallet Address</p>
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-[13.5px] font-mono text-fg-primary break-all">{address}</p>
-          <button
-            onClick={handleCopy}
-            className="shrink-0 px-3 py-1.5 rounded-lg text-[12px] font-medium border border-white/[0.06] bg-bg-elevated text-fg-secondary hover:text-fg-primary transition-colors"
-          >
-            {copied ? "Copied!" : "Copy"}
-          </button>
-        </div>
-      </div>
-
-      <div className="relative mt-4 p-4 rounded-xl border border-white/[0.05] bg-bg-base/60">
-        <p className="text-[11px] text-fg-tertiary mb-1.5">Airdrop / Reward Address</p>
-        <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
-          <p className="text-[13px] text-fg-primary">
-            {truncateAddress(address)} is set as your reward address
-          </p>
-        </div>
-        <p className="mt-1.5 text-[11.5px] text-fg-tertiary">
-          Campaign rewards and airdrops will be sent to this address.
+function TransactionRow({ tx }: { tx: WalletTransaction }) {
+  const isPositive = tx.amount_usdc >= 0;
+  return (
+    <div className="flex items-center gap-3" style={{ height: 68, padding: "8px 12px", borderRadius: 16 }}>
+      <span className="shrink-0 grid place-items-center rounded-full" style={{ width: 36, height: 36, background: C.elevated }}>
+        <img src={ICON.arrow} alt="" style={{ width: 18, height: 18, transform: isPositive ? undefined : "rotate(180deg)" }} />
+      </span>
+      <div className="flex-1 min-w-0">
+        <p style={{ fontSize: 14, fontWeight: 500, color: C.text, margin: 0 }} className="truncate">{tx.label}</p>
+        <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>
+          {fmtTxDate(tx.date)} · {tx.type === "reward" ? "Reward" : "Transfer"}
         </p>
+      </div>
+      <div className="flex flex-col items-end gap-1 shrink-0">
+        <span style={{ fontSize: 12, color: isPositive ? C.success : C.text, whiteSpace: "nowrap" }}>
+          {isPositive ? "+" : "−"}{fmtUsdc(Math.abs(tx.amount_usdc))} USDC
+        </span>
+        <StatusPill status={tx.status} />
+        {tx.status === "failed" && tx.error && (
+          <span style={{ fontSize: 10, color: C.danger, maxWidth: 140, textAlign: "right" }}>{tx.error}</span>
+        )}
       </div>
     </div>
   );
 }
 
-function ConnectWalletForm({
-  onConnect,
-}: {
-  onConnect: (address: string, chain: string) => Promise<void>;
-}) {
-  const [address, setAddress] = useState("");
-  const [chain, setChain] = useState("ethereum");
+// ── Connect / change wallet ─────────────────────────────────────────────────
+function ChangeWalletModal({
+  currentAddress, onClose, onSaved,
+}: { currentAddress: string | null; onClose: () => void; onSaved: (address: string) => void }) {
+  const [address, setAddress] = useState(currentAddress ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const validateAddress = (addr: string, chainId: string) => {
-    if (chainId === "solana") return addr.length >= 32 && addr.length <= 44;
-    return /^0x[a-fA-F0-9]{40}$/.test(addr);
-  };
-
-  const handleConnect = async () => {
-    if (!address) { setError("Please enter a wallet address."); return; }
-    if (!validateAddress(address, chain)) {
-      setError(
-        chain === "solana"
-          ? "Invalid Solana address. Should be 32–44 characters."
-          : "Invalid Ethereum address. Should start with 0x and be 42 characters."
-      );
+  const handleSave = async () => {
+    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+      setError("Enter a valid Base address — starts with 0x, 42 characters.");
       return;
     }
     setSaving(true);
     setError(null);
     try {
-      await onConnect(address, chain);
+      await saveWallet({ wallet_address: address, wallet_chain: "base" });
+      onSaved(address);
     } catch (err: any) {
       setError(err.message ?? "Something went wrong.");
+    } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div
-      className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-6"
-      style={{ background: "rgb(var(--bg-card))" }}
-    >
+    <div className="fixed inset-0 z-50 grid place-items-center p-4" style={{ background: "rgba(0,0,0,0.6)" }} onClick={onClose}>
       <div
-        aria-hidden
-        className="absolute inset-x-0 top-0 h-px pointer-events-none"
-        style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }}
-      />
-      <div className="relative">
-        <h3 className="text-[15px] font-semibold text-fg-primary">Connect Your Wallet</h3>
-        <p className="text-[12.5px] text-fg-tertiary mt-1">
-          Add your wallet address to receive campaign rewards and airdrops.
+        onClick={(e) => e.stopPropagation()}
+        style={{ background: "#0a0d16", border: `1px solid ${C.cardBorder}`, borderRadius: 24, padding: 24, width: 400, maxWidth: "100%", fontFamily: F }}
+      >
+        <p style={{ fontSize: 18, fontWeight: 600, color: C.text, margin: 0 }}>Withdrawal wallet</p>
+        <p style={{ fontSize: 13, color: C.muted, margin: "6px 0 20px" }}>
+          Withdrawals only support a Base address right now.
         </p>
-
         {error && (
-          <div className="mt-4 p-3 rounded-xl text-[13px] bg-[rgb(var(--danger)/0.08)] border border-[rgb(var(--danger)/0.2)] text-[rgb(var(--danger))]">
+          <div style={{ background: C.dangerBg, color: C.danger, fontSize: 13, padding: "10px 12px", borderRadius: 12, marginBottom: 14 }}>
             {error}
           </div>
         )}
-
-        <div className="mt-5">
-          <p className="text-[12.5px] text-fg-tertiary mb-2">Select Network</p>
-          <div className="grid grid-cols-3 gap-3">
-            {CHAINS.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => { setChain(c.id); setAddress(""); setError(null); }}
-                className={cn(
-                  "p-3 rounded-xl border text-center transition-all",
-                  chain === c.id
-                    ? "border-brand/50 bg-brand/10"
-                    : "border-white/[0.06] bg-bg-base/40 hover:border-white/[0.12]"
-                )}
-              >
-                <p
-                  className="text-[13px] font-semibold"
-                  style={{ color: chain === c.id ? c.color : "rgb(var(--fg-primary))" }}
-                >
-                  {c.label}
-                </p>
-                <p className="text-[11px] text-fg-tertiary mt-0.5">{c.symbol}</p>
-              </button>
-            ))}
-          </div>
+        <input
+          type="text"
+          value={address}
+          onChange={(e) => setAddress(e.target.value.trim())}
+          placeholder="0x..."
+          style={{ width: "100%", padding: "12px 16px", borderRadius: 16, border: `1px solid ${C.divider}`, background: C.canvas, color: C.text, fontSize: 13.5, fontFamily: "monospace" }}
+        />
+        <div className="flex gap-3" style={{ marginTop: 20 }}>
+          <button onClick={onClose} style={{ flex: 1, padding: "12px 0", borderRadius: 16, border: `1px solid ${C.divider}`, background: "transparent", color: C.muted, fontSize: 13.5, fontWeight: 500 }}>
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving || !address}
+            style={{ flex: 1, padding: "12px 0", borderRadius: 16, border: "none", backgroundImage: GRAD.button, color: "#fff", fontSize: 13.5, fontWeight: 500, opacity: saving || !address ? 0.6 : 1 }}
+          >
+            {saving ? "Saving..." : "Save"}
+          </button>
         </div>
-
-        <div className="mt-4">
-          <p className="text-[12.5px] text-fg-tertiary mb-2">Wallet Address</p>
-          <input
-            type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value.trim())}
-            placeholder={chain === "solana" ? "Enter Solana address..." : "0x..."}
-            className="w-full px-4 py-3 rounded-xl border border-white/[0.06] bg-bg-base/60 text-[13.5px] font-mono text-fg-primary placeholder:text-fg-muted focus:outline-none focus:border-white/[0.15] transition-colors"
-          />
-          <p className="mt-1.5 text-[11.5px] text-fg-muted">
-            {chain === "solana"
-              ? "Solana wallet address (32–44 characters)"
-              : "Ethereum-compatible address starting with 0x"}
-          </p>
-        </div>
-
-        <button
-          onClick={handleConnect}
-          disabled={saving || !address}
-          className="mt-5 w-full py-3 rounded-xl text-[13.5px] font-semibold text-white transition-colors disabled:opacity-50"
-          style={{ background: "rgb(74 125 255)" }}
-        >
-          {saving ? "Saving..." : "Connect Wallet"}
-        </button>
       </div>
     </div>
   );
 }
 
-export default function WalletPage() {
-  usePageTitle("Zerra · Wallet");
-  const { user, refresh } = useCurrentUser() as any;
+// ── Confirm withdrawal ───────────────────────────────────────────────────────
+function ConfirmWithdrawModal({
+  amount, fee, destination, onClose, onConfirmed,
+}: { amount: number; fee: number; destination: string; onClose: () => void; onConfirmed: () => void }) {
+  const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [txHash, setTxHash] = useState<string | null>(null);
+  const net = Math.max(0, amount - fee);
 
-  // Local override so disconnect is instant in the UI before refresh()
-  const [localWallet, setLocalWallet] = useState<string | null>(undefined as any);
-  const [localChain,  setLocalChain]  = useState<string | null>(null);
-
-  const walletAddress = localWallet !== undefined ? localWallet : (user?.wallet_address ?? null);
-  const walletChain   = localChain  ?? user?.wallet_chain ?? "ethereum";
-
-  const handleConnect = async (address: string, chain: string) => {
-    await saveWallet({ wallet_address: address, wallet_chain: chain });
-    setLocalWallet(address);
-    setLocalChain(chain);
-    if (refresh) refresh();
+  const handleConfirm = async () => {
+    setState("sending");
+    setError(null);
+    try {
+      const result = await requestWithdrawal(amount);
+      setTxHash(result.tx_hash);
+      setState("done");
+    } catch (err: any) {
+      setError(err.message ?? "Withdrawal failed.");
+      setState("error");
+    }
   };
 
-  const handleDisconnect = async () => {
-  setLocalWallet(null);
-  setLocalChain(null);
-  try {
-    await clearWallet();
-    if (refresh) refresh();
-  } catch {
-    setLocalWallet(undefined as any);
-    setLocalChain(null);
-  }
-};
-
   return (
-    <div className="pb-12 space-y-8">
-      <div className="pt-2">
-        <div className="flex items-center gap-2.5 text-fg-tertiary">
-          <DiamondIcon size={14} />
-          <span className="text-[12.5px]">Airdrop & reward address</span>
-        </div>
-        <h2
-          className={cn(
-            "mt-4 font-display font-medium tracking-[-0.03em]",
-            "text-[48px] md:text-[64px] leading-[0.95]",
-            "bg-clip-text text-transparent",
-            "bg-gradient-to-b from-white via-white to-[#7d8aa8]"
-          )}
-        >
-          Wallet
-        </h2>
-      </div>
+    <div className="fixed inset-0 z-50 grid place-items-center p-4" style={{ background: "rgba(0,0,0,0.6)" }} onClick={state === "sending" ? undefined : onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ background: "#0a0d16", border: `1px solid ${C.cardBorder}`, borderRadius: 24, padding: 24, width: 400, maxWidth: "100%", fontFamily: F }}
+      >
+        {state === "done" ? (
+          <>
+            <p style={{ fontSize: 18, fontWeight: 600, color: C.success, margin: 0 }}>Withdrawal sent</p>
+            <p style={{ fontSize: 13, color: C.muted, margin: "8px 0 4px" }}>{fmtUsdc(net)} USDC is on its way to your wallet.</p>
+            {txHash && (
+              <a href={`https://basescan.org/tx/${txHash}`} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: C.accent }}>
+                View on Basescan →
+              </a>
+            )}
+            <button
+              onClick={onConfirmed}
+              style={{ width: "100%", marginTop: 20, padding: "12px 0", borderRadius: 16, border: "none", backgroundImage: GRAD.button, color: "#fff", fontSize: 13.5, fontWeight: 500 }}
+            >
+              Done
+            </button>
+          </>
+        ) : (
+          <>
+            <p style={{ fontSize: 18, fontWeight: 600, color: C.text, margin: 0 }}>Confirm withdrawal</p>
+            <p style={{ fontSize: 13, color: C.muted, margin: "6px 0 20px" }}>Funds are sent immediately once confirmed — this can't be undone.</p>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_1fr] gap-6">
-        <div className="space-y-4">
-          {walletAddress ? (
-            <WalletCard
-              address={walletAddress}
-              chain={walletChain}
-              onDisconnect={handleDisconnect}
-            />
-          ) : (
-            <ConnectWalletForm onConnect={handleConnect} />
-          )}
-        </div>
-
-        <div className="space-y-4">
-          <div
-            className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-6"
-            style={{ background: "rgb(var(--bg-card))" }}
-          >
-            <div
-              aria-hidden
-              className="absolute inset-x-0 top-0 h-px pointer-events-none"
-              style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }}
-            />
-            <div className="relative">
-              <h3 className="text-[15px] font-semibold text-fg-primary mb-4">How it works</h3>
-              <div className="space-y-4">
-                {[
-                  { step: "1", title: "Connect your wallet", desc: "Add your Ethereum, Solana, or Base wallet address." },
-                  { step: "2", title: "Participate in campaigns", desc: "Claim bounties and create qualifying content." },
-                  { step: "3", title: "Receive rewards", desc: "USDC and airdrop tokens are sent directly to your wallet." },
-                ].map(({ step, title, desc }) => (
-                  <div key={step} className="flex gap-4">
-                    <div className="w-7 h-7 rounded-full bg-brand/15 border border-brand/25 flex items-center justify-center text-[12px] font-bold text-brand shrink-0">
-                      {step}
-                    </div>
-                    <div>
-                      <p className="text-[13.5px] font-medium text-fg-primary">{title}</p>
-                      <p className="text-[12px] text-fg-tertiary mt-0.5">{desc}</p>
-                    </div>
-                  </div>
-                ))}
+            <div className="flex flex-col gap-3" style={{ fontSize: 13 }}>
+              {[
+                ["Amount", `${fmtUsdc(amount)} USDC`],
+                ["To", truncateAddress(destination)],
+                ["Network", "Base"],
+                ["Network fee", `${fmtUsdc(fee)} USDC`],
+              ].map(([label, value]) => (
+                <div key={label} className="flex items-center justify-between">
+                  <span style={{ color: C.muted }}>{label}</span>
+                  <span style={{ color: C.text, fontWeight: 500 }}>{value}</span>
+                </div>
+              ))}
+              <div style={{ height: 1, background: C.divider, margin: "4px 0" }} />
+              <div className="flex items-center justify-between">
+                <span style={{ color: C.text, fontWeight: 500 }}>You receive</span>
+                <span style={{ color: C.text, fontWeight: 600, fontSize: 16 }}>{fmtUsdc(net)} USDC</span>
               </div>
             </div>
-          </div>
 
-          <div
-            className="relative overflow-hidden rounded-2xl border border-white/[0.06] p-5"
-            style={{ background: "rgb(var(--bg-card))" }}
-          >
-            <div
-              aria-hidden
-              className="absolute inset-x-0 top-0 h-px pointer-events-none"
-              style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }}
-            />
-            <div className="relative flex items-start gap-3">
-              <svg
-                width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="rgb(var(--fg-muted))" strokeWidth="1.6"
-                strokeLinecap="round" strokeLinejoin="round"
-                className="shrink-0 mt-0.5"
+            {error && (
+              <div style={{ background: C.dangerBg, color: C.danger, fontSize: 13, padding: "10px 12px", borderRadius: 12, marginTop: 16 }}>
+                {error}
+              </div>
+            )}
+
+            <div className="flex gap-3" style={{ marginTop: 20 }}>
+              <button onClick={onClose} disabled={state === "sending"} style={{ flex: 1, padding: "12px 0", borderRadius: 16, border: `1px solid ${C.divider}`, background: "transparent", color: C.muted, fontSize: 13.5, fontWeight: 500, opacity: state === "sending" ? 0.5 : 1 }}>
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirm}
+                disabled={state === "sending"}
+                style={{ flex: 1, padding: "12px 0", borderRadius: 16, border: "none", backgroundImage: GRAD.button, color: "#fff", fontSize: 13.5, fontWeight: 500, opacity: state === "sending" ? 0.7 : 1 }}
               >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-              <p className="text-[12.5px] text-fg-tertiary leading-relaxed">
-                We only store your wallet address for reward delivery. We never ask for your
-                private key or seed phrase. Zerra cannot access or move funds in your wallet.
-              </p>
+                {state === "sending" ? "Sending..." : "Confirm & send"}
+              </button>
             </div>
-          </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Balance hero card ────────────────────────────────────────────────────────
+function BalanceCard({ balance }: { balance: WalletBalance }) {
+  const [revealed, setRevealed] = useState(true);
+  const mask = (s: string) => (revealed ? s : "••••••");
+
+  return (
+    <Panel gradient={GRAD.balanceCard} style={{ padding: 32 }}>
+      <div className="flex items-center justify-between">
+        <span style={{ fontSize: 14, fontWeight: 500, color: C.muted }}>Available to withdraw</span>
+        <button onClick={() => setRevealed((r) => !r)} aria-label={revealed ? "Hide balance" : "Show balance"}>
+          <img src={ICON.eye} alt="" style={{ width: 20, height: 20, opacity: revealed ? 1 : 0.5 }} />
+        </button>
+      </div>
+
+      <div className="flex items-baseline gap-3" style={{ marginTop: 8 }}>
+        <span style={{ fontSize: "clamp(36px, 9vw, 72px)", fontWeight: 500, lineHeight: 1.1, color: C.text }}>{mask(fmtUsdc(balance.available_to_withdraw))}</span>
+        <span style={{ fontSize: 18, fontWeight: 600, color: C.accent }}>USDC</span>
+      </div>
+
+      <div className="flex items-center justify-between" style={{ marginTop: 8 }}>
+        <span style={{ fontSize: 14, color: C.success }}>
+          {balance.this_month_usdc > 0 ? `↗ +${fmtUsdc(balance.this_month_usdc)} USDC this month` : "No change this month"}
+        </span>
+        <span style={{ fontSize: 12, color: C.muted }}>Updated just now</span>
+      </div>
+
+      <div style={{ height: 1, background: C.divider, opacity: 0.6, margin: "24px 0" }} />
+
+      <div className="flex gap-8">
+        <div className="flex-1">
+          <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>Pending rewards</p>
+          <p style={{ margin: "8px 0 0" }}>
+            <span style={{ fontSize: 28, fontWeight: 600, color: C.text }}>{mask(fmtUsdc(balance.pending_rewards))}</span>{" "}
+            <span style={{ fontSize: 12, color: C.muted }}>USDC</span>
+          </p>
+        </div>
+        <div className="flex-1">
+          <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>Lifetime earned</p>
+          <p style={{ margin: "8px 0 0" }}>
+            <span style={{ fontSize: 28, fontWeight: 600, color: C.text }}>{mask(fmtUsdc(balance.lifetime_earned))}</span>{" "}
+            <span style={{ fontSize: 12, color: C.muted }}>USDC</span>
+          </p>
         </div>
       </div>
+    </Panel>
+  );
+}
+
+// ── Withdraw panel ───────────────────────────────────────────────────────────
+function WithdrawPanel({
+  balance, feeUsdc, treasuryConfigured, walletAddress, onWalletChanged, onWithdrawn,
+}: {
+  balance: WalletBalance; feeUsdc: number; treasuryConfigured: boolean;
+  walletAddress: string | null; onWalletChanged: (a: string) => void; onWithdrawn: () => void;
+}) {
+  const [amount, setAmount] = useState("");
+  const [changingWallet, setChangingWallet] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+
+  const numeric = Number(amount);
+  const isValidAmount = amount !== "" && Number.isFinite(numeric) && numeric > feeUsdc && numeric <= balance.available_to_withdraw;
+  const canWithdraw = isValidAmount && !!walletAddress && treasuryConfigured;
+  const net = isValidAmount ? Math.max(0, numeric - feeUsdc) : null;
+
+  const handleAmountChange = (raw: string) => {
+    if (raw === "" || /^\d*\.?\d{0,2}$/.test(raw)) setAmount(raw);
+  };
+
+  return (
+    <>
+      <Panel gradient={GRAD.glassPanel} style={{ padding: 24, width: "100%" }} className="flex flex-col gap-6">
+        <div>
+          <p style={{ fontSize: 28, fontWeight: 600, color: C.text, margin: 0 }}>Withdraw USDC</p>
+          <p style={{ fontSize: 14, color: C.muted, margin: "4px 0 0" }}>Send earnings to your wallet.</p>
+        </div>
+
+        {!treasuryConfigured && (
+          <div style={{ background: C.warningBg, color: C.warning, fontSize: 12.5, padding: "10px 14px", borderRadius: 14, lineHeight: 1.5 }}>
+            Withdrawals aren't turned on yet — check back soon.
+          </div>
+        )}
+
+        <div style={{ background: C.canvas, border: `1px solid ${C.divider}`, borderRadius: 24, padding: 20 }}>
+          <div className="flex items-center justify-between" style={{ fontSize: 12 }}>
+            <span style={{ color: C.muted }}>Amount</span>
+            <button
+              onClick={() => setAmount(String(balance.available_to_withdraw))}
+              style={{ color: C.accent, fontWeight: 500 }}
+            >
+              Max
+            </button>
+          </div>
+          <div className="flex items-baseline gap-3" style={{ marginTop: 8 }}>
+            <input
+              value={amount}
+              onChange={(e) => handleAmountChange(e.target.value)}
+              placeholder="0.00"
+              inputMode="decimal"
+              style={{ background: "transparent", border: "none", outline: "none", color: C.text, fontSize: "clamp(28px, 7vw, 48px)", fontWeight: 500, width: "100%", minWidth: 0, fontFamily: F }}
+            />
+            <span style={{ fontSize: 14, color: C.accent, fontWeight: 600, whiteSpace: "nowrap" }}>USDC</span>
+          </div>
+          <p style={{ fontSize: 12, color: C.muted, margin: "8px 0 0" }}>Available: {fmtUsdc(balance.available_to_withdraw)} USDC</p>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <span style={{ fontSize: 14, fontWeight: 500, color: C.text }}>Send to</span>
+            <button onClick={() => setChangingWallet(true)} style={{ fontSize: 12, color: C.accent }}>Change</button>
+          </div>
+          <div className="flex items-center gap-3" style={{ background: C.canvas, borderRadius: 16, padding: 16 }}>
+            <img src={ICON.wallet} alt="" style={{ width: 20, height: 20 }} />
+            {walletAddress ? (
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 500, color: C.text, margin: 0 }}>My creator wallet</p>
+                <p style={{ fontSize: 12, color: C.muted, margin: 0, fontFamily: "monospace" }}>{truncateAddress(walletAddress)}</p>
+              </div>
+            ) : (
+              <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>No wallet connected — add one to withdraw.</p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between" style={{ fontSize: 14 }}>
+          <span style={{ color: C.muted }}>Network</span>
+          <span style={{ color: C.text, fontWeight: 500 }}>Base</span>
+        </div>
+
+        <div style={{ height: 1, background: C.divider }} />
+
+        <div className="flex items-center justify-between" style={{ fontSize: 12 }}>
+          <span style={{ color: C.muted }}>Network fee</span>
+          <span style={{ color: C.text }}>{fmtUsdc(feeUsdc)} USDC</span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span style={{ fontSize: 14, fontWeight: 500, color: C.text }}>You receive</span>
+          <span style={{ fontSize: 18, fontWeight: 600, color: C.text }}>{net != null ? `${fmtUsdc(net)} USDC` : "—"}</span>
+        </div>
+
+        <button
+          onClick={() => setConfirming(true)}
+          disabled={!canWithdraw}
+          style={{
+            height: 52, borderRadius: 16, border: "none", color: "#fff", fontSize: 14, fontWeight: 500,
+            backgroundImage: canWithdraw ? GRAD.button : undefined,
+            background: canWithdraw ? undefined : C.elevated,
+            cursor: canWithdraw ? "pointer" : "not-allowed",
+            opacity: canWithdraw ? 1 : 0.6,
+          }}
+        >
+          Review withdrawal
+        </button>
+        <p style={{ fontSize: 12, color: C.muted, margin: 0, textAlign: "center" }}>You'll confirm before funds are sent.</p>
+      </Panel>
+
+      {changingWallet && (
+        <ChangeWalletModal
+          currentAddress={walletAddress}
+          onClose={() => setChangingWallet(false)}
+          onSaved={(a) => { onWalletChanged(a); setChangingWallet(false); }}
+        />
+      )}
+      {confirming && walletAddress && isValidAmount && (
+        <ConfirmWithdrawModal
+          amount={numeric}
+          fee={feeUsdc}
+          destination={walletAddress}
+          onClose={() => setConfirming(false)}
+          onConfirmed={() => { setConfirming(false); setAmount(""); onWithdrawn(); }}
+        />
+      )}
+    </>
+  );
+}
+
+// ── Recent transactions (preview, on the Balance tab) ───────────────────────
+function RecentTransactions({ transactions, loading, onViewAll }: { transactions: WalletTransaction[] | null; loading: boolean; onViewAll: () => void }) {
+  const [filter, setFilter] = useState<"all" | "reward" | "withdrawal">("all");
+  const filtered = (transactions ?? []).filter((t) => filter === "all" || t.type === filter).slice(0, 4);
+
+  return (
+    <Panel gradient={GRAD.glassPanel} style={{ padding: 24, width: "100%" }} className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <p style={{ fontSize: 18, fontWeight: 600, color: C.text, margin: 0 }}>Recent transactions</p>
+        <button onClick={onViewAll} style={{ fontSize: 12, color: C.accent }}>View all →</button>
+      </div>
+      <div className="flex gap-4">
+        {([["all", "All activity"], ["reward", "Rewards"], ["withdrawal", "Withdrawals"]] as const).map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setFilter(key)}
+            style={{
+              padding: 12, borderRadius: 999, fontSize: 12,
+              background: filter === key ? C.elevated : "transparent",
+              color: filter === key ? C.text : C.muted,
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {loading ? (
+        <p style={{ fontSize: 13, color: C.muted }}>Loading...</p>
+      ) : filtered.length === 0 ? (
+        <p style={{ fontSize: 13, color: C.muted }}>No transactions yet.</p>
+      ) : (
+        <div className="flex flex-col">
+          {filtered.map((tx) => <TransactionRow key={`${tx.type}-${tx.id}`} tx={tx} />)}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+// ── Full transactions view (Transactions tab) ───────────────────────────────
+function TransactionsView({ transactions, loading }: { transactions: WalletTransaction[] | null; loading: boolean }) {
+  const [filter, setFilter] = useState<"all" | "reward" | "withdrawal">("all");
+  const filtered = (transactions ?? []).filter((t) => filter === "all" || t.type === filter);
+
+  return (
+    <Panel gradient={GRAD.glassPanel} style={{ padding: 24, width: "100%", maxWidth: 706 }} className="flex flex-col gap-4">
+      <p style={{ fontSize: 18, fontWeight: 600, color: C.text, margin: 0 }}>All transactions</p>
+      <div className="flex gap-4">
+        {([["all", "All activity"], ["reward", "Rewards"], ["withdrawal", "Withdrawals"]] as const).map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setFilter(key)}
+            style={{
+              padding: 12, borderRadius: 999, fontSize: 12,
+              background: filter === key ? C.elevated : "transparent",
+              color: filter === key ? C.text : C.muted,
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {loading ? (
+        <p style={{ fontSize: 13, color: C.muted }}>Loading...</p>
+      ) : filtered.length === 0 ? (
+        <p style={{ fontSize: 13, color: C.muted }}>No transactions yet.</p>
+      ) : (
+        <div className="flex flex-col">
+          {filtered.map((tx) => <TransactionRow key={`${tx.type}-${tx.id}`} tx={tx} />)}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+export default function WalletPage() {
+  usePageTitle("Zerra · Wallet");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get("tab") === "transactions" ? "transactions" : "balance";
+
+  const { user, refresh } = useCurrentUser();
+  const [walletAddress, setWalletAddress] = useState<string | null | undefined>(undefined);
+
+  const [balanceData, setBalanceData] = useState<{ balance: WalletBalance; treasuryConfigured: boolean; withdrawalFeeUsdc: number } | null>(null);
+  const [balanceError, setBalanceError] = useState(false);
+  const [transactions, setTransactions] = useState<WalletTransaction[] | null>(null);
+  const [txError, setTxError] = useState(false);
+
+  useEffect(() => {
+    if (walletAddress === undefined && user) setWalletAddress(user.wallet_address ?? null);
+  }, [user, walletAddress]);
+
+  const loadBalance = () => {
+    getWalletBalance().then((d) => setBalanceData(d)).catch(() => setBalanceError(true));
+  };
+  const loadTransactions = () => {
+    getWalletTransactions().then((d) => setTransactions(d.transactions)).catch(() => setTxError(true));
+  };
+
+  useEffect(() => { loadBalance(); loadTransactions(); }, []);
+
+  const refreshAfterWithdraw = () => { loadBalance(); loadTransactions(); };
+
+  return (
+    <div className="pb-12" style={{ fontFamily: F }}>
+      <div style={{ marginBottom: 24 }}>
+        <p style={{ fontSize: 28, fontWeight: 600, color: C.text, margin: 0 }}>Your content. Your earnings.</p>
+        <p style={{ fontSize: 14, color: C.muted, margin: "6px 0 0" }}>Track your rewards and move available USDC to your wallet.</p>
+      </div>
+
+      {tab === "balance" ? (
+        balanceError ? (
+          <p style={{ fontSize: 13, color: C.muted }}>Couldn't load your balance. Try refreshing.</p>
+        ) : !balanceData ? (
+          <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_1fr] gap-6">
+            <div style={{ height: 320, borderRadius: 24, background: C.elevated, opacity: 0.4 }} className="animate-pulse" />
+            <div style={{ height: 320, borderRadius: 24, background: C.elevated, opacity: 0.4 }} className="animate-pulse" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_1fr] gap-6 items-start">
+            <div className="flex flex-col gap-6">
+              <BalanceCard balance={balanceData.balance} />
+              <div className="flex items-center gap-2">
+                <img src={ICON.clock} alt="" style={{ width: 16, height: 16 }} />
+                <span style={{ fontSize: 12, color: C.muted }}>Pending rewards become available after content approval.</span>
+              </div>
+              <RecentTransactions
+                transactions={transactions}
+                loading={transactions === null && !txError}
+                onViewAll={() => setSearchParams({ tab: "transactions" })}
+              />
+            </div>
+            <WithdrawPanel
+              balance={balanceData.balance}
+              feeUsdc={balanceData.withdrawalFeeUsdc}
+              treasuryConfigured={balanceData.treasuryConfigured}
+              walletAddress={walletAddress ?? null}
+              onWalletChanged={(a) => { setWalletAddress(a); if (refresh) refresh(); }}
+              onWithdrawn={refreshAfterWithdraw}
+            />
+          </div>
+        )
+      ) : txError ? (
+        <p style={{ fontSize: 13, color: C.muted }}>Couldn't load your transactions. Try refreshing.</p>
+      ) : (
+        <TransactionsView transactions={transactions} loading={transactions === null} />
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { apiGet, apiPost, apiGetPublic, apiPut, apiDelete } from "./client";
 import { supabase } from "./supabase";
-import type { InfluenceRatingResponse, AnalyticsInsights, CreatorProfileResponse } from "../types";
+import type { InfluenceRatingResponse, AnalyticsInsights, CreatorProfileResponse, WalletBalanceResponse, WalletTransaction } from "../types";
 
 // ——— Auth / User ———
 export const getMe = () => apiGet<{ user: any }>("/me");
@@ -106,3 +106,12 @@ export const clearWallet = () =>
 // ——— Wallet ———
 export const saveWallet = (body: { wallet_address: string; wallet_chain?: string }) =>
   apiPut<{ user: any }>("/me/wallet", body);
+
+// ——— Wallet (balance + withdrawals) ———
+export const getWalletBalance = () => apiGet<WalletBalanceResponse>("/wallet/balance");
+
+export const getWalletTransactions = () =>
+  apiGet<{ transactions: WalletTransaction[] }>("/wallet/transactions");
+
+export const requestWithdrawal = (amount_usdc: number) =>
+  apiPost<{ status: string; tx_hash: string; amount_usdc: number; net_amount_usdc: number }>("/wallet/withdraw", { amount_usdc });

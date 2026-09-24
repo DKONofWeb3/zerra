@@ -46,7 +46,14 @@ function useTabConfig(): TabConfig {
     return { tabs: [], activeTab: "", onTabClick: () => {} };
   }
   if (pathname.startsWith("/market"))   return { tabs: ["Market"],   activeTab: "Market",   onTabClick: () => {} };
-  if (pathname.startsWith("/wallet"))   return { tabs: ["Wallet"],   activeTab: "Wallet",   onTabClick: () => {} };
+  if (pathname.startsWith("/wallet")) {
+    const activeTab = searchParams.get("tab") === "transactions" ? "Transactions" : "Balance";
+    return {
+      tabs: ["Balance", "Transactions"],
+      activeTab,
+      onTabClick: (tab) => tab === "Transactions" ? setSearchParams({ tab: "transactions" }) : setSearchParams({}),
+    };
+  }
   if (pathname.startsWith("/settings")) return { tabs: ["Settings"], activeTab: "Settings", onTabClick: () => {} };
   return { tabs: ["Overview"], activeTab: "Overview", onTabClick: () => {} };
 }

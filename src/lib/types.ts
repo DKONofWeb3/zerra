@@ -351,3 +351,39 @@ export interface BadgeState extends BadgeDef {
   attained: boolean;  // already claimed
   attainedAt?: string;
 }
+/* ============================================================
+   WALLET — self-serve USDC withdrawals. Backend: GET /wallet/balance,
+   GET /wallet/transactions, POST /wallet/withdraw
+   (zerra-backend/src/routes/wallet.ts). Balance is a real computed ledger,
+   never a fabricated number — see that file for exactly how it is derived
+   from claims/earnings/withdrawals.
+   ============================================================ */
+
+export interface WalletBalance {
+  available_to_withdraw: number;
+  pending_rewards: number;
+  lifetime_earned: number;
+  this_month_usdc: number;
+}
+
+export interface WalletBalanceResponse {
+  balance: WalletBalance;
+  treasuryConfigured: boolean;
+  /** Flat fee deducted from a withdrawal, in USDC — request 500, receive 500 - this on-chain. */
+  withdrawalFeeUsdc: number;
+}
+
+export type WalletTransactionStatus = "pending" | "completed" | "failed";
+
+export interface WalletTransaction {
+  type: "reward" | "withdrawal";
+  id: string;
+  label: string;
+  /** Positive for a reward, negative for a withdrawal. */
+  amount_usdc: number;
+  status: WalletTransactionStatus;
+  date: string | null;
+  tx_hash?: string | null;
+  network?: string | null;
+  error?: string | null;
+}
