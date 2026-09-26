@@ -34,11 +34,12 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function DashboardRow() {
+function DashboardRow({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <NavLink
       to="/dashboard"
       end
+      onClick={onNavigate}
       className={({ isActive }) =>
         cn(
           "group relative flex items-center gap-3 rounded-2xl pl-2 pr-3 py-2 transition-all",
@@ -65,7 +66,7 @@ function DashboardRow() {
   );
 }
 
-function NavRow({ item }: { item: NavItem }) {
+function NavRow({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) {
   const Icon = item.icon;
   const location = useLocation();
   const forceActive = item.to === "/influence"
@@ -75,6 +76,7 @@ function NavRow({ item }: { item: NavItem }) {
   return (
     <NavLink
       to={item.to}
+      onClick={onNavigate}
       className={({ isActive }) => {
         const active = forceActive ?? isActive;
         return cn(
@@ -109,6 +111,41 @@ function NavRow({ item }: { item: NavItem }) {
   );
 }
 
+/**
+ * The Dashboard row + Account/Activities groups, shared verbatim by the
+ * desktop Sidebar (below) and MobileNavDrawer — so mobile gets the exact
+ * same nav (all 7 destinations) instead of a second, cheaper design, and
+ * the two can never silently drift apart. `onNavigate` lets the drawer
+ * close itself when a link is tapped; the desktop Sidebar leaves it unset.
+ */
+export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+  return (
+    <>
+      <div className="px-3 pt-6 pb-2">
+        <DashboardRow onNavigate={onNavigate} />
+      </div>
+
+      <nav className="px-3 pt-6 flex-1 overflow-y-auto pb-6">
+        <SectionLabel>Account</SectionLabel>
+        <div className="space-y-1">
+          {accountItems.map((item) => (
+            <NavRow key={item.to} item={item} onNavigate={onNavigate} />
+          ))}
+        </div>
+
+        <div className="h-6" />
+
+        <SectionLabel>Activities</SectionLabel>
+        <div className="space-y-1">
+          {activityItems.map((item) => (
+            <NavRow key={item.to} item={item} onNavigate={onNavigate} />
+          ))}
+        </div>
+      </nav>
+    </>
+  );
+}
+
 export function Sidebar() {
   const { user }           = useCurrentUser();
   const firstName          = user?.name?.split(" ")[0] ?? "Creator";
@@ -140,29 +177,7 @@ export function Sidebar() {
         <div className="h-px bg-stroke" />
       </div>
 
-      {/* Dashboard row */}
-      <div className="px-3 pt-6 pb-2">
-        <DashboardRow />
-      </div>
-
-      {/* Nav groups */}
-      <nav className="px-3 pt-6 flex-1 overflow-y-auto pb-6">
-        <SectionLabel>Account</SectionLabel>
-        <div className="space-y-1">
-          {accountItems.map((item) => (
-            <NavRow key={item.to} item={item} />
-          ))}
-        </div>
-
-        <div className="h-6" />
-
-        <SectionLabel>Activities</SectionLabel>
-        <div className="space-y-1">
-          {activityItems.map((item) => (
-            <NavRow key={item.to} item={item} />
-          ))}
-        </div>
-      </nav>
+      <SidebarNav />
     </aside>
   );
 }

@@ -1,5 +1,5 @@
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { Search, Bell } from "lucide-react";
+import { Search, Bell, Menu } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useState, useCallback } from "react";
 
@@ -72,7 +72,7 @@ function useSearch() {
   return { isSearchable, handleSearch };
 }
 
-export function TopBar() {
+export function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
   const { tabs, activeTab, onTabClick } = useTabConfig();
   const { isSearchable, handleSearch }  = useSearch();
   const [query, setQuery] = useState("");
@@ -133,20 +133,29 @@ export function TopBar() {
 
       {/* ── MOBILE TopBar ── */}
       <div className="flex md:hidden items-center justify-between px-4 pt-4 pb-2 gap-3">
-        <div className="flex items-baseline gap-4 min-w-0">
-          {tabs.map((tab) => (
-            <button key={tab} onClick={() => onTabClick(tab)}
-              className={cn(
-                "font-display text-[22px] font-medium tracking-tight transition-colors truncate",
-                tabs.length === 1
-                  ? "text-fg-primary cursor-default"
-                  : activeTab === tab
-                    ? "text-fg-primary"
-                    : "text-fg-muted"
-              )}>
-              {tab}
-            </button>
-          ))}
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            onClick={onMenuClick}
+            aria-label="Open menu"
+            className="shrink-0 glass h-9 w-9 rounded-full flex items-center justify-center transition-colors hover:border-white/[0.12]"
+          >
+            <Menu className="w-4 h-4 text-fg-secondary" />
+          </button>
+          <div className="flex items-baseline gap-4 min-w-0">
+            {tabs.map((tab) => (
+              <button key={tab} onClick={() => onTabClick(tab)}
+                className={cn(
+                  "font-display text-[22px] font-medium tracking-tight transition-colors truncate",
+                  tabs.length === 1
+                    ? "text-fg-primary cursor-default"
+                    : activeTab === tab
+                      ? "text-fg-primary"
+                      : "text-fg-muted"
+                )}>
+                {tab}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {isSearchable && (
