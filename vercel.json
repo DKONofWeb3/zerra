@@ -4,6 +4,7 @@
   ],
   "rewrites": [
     { "source": "/home", "destination": "https://valuable-guest-578488.framer.app/home" },
+    { "source": "/pitch-deck", "destination": "https://valuable-guest-578488.framer.app/pitch-deck" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
