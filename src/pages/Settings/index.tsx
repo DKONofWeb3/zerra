@@ -482,7 +482,9 @@ function PrivacySection() {
 
 // ── Connected Accounts ─────────────────────────────────────────────────────
 function ConnectedAccountsSection() {
-  const { accounts, connectTikTok, disconnect } = useSocialAccounts();
+  const { accounts, loading, error: loadError, connectTikTok, disconnect, refetch } = useSocialAccounts();
+  // Until we actually know, don't present an unconfirmed "Connect" (it reads as "not connected").
+  const unknown = accounts.length === 0 && (loading || loadError);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [igError, setIgError] = useState<string | null>(null);
   const [tiktokError, setTiktokError] = useState<string | null>(null);
@@ -571,10 +573,19 @@ function ConnectedAccountsSection() {
                   )}
                 </div>
                 <div className="text-[12px] text-fg-tertiary mt-0.5">
-                  {account ? `@${account.username ?? "connected"}` : description}
+                  {account ? `@${account.username ?? "connected"}` : unknown ? (loading ? "Checking your connection…" : "Couldn't load your connections.") : description}
                 </div>
               </div>
-              {account ? (
+              {unknown ? (
+                loading ? (
+                  <span className="text-[12.5px] text-fg-muted shrink-0">Loading…</span>
+                ) : (
+                  <button onClick={() => refetch()}
+                    className="px-4 py-2 rounded-xl text-[12.5px] font-medium border border-white/[0.08] bg-bg-elevated text-fg-primary hover:bg-bg-card transition-colors shrink-0">
+                    Retry
+                  </button>
+                )
+              ) : account ? (
                 <button onClick={() => handleDisconnect(account.id)} disabled={disconnecting === account.id}
                   className="text-[12.5px] text-danger hover:opacity-80 transition-opacity disabled:opacity-40 shrink-0">
                   {disconnecting === account.id ? "Disconnecting..." : "Disconnect"}
