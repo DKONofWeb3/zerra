@@ -29,9 +29,6 @@ export default function AuthCallback() {
           if (error || !data.session) {
             console.error("Session error:", error);
             setStatus("error");
-          } else if (params.get("type") === "recovery") {
-            // Password-reset email: let the user choose a new password first.
-            navigate("/reset-password", { replace: true });
           } else {
             const redirectTo = await getPostLoginRedirect(data.session.user.id);
             navigate(redirectTo, { replace: true });

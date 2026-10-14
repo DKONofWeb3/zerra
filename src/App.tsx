@@ -24,7 +24,6 @@ import CreatorProfilePage from "./pages/Creator";
 import NotFoundPage from "./pages/NotFound";
 import LoginPage from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
-import ResetPasswordPage from "./pages/ResetPassword";
 import TermsPage from "./pages/Terms";
 import PrivacyPage from "./pages/Privacy";
 import AdminOverviewPage from "./pages/Admin/index";
@@ -160,7 +159,6 @@ export default function App() {
         <Route path="/new-home"      element={<NewHomePage />} />
         <Route path="/login"         element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/terms"         element={<TermsPage />} />
         <Route path="/privacy"       element={<PrivacyPage />} />
         {/* Public referral redirect — no auth needed, just stores code and sends to signup */}
