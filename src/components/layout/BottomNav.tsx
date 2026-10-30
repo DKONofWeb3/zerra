@@ -1,40 +1,36 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Star, Compass, TrendingUp, Users } from "lucide-react";
 import { cn } from "@/lib/cn";
-
-const NAV_ITEMS = [
-  { to: "/dashboard",  label: "Home",      icon: LayoutDashboard },
-  { to: "/influence",  label: "Influence", icon: Star },
-  { to: "/explore",    label: "Explore",   icon: Compass },
-  { to: "/referrals",  label: "Referrals", icon: Users },
-  { to: "/market",     label: "Market",    icon: TrendingUp },
-];
+import { PRIMARY_NAV, isNavActive } from "./navItems";
 
 export function BottomNav() {
-  const location = useLocation();
+  const { pathname } = useLocation();
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-white/[0.06] md:hidden"
-      style={{ background: "rgb(6 8 14)", height: 64, paddingBottom: "env(safe-area-inset-bottom)" }}
+      className="fixed bottom-0 left-0 right-0 z-50 flex items-start justify-between border-t border-white/[0.05] md:hidden"
+      style={{
+        background: "rgba(6,8,14,0.82)",
+        backdropFilter: "blur(3.35px)",
+        WebkitBackdropFilter: "blur(3.35px)",
+        padding: "4px 4px 0",
+        paddingBottom: "max(env(safe-area-inset-bottom), 12px)",
+        fontFamily: '"DM Sans", ui-sans-serif, system-ui, sans-serif',
+      }}
     >
-      {NAV_ITEMS.map(({ to, label, icon: Icon }) => {
-        const isActive = to === "/influence"
-          ? location.pathname === "/influence" || location.pathname.startsWith("/influence/")
-          : location.pathname === to || location.pathname.startsWith(to + "/");
-
+      {PRIMARY_NAV.map(({ to, short, icon: Icon }) => {
+        const isActive = isNavActive(to, pathname);
         return (
           <NavLink
             key={to}
             to={to}
-            className="flex flex-col items-center justify-center gap-1 flex-1 h-full transition-colors"
+            className="flex flex-col items-center justify-center gap-1 flex-1 p-2 transition-colors"
           >
             <Icon
-              className={cn("w-5 h-5 transition-colors", isActive ? "text-brand" : "text-fg-muted")}
+              className={cn("w-5 h-5 transition-colors", isActive ? "text-[#4a7dff]" : "text-[#6e6e6e]")}
               strokeWidth={isActive ? 2.5 : 1.8}
             />
-            <span className={cn("text-[10px] font-medium transition-colors", isActive ? "text-brand" : "text-fg-muted")}>
-              {label}
+            <span className={cn("text-[12px] leading-4 font-medium transition-colors", isActive ? "text-[#4a7dff]" : "text-[#6e6e6e]")}>
+              {short}
             </span>
           </NavLink>
         );

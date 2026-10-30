@@ -1,14 +1,13 @@
 import { Outlet, useLocation } from "react-router-dom";
-import { Sidebar } from "./Sidebar";
+import { TopNav } from "./TopNav";
 import { TopBar } from "./TopBar";
 import { BottomNav } from "./BottomNav";
 import { MobileIdentityHeader } from "./MobileIdentityHeader";
 
 export function AppLayout() {
-  // The dashboard is the creator profile now, and that header already shows
-  // name + badge + TikTok — so the mobile identity row would be redundant
-  // there. It still runs on every other page, where it's the only place
-  // mobile shows who you're signed in as.
+  // The dashboard draws its own header on mobile (title + bell + avatar) and
+  // its own welcome row on desktop, so the generic page-title bar and the
+  // mobile identity row would only repeat it. Every other page keeps them.
   const onDashboard = useLocation().pathname.startsWith("/dashboard");
 
   return (
@@ -16,13 +15,9 @@ export function AppLayout() {
       <div aria-hidden className="atmosphere-base-glow" />
       <div aria-hidden className="atmosphere-glow" />
       <div className="atmosphere-content flex w-full h-full overflow-hidden">
-
-        {/* Sidebar — desktop only */}
-        <div className="hidden md:flex">
-          <Sidebar />
-        </div>
-
         <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          {/* Top navigation — desktop only (mobile uses the bottom bar) */}
+          <TopNav />
           <TopBar />
           {!onDashboard && <MobileIdentityHeader />}
           <div
@@ -30,8 +25,8 @@ export function AppLayout() {
             style={{ padding: "24px 16px 80px", }}
           >
             {/* Desktop padding override */}
-            <style>{`@media (min-width: 768px) { .app-content { padding: 24px 40px 24px !important; } }`}</style>
-            <div className="app-content" style={{ padding: "24px 16px 80px" }}>
+            <style>{`@media (min-width: 768px) { .app-content { padding: 24px 40px 24px !important; } .app-content--dash { padding: 0 32px 32px !important; } }`}</style>
+            <div className={onDashboard ? "app-content app-content--dash" : "app-content"} style={{ padding: "24px 16px 80px" }}>
               <Outlet />
             </div>
           </div>

@@ -68,16 +68,16 @@ function useSearch() {
 export function TopBar() {
   const { tabs, activeTab, onTabClick } = useTabConfig();
   const { isSearchable, handleSearch }  = useSearch();
+  const location = useLocation();
   const [query, setQuery] = useState("");
-
-  const today = new Date().toLocaleDateString("en-US", {
-    weekday: "short", month: "short", day: "numeric",
-  });
 
   const onSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
     handleSearch(e.target.value);
   };
+
+  // The dashboard has its own header (see pages/Dashboard).
+  if (location.pathname.startsWith("/dashboard")) return null;
 
   return (
     <>
@@ -115,12 +115,7 @@ export function TopBar() {
               />
             </div>
           )}
-          <button className="glass h-12 px-4 rounded-full flex items-center transition-colors hover:border-white/[0.12]">
-            <Bell className="w-5 h-5 text-fg-secondary" />
-          </button>
-          <div className="glass h-12 px-5 rounded-full flex items-center">
-            <span className="text-[13px] text-fg-primary font-medium whitespace-nowrap">{today}</span>
-          </div>
+          {/* Bell + avatar now live in the top nav */}
         </div>
       </div>
 

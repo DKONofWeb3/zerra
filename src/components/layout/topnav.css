@@ -1,0 +1,112 @@
+/* Bloom desktop top bar — measurements come straight from the Figma node. */
+.topnav {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 40px 26px 0;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  position: relative;
+  z-index: 5;
+}
+@media (min-width: 768px) {
+  .topnav { display: flex; }
+}
+
+.topnav__logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 60.759px;
+  background: rgba(12, 13, 15, 0.2);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.topnav__logo img { width: 30.178px; height: 24.304px; object-fit: cover; }
+
+.topnav__links {
+  display: flex;
+  align-items: center;
+  gap: 76px;
+}
+@media (max-width: 1180px) { .topnav__links { gap: 40px; } }
+@media (max-width: 900px)  { .topnav__links { gap: 22px; } }
+
+.topnav__item {
+  color: #787d92;
+  font-size: 16px;
+  line-height: 1.11;
+  letter-spacing: -1.12px;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.topnav__item:hover { color: #fff; }
+.topnav__item.is-active {
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  padding: 15px 21px;
+  border-radius: 23.746px;
+  min-width: 141px;
+  background-image: linear-gradient(139.75deg, rgba(16, 17, 21, 0.2) 43.343%, rgba(94, 100, 123, 0.2) 164.59%);
+  border: 1px solid rgba(255, 255, 255, 0.19);
+}
+.topnav__bar {
+  width: 3.43px;
+  height: 18px;
+  border-radius: 3px;
+  background: #fff;
+  margin-left: auto;
+}
+
+/* ── bell + avatar (shared with the mobile header) ── */
+.hdr-actions {
+  --hdr-size: 48px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.hdr-btn {
+  width: var(--hdr-size);
+  height: var(--hdr-size);
+  border-radius: 36.24px;
+  border: 1.797px solid rgba(255, 255, 255, 0.19);
+  background: rgba(0, 0, 0, 0.2);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 0;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.hdr-btn:hover { border-color: rgba(255, 255, 255, 0.4); }
+.hdr-btn:not(.hdr-avatar) > img { width: 50%; height: 50%; }
+.hdr-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.hdr-avatar span { color: #fff; font-size: calc(var(--hdr-size) * 0.4); font-weight: 500; }
+
+.hdr-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 176px;
+  padding: 6px;
+  border-radius: 16px;
+  background: rgba(10, 12, 18, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  z-index: 60;
+}
+.hdr-menu a {
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: #b4b8c8;
+  font-size: 14px;
+  text-decoration: none;
+}
+.hdr-menu a:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
