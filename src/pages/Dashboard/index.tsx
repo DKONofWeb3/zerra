@@ -130,7 +130,11 @@ export default function DashboardPage() {
     ? new Date(session.user.last_sign_in_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
     : null;
 
-  const name = user?.name?.trim() || user?.username || "Creator";
+  // /me can come back without a name (profile never filled in), so fall back to what Supabase knows from sign-in.
+  const meta = (session?.user?.user_metadata ?? {}) as Record<string, string | undefined>;
+  const emailName = (user?.email ?? session?.user?.email)?.split("@")[0];
+  const name = user?.name?.trim() || user?.username || meta.full_name || meta.name || meta.user_name || emailName || "Creator";
+  const avatar = user?.avatar || meta.avatar_url || meta.picture || null;
   const firstName = name.split(" ")[0];
   const attained = badges.filter((b) => b.attained);
   const role = attained[0]?.id === "early-creator" ? "Early Creator" : attained[0]?.shortLabel ?? "Creator";
@@ -170,8 +174,8 @@ export default function DashboardPage() {
         <section className="dash-profile">
           <div className="dash-profile__id">
             <div className="dash-profile__avatar">
-              {user?.avatar
-                ? <img src={user.avatar} alt="" referrerPolicy="no-referrer" />
+              {avatar
+                ? <img src={avatar} alt="" referrerPolicy="no-referrer" />
                 : name.charAt(0).toUpperCase()}
             </div>
             <div>

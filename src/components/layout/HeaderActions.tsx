@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useAuth } from "@/contexts/AuthContext";
 import { MENU_LINKS } from "./navItems";
 import "./topnav.css";
 
 /** Bell + avatar from the Bloom header. The avatar opens a menu holding the pages the new primary nav doesn't list. */
 export function HeaderActions({ size = 48 }: { size?: number }) {
   const { user } = useCurrentUser();
+  const { session } = useAuth();
+  const meta = (session?.user?.user_metadata ?? {}) as Record<string, string | undefined>;
+  const avatar = user?.avatar || meta.avatar_url || meta.picture || null;
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -24,7 +28,7 @@ export function HeaderActions({ size = 48 }: { size?: number }) {
     };
   }, [open]);
 
-  const initial = (user?.name ?? user?.email ?? "Z").charAt(0).toUpperCase();
+  const initial = (user?.name || meta.full_name || meta.name || user?.email || session?.user?.email || "Z").charAt(0).toUpperCase();
 
   return (
     <div className="hdr-actions" style={{ ["--hdr-size" as string]: `${size}px` }} ref={ref}>
@@ -32,8 +36,8 @@ export function HeaderActions({ size = 48 }: { size?: number }) {
         <img src="/dash/bell.svg" alt="" />
       </button>
       <button type="button" className="hdr-btn hdr-avatar" aria-label="Account menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        {user?.avatar
-          ? <img src={user.avatar} alt="" referrerPolicy="no-referrer" />
+        {avatar
+          ? <img src={avatar} alt="" referrerPolicy="no-referrer" />
           : <span>{initial}</span>}
       </button>
       {open && (
