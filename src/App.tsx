@@ -9,6 +9,7 @@ import LandingPage from "./pages/Landing";
 import NewHomePage from "./pages/Landing/NewHome";
 import DashboardPage from "./pages/Dashboard";
 import PortfolioPage from "./pages/Portfolio";
+import ReadinessPage from "./pages/Readiness";
 import TopCreatorsPage from "./pages/Influence/TopCreators";
 import InfluencePage from "./pages/Influence";
 import TopPerformingPage from "./pages/Influence/TopPerforming";
@@ -168,6 +169,7 @@ export default function App() {
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
           <Route path="/dashboard"                element={<DashboardPage />} />
           <Route path="/portfolio"                element={<PortfolioPage />} />
+          <Route path="/readiness"                element={<ReadinessPage />} />
           <Route path="/influence"                element={<TopCreatorsPage />} />
           <Route path="/influence/top-creators"   element={<InfluencePage />} />
           <Route path="/influence/top-performing" element={<TopPerformingPage />} />

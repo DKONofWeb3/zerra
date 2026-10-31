@@ -45,6 +45,7 @@ function useTabConfig(): TabConfig {
   if (pathname.startsWith("/dashboard")) {
     return { tabs: [], activeTab: "", onTabClick: () => {} };
   }
+  if (pathname.startsWith("/readiness")) return { tabs: ["Readiness"], activeTab: "Readiness", onTabClick: () => {} };
   if (pathname.startsWith("/market"))   return { tabs: ["Market"],   activeTab: "Market",   onTabClick: () => {} };
   if (pathname.startsWith("/wallet"))   return { tabs: ["Wallet"],   activeTab: "Wallet",   onTabClick: () => {} };
   if (pathname.startsWith("/settings")) return { tabs: ["Settings"], activeTab: "Settings", onTabClick: () => {} };
