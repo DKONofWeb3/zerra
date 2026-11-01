@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/cn";
 import {
-  LayoutGrid, Megaphone, Users, BarChart3, TrendingUp, ShieldAlert,
+  LayoutGrid, Megaphone, Users, BarChart3, TrendingUp, ShieldAlert, Target,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { to: "/admin/campaigns",  label: "Campaigns",   icon: Megaphone },
   { to: "/admin/users",      label: "Users",       icon: Users },
   { to: "/admin/trending",   label: "Trending",    icon: TrendingUp },
+  { to: "/admin/readiness",  label: "Readiness",   icon: Target },
   { to: "/admin/metrics",    label: "AI Metrics",  icon: BarChart3 },
   { to: "/admin/audit-log",  label: "Audit Log",   icon: ShieldAlert },
 ];

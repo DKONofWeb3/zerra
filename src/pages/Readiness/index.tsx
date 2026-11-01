@@ -1,13 +1,8 @@
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { computeReadiness, TIERS, type ReadinessInput } from "@/lib/readiness";
+import { computeReadiness, TIERS } from "@/lib/readiness";
+import { connectTwitter, getReadiness, refreshReadiness, type ReadinessResponse } from "@/lib/api";
 import "./readiness.css";
-
-// TODO(kaito): replace with real data once the Kaito key is in. Smart Follower
-// counts and daily gains come from kaito_smart_followers; per-post engagement
-// by distinct Smart Followers is not exposed by that tool, so it may stay null.
-const SAMPLE: ReadinessInput = { smartFollowers: 650, engagementPerPost: 18, posts: 10 };
-const SAMPLE_TREND = [31, 34, 33, 38, 41, 44, 43, 47, 50, 52, 55, 57];
 
 function Ring({ score }: { score: number }) {
   const r = 70, c = 2 * Math.PI * r;
@@ -20,6 +15,9 @@ function Ring({ score }: { score: number }) {
 }
 
 function Trend({ data }: { data: number[] }) {
+  if (data.length < 2) {
+    return <p className="rd-lead">Your trend appears after a second daily check.</p>;
+  }
   const max = Math.max(...data), min = Math.min(...data);
   const pts = data.map((v, i) => `${(i / (data.length - 1)) * 300},${56 - ((v - min) / (max - min || 1)) * 48}`).join(" ");
   return (
@@ -29,20 +27,103 @@ function Trend({ data }: { data: number[] }) {
   );
 }
 
-export default function ReadinessPage() {
-  usePageTitle("Zerra · Smart Readiness");
-  const r = useMemo(() => computeReadiness(SAMPLE), []);
-  const w = r.weakest;
-
+function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="rd">
-      <div className="rd-banner">Preview with sample data. Live Kaito data isn't connected yet.</div>
-
       <header className="rd-head">
         <h1>Your path to Smart Account status</h1>
         <p>Know where you stand. Know what to do next.</p>
       </header>
+      {children}
+    </div>
+  );
+}
 
+export default function ReadinessPage() {
+  usePageTitle("Zerra · Smart Readiness");
+  const [data, setData] = useState<ReadinessResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      setData(await getReadiness());
+      setError(null);
+    } catch (e: any) {
+      setError(e.message ?? "Couldn't load your readiness");
+    }
+  }, []);
+
+  const refresh = useCallback(async () => {
+    setBusy(true);
+    setNote(null);
+    try {
+      await refreshReadiness();
+      await load();
+    } catch (e: any) {
+      // A cooldown or provider hiccup is not a failure of the page itself.
+      setNote(e.message ?? "Couldn't refresh right now");
+    } finally {
+      setBusy(false);
+    }
+  }, [load]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // First visit with X connected and no snapshot yet: compute it now instead of making the user wait for the daily job.
+  const needsFirstRun = !!data && data.available && data.connected && !data.latest;
+  useEffect(() => { if (needsFirstRun) refresh(); }, [needsFirstRun]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const r = useMemo(() => {
+    const s = data?.latest;
+    return s ? computeReadiness({ qualityFollowers: s.quality_followers, engagementPerPost: s.engagement_per_post, posts: s.posts_30d }) : null;
+  }, [data]);
+
+  if (error && !data) return <Shell><p className="rd-lead">{error}</p></Shell>;
+  if (!data) return <Shell><p className="rd-lead">Loading…</p></Shell>;
+
+  if (!data.available) {
+    return (
+      <Shell>
+        <section className="rd-card">
+          <h3>Coming soon</h3>
+          <p className="rd-lead">Smart Readiness isn't switched on yet. Check back soon.</p>
+        </section>
+      </Shell>
+    );
+  }
+
+  if (!data.connected) {
+    return (
+      <Shell>
+        <section className="rd-card">
+          <h3>Connect your X account</h3>
+          <p className="rd-lead">
+            We look at the public followers and posts of the X account you connect, then show your readiness score, what's holding it back and how it trends. Only you see your score.
+          </p>
+          <button type="button" className="rd-btn" onClick={() => connectTwitter()}>Connect X</button>
+        </section>
+      </Shell>
+    );
+  }
+
+  if (!data.latest || !r) {
+    return (
+      <Shell>
+        <section className="rd-card">
+          <h3>@{data.username}</h3>
+          <p className="rd-lead">{busy ? "Calculating your score. This takes a few seconds." : note ?? "Your first score is being prepared."}</p>
+          {!busy && <button type="button" className="rd-btn" onClick={refresh}>Try again</button>}
+        </section>
+      </Shell>
+    );
+  }
+
+  const s = data.latest;
+  const w = r.weakest;
+  return (
+    <Shell>
       <div className="rd-grid">
         <section className="rd-card rd-score">
           <div className="rd-ringwrap">
@@ -52,20 +133,20 @@ export default function ReadinessPage() {
           <div>
             <div className="rd-tier">{r.tier.name}</div>
             <p className="rd-advice">{r.tier.advice}</p>
-            {r.partial && <p className="rd-note">Some signals are unavailable, so this score uses the rest.</p>}
+            {r.partial && <p className="rd-note">Engagement per post isn't measured yet, so this score uses the other signals.</p>}
           </div>
         </section>
 
         <section className="rd-card">
           <h3>Signals (last 30 days)</h3>
           <ul className="rd-signals">
-            {r.signals.map((s) => (
-              <li key={s.key}>
+            {r.signals.map((x) => (
+              <li key={x.key}>
                 <div className="rd-signals__row">
-                  <span>{s.label}</span>
-                  <span>{s.value == null ? "Not available" : `${s.value} / ${s.target}`}</span>
+                  <span>{x.label}</span>
+                  <span>{x.value == null ? "Not measured yet" : `${x.value} / ${x.target}`}</span>
                 </div>
-                <div className="rd-track"><i style={{ width: `${s.score ?? 0}%` }} /></div>
+                <div className="rd-track"><i style={{ width: `${x.score ?? 0}%` }} /></div>
               </li>
             ))}
           </ul>
@@ -75,12 +156,10 @@ export default function ReadinessPage() {
           <h3>What's holding you back</h3>
           {w ? (
             <>
-              <p className="rd-lead">
-                Your biggest gap is <b>{w.label.toLowerCase()}</b>: {w.value} of {w.target}.
-              </p>
+              <p className="rd-lead">Your biggest gap is <b>{w.label.toLowerCase()}</b>: {w.value} of {w.target}.</p>
               <ul className="rd-next">
-                {r.signals.filter((s) => s.score != null && s.score < 100).map((s) => (
-                  <li key={s.key}>{s.label}: reach {s.target} (you're at {s.value}).</li>
+                {r.signals.filter((x) => x.score != null && x.score < 100).map((x) => (
+                  <li key={x.key}>{x.label}: reach {x.target} (you're at {x.value}).</li>
                 ))}
               </ul>
             </>
@@ -90,8 +169,8 @@ export default function ReadinessPage() {
         </section>
 
         <section className="rd-card">
-          <h3>30-day trend</h3>
-          <Trend data={SAMPLE_TREND} />
+          <h3>Trend</h3>
+          <Trend data={data.trend.map((t) => t.score)} />
           <div className="rd-tiers">
             {TIERS.map((t) => (
               <span key={t.name} className={t.name === r.tier.name ? "is-on" : ""}>{t.name} · {t.min}+</span>
@@ -100,9 +179,16 @@ export default function ReadinessPage() {
         </section>
       </div>
 
+      <div className="rd-actions">
+        <button type="button" className="rd-btn rd-btn--ghost" onClick={refresh} disabled={busy}>{busy ? "Refreshing…" : "Refresh"}</button>
+        {note && <span className="rd-note">{note}</span>}
+      </div>
+
       <p className="rd-foot">
-        This is Zerra's own readiness estimate. It is not an official Kaito score and does not guarantee Smart Account classification.
+        Based on a sample of {s.sampled.toLocaleString()} of your {s.followers_total.toLocaleString()} followers for @{data.username}; quality follower count is an estimate.
+        {s.seed_followers > 0 && <> {s.seed_followers} of the sampled followers are on our curated high-signal list.</>}
+        {" "}This is Zerra's own readiness estimate. It is not an official Kaito score and does not guarantee Smart Account classification.
       </p>
-    </div>
+    </Shell>
   );
 }

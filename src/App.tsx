@@ -34,6 +34,7 @@ import AdminUsersPage from "./pages/Admin/Users/index";
 import AdminTrendingPage from "./pages/Admin/Trending/index";
 import AdminMetricsPage from "./pages/Admin/Metrics/index";
 import AdminAuditLogPage from "./pages/Admin/AuditLog/index";
+import AdminReadinessPage from "./pages/Admin/Readiness/index";
 import { ProjectLayout } from "./components/project/ProjectLayout";
 import ProjectOverviewPage from "./pages/Project/index";
 import ProjectLeaderboardPage from "./pages/Project/Leaderboard/index";
@@ -192,6 +193,7 @@ export default function App() {
           <Route path="/admin/users"         element={<AdminUsersPage />} />
           <Route path="/admin/trending"      element={<AdminTrendingPage />} />
           <Route path="/admin/metrics"       element={<AdminMetricsPage />} />
+          <Route path="/admin/readiness"     element={<AdminReadinessPage />} />
           <Route path="/admin/audit-log"     element={<AdminAuditLogPage />} />
         </Route>
 

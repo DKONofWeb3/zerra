@@ -1,12 +1,12 @@
 // Smart Account Readiness Score: our own estimate, NOT Kaito's classification.
 // Targets and weights are proposed product thresholds from the founder's spec.
 
-export const TARGETS = { smartFollowers: 1000, engagementPerPost: 50, posts: 12 } as const;
+export const TARGETS = { qualityFollowers: 1000, engagementPerPost: 50, posts: 12 } as const;
 const WEIGHTS = { followers: 0.4, engagement: 0.4, consistency: 0.2 } as const;
 
 export interface ReadinessInput {
-  smartFollowers: number;
-  /** Avg distinct Smart Followers engaging per post (30d). null = the data source can't provide it. */
+  qualityFollowers: number;
+  /** Avg distinct quality followers engaging per post (30d). null = the data source can't provide it. */
   engagementPerPost: number | null;
   /** Qualifying posts in the last 30 days. */
   posts: number;
@@ -38,17 +38,17 @@ export interface Readiness {
 
 export const TIERS: Tier[] = [
   { name: "Emerging",            min: 0,  advice: "Build a relevant audience and establish consistent publishing." },
-  { name: "Gaining Recognition", min: 40, advice: "Grow your network of Smart Followers and earn more meaningful engagement." },
+  { name: "Gaining Recognition", min: 40, advice: "Grow your network of quality followers and earn more meaningful engagement." },
   { name: "Near Target",         min: 60, advice: "Find your weakest metric and focus on improving it." },
-  { name: "High Readiness",      min: 80, advice: "Strong against our targets. Official Kaito classification is a separate check." },
+  { name: "High Readiness",      min: 80, advice: "Strong against our targets. Keep your cadence up." },
 ];
 
 const pct = (v: number, t: number) => 100 * Math.min(Math.max(v, 0) / t, 1);
 
 export function computeReadiness(i: ReadinessInput): Readiness {
   const signals: Signal[] = [
-    { key: "followers",   label: "Smart Follower network",    value: i.smartFollowers,    target: TARGETS.smartFollowers,    score: pct(i.smartFollowers, TARGETS.smartFollowers), weight: WEIGHTS.followers },
-    { key: "engagement",  label: "Smart engagement per post", value: i.engagementPerPost, target: TARGETS.engagementPerPost, score: i.engagementPerPost == null ? null : pct(i.engagementPerPost, TARGETS.engagementPerPost), weight: WEIGHTS.engagement },
+    { key: "followers",   label: "Quality follower network",    value: i.qualityFollowers,    target: TARGETS.qualityFollowers,    score: pct(i.qualityFollowers, TARGETS.qualityFollowers), weight: WEIGHTS.followers },
+    { key: "engagement",  label: "Quality engagement per post", value: i.engagementPerPost, target: TARGETS.engagementPerPost, score: i.engagementPerPost == null ? null : pct(i.engagementPerPost, TARGETS.engagementPerPost), weight: WEIGHTS.engagement },
     { key: "consistency", label: "Posting consistency",       value: i.posts,             target: TARGETS.posts,             score: pct(i.posts, TARGETS.posts), weight: WEIGHTS.consistency },
   ];
   const live = signals.filter((s) => s.score != null);

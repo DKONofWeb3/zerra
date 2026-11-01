@@ -25,4 +25,5 @@ export const MENU_LINKS = [
   { to: "/referrals", label: "Referrals" },
   { to: "/market",    label: "Market" },
   { to: "/wallet",    label: "Wallet" },
+  { to: "/readiness", label: "Smart Readiness" },
 ] as const;

@@ -106,3 +106,30 @@ export const clearWallet = () =>
 // ——— Wallet ———
 export const saveWallet = (body: { wallet_address: string; wallet_chain?: string }) =>
   apiPut<{ user: any }>("/me/wallet", body);
+// ——— Smart Readiness ———
+export interface ReadinessSnapshot {
+  snapshot_date: string;
+  followers_total: number;
+  sampled: number;
+  quality_followers: number;
+  seed_followers: number;
+  posts_30d: number;
+  engagement_per_post: number | null;
+  score: number;
+  tier: string;
+  created_at: string;
+}
+export interface ReadinessResponse {
+  available: boolean;
+  connected: boolean;
+  username: string | null;
+  latest: ReadinessSnapshot | null;
+  trend: { date: string; score: number }[];
+}
+export const getReadiness = () => apiGet<ReadinessResponse>("/readiness/me");
+export const refreshReadiness = () => apiPost<{ ok: true }>("/readiness/me/refresh");
+
+export interface SeedAccount { id: string; handle: string; note: string | null; created_at: string }
+export const getSeedAccounts = () => apiGet<{ seeds: SeedAccount[] }>("/admin/readiness/seeds");
+export const addSeedAccounts = (handles: string[]) => apiPost<{ added: number }>("/admin/readiness/seeds", { handles });
+export const deleteSeedAccount = (id: string) => apiDelete<{ ok: true }>(`/admin/readiness/seeds/${id}`);
