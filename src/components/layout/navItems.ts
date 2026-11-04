@@ -10,7 +10,7 @@ import { LayoutDashboard, ClipboardList, TrendingUp, Trophy, Settings } from "lu
 export const PRIMARY_NAV = [
   { to: "/dashboard",           label: "Dashboard",   short: "Home",        icon: LayoutDashboard },
   { to: "/explore",             label: "Tasks",       short: "Tasks",       icon: ClipboardList },
-  { to: "/influence",           label: "Trending",    short: "Trending",    icon: TrendingUp },
+  { to: "/trending",            label: "Trending",    short: "Trending",    icon: TrendingUp },
   { to: "/explore/leaderboard", label: "Leaderboard", short: "Leaderboard", icon: Trophy },
   { to: "/settings",            label: "Settings",    short: "Settings",    icon: Settings },
 ] as const;
@@ -25,5 +25,6 @@ export const MENU_LINKS = [
   { to: "/referrals", label: "Referrals" },
   { to: "/market",    label: "Market" },
   { to: "/wallet",    label: "Wallet" },
+  { to: "/influence", label: "Influence" },
   { to: "/readiness", label: "Smart Readiness" },
 ] as const;

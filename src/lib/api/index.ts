@@ -133,3 +133,25 @@ export interface SeedAccount { id: string; handle: string; note: string | null; 
 export const getSeedAccounts = () => apiGet<{ seeds: SeedAccount[] }>("/admin/readiness/seeds");
 export const addSeedAccounts = (handles: string[]) => apiPost<{ added: number }>("/admin/readiness/seeds", { handles });
 export const deleteSeedAccount = (id: string) => apiDelete<{ ok: true }>(`/admin/readiness/seeds/${id}`);
+
+// ——— Trending ———
+export interface TrendingPost {
+  id: string;
+  title: string | null;
+  cover_image_url: string | null;
+  creator_name: string | null;
+  creator_avatar: string | null;
+  handle: string | null;
+  niche: string | null;
+  platform: string;
+  views: number;
+  engagement_rate: number;
+  posted_at: string;
+}
+export interface TrendingResponse {
+  updated_at: string | null;
+  top: TrendingPost[];
+  posts: TrendingPost[];
+  niches: { niche: string; share: number }[];
+}
+export const getTrending = () => apiGetPublic<TrendingResponse>("/analytics/trending");

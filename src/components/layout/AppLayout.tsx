@@ -8,7 +8,8 @@ export function AppLayout() {
   // The dashboard draws its own header on mobile (title + bell + avatar) and
   // its own welcome row on desktop, so the generic page-title bar and the
   // mobile identity row would only repeat it. Every other page keeps them.
-  const onDashboard = useLocation().pathname.startsWith("/dashboard");
+  const { pathname } = useLocation();
+  const onDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/trending");
 
   return (
     <div className="atmosphere-root flex h-screen overflow-hidden bg-bg-base text-fg-primary">
