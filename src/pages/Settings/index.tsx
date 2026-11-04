@@ -507,7 +507,8 @@ function ConnectedAccountsSection() {
     } else if (error === "twitter_already_linked") {
       setTwitterError("That X account is already connected to a different Zerra account.");
     } else if (error === "twitter_failed" || error === "twitter_denied") {
-      setTwitterError("X connection failed. Please try again.");
+      const reason = params.get("reason");
+      setTwitterError(`X connection failed${reason ? ` (${reason})` : ""}. Please try again.`);
     }
   }, []);
 

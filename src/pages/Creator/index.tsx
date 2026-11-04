@@ -8,6 +8,7 @@ import { LockedCard } from "@/components/dashboard/LockedCard";
 import { BadgeGlyph } from "@/components/icons/BadgeIcon";
 import { useBadges } from "@/hooks/useBadges";
 import { useSocialAccounts } from "@/hooks/useSocialAccounts";
+import { connectedHandles } from "@/lib/connectedLabels";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import type { CreatorProfileResponse, TikTokPost, BadgeState } from "@/lib/types";
 
@@ -117,7 +118,7 @@ function ProfileHeader({
 }) {
   // Name / badge / TikTok handle moved here off the sidebar, which used to
   // duplicate all three above the nav.
-  const tiktokHandle = accounts.find((a) => a.platform === "tiktok")?.username ?? null;
+  const handles = connectedHandles(accounts);
   const badgeRow = (
     <span className="flex items-center gap-1 shrink-0">
       {isVerified && <img src={ICON.verify} alt="Verified" style={{ width: 24, height: 24 }} />}
@@ -172,9 +173,9 @@ function ProfileHeader({
           <span style={{ fontSize: 20, fontWeight: 500, color: "#fff", letterSpacing: "-0.8px" }}>{creator.name}</span>
           {badgeRow}
         </div>
-        {tiktokHandle && (
+        {handles.length > 0 && (
           <p style={{ fontSize: 14, color: C.textMuted, letterSpacing: "-0.56px", margin: "2px 0 0" }}>
-            TikTok: <span style={{ color: C.green }}>@{tiktokHandle}</span>
+            {handles.map((h, i) => (<span key={h.platform}>{i > 0 && " · "}{h.label}: <span style={{ color: C.green }}>@{h.username}</span></span>))}
           </p>
         )}
         <p style={{ fontSize: 16, fontWeight: 500, color: C.textMuted, letterSpacing: "-0.64px", margin: "2px 0 0" }}>
@@ -243,9 +244,9 @@ function ProfileHeader({
               <div className="flex items-center gap-3 ml-3">{actions}</div>
             </div>
 
-            {tiktokHandle && (
+            {handles.length > 0 && (
               <p style={{ fontSize: 14, color: C.textMuted, letterSpacing: "-0.56px", margin: "8px 0 0" }}>
-                TikTok: <span style={{ color: C.green }}>@{tiktokHandle}</span>
+                {handles.map((h, i) => (<span key={h.platform}>{i > 0 && " · "}{h.label}: <span style={{ color: C.green }}>@{h.username}</span></span>))}
               </p>
             )}
             <p style={{ fontSize: 16, fontWeight: 500, color: C.textMuted, letterSpacing: "-0.64px", margin: "2px 0 0" }}>

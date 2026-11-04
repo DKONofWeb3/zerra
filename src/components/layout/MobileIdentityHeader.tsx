@@ -4,6 +4,7 @@ import { useSocialAccounts } from "@/hooks/useSocialAccounts";
 import { useBadges } from "@/hooks/useBadges";
 import { UserAvatar } from "./UserAvatar";
 import { BadgeGlyph } from "@/components/icons/BadgeIcon";
+import { connectedHandles } from "@/lib/connectedLabels";
 
 /**
  * Identity row shown above page content on mobile only. On desktop
@@ -19,6 +20,7 @@ export function MobileIdentityHeader() {
   const tiktokAccount = accounts.find((a) => a.platform === "tiktok");
   const { badges } = useBadges(tiktokAccount?.follower_count ?? null);
   const attainedBadges = badges.filter((b) => b.attained);
+  const handles = connectedHandles(accounts);
 
   return (
     <div className="flex md:hidden items-center gap-3 px-4 pt-3">
@@ -40,12 +42,16 @@ export function MobileIdentityHeader() {
             </span>
           )}
         </div>
-        <p className="text-[11.5px] text-fg-tertiary truncate mt-0.5">
-          TikTok:{" "}
-          <span className={tiktokAccount ? "text-[rgb(var(--success))]" : "text-fg-secondary"}>
-            {tiktokAccount ? `@${tiktokAccount.username ?? "Connected"}` : "Not connected"}
-          </span>
-        </p>
+        {handles.length > 0 && (
+          <p className="text-[11.5px] text-fg-tertiary truncate mt-0.5">
+            {handles.map((h, i) => (
+              <span key={h.platform}>
+                {i > 0 && " · "}
+                {h.label}: <span className="text-[rgb(var(--success))]">@{h.username}</span>
+              </span>
+            ))}
+          </p>
+        )}
       </div>
     </div>
   );
