@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useSocialAccounts } from "@/hooks/useSocialAccounts";
 import { useBadges } from "@/hooks/useBadges";
-import { getCreatorProfile, getReadiness, type ReadinessResponse } from "@/lib/api";
+import { connectTwitter, getCreatorProfile, getReadiness, type ReadinessResponse } from "@/lib/api";
 import { Tag } from "lucide-react";
 import { BadgeGlyph } from "@/components/icons/BadgeIcon";
 import { HeaderActions } from "@/components/layout/HeaderActions";
@@ -99,11 +99,50 @@ function StarsArt() {
   );
 }
 
+function ConnectXGate({ name }: { name: string }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const code = new URLSearchParams(window.location.search).get("error");
+  const failedMessage = code === "twitter_already_linked"
+    ? "That X account is already connected to a different Zerra account."
+    : code?.startsWith("twitter_") ? "X connection failed. Please try again." : null;
+
+  const connect = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await connectTwitter();
+    } catch (e: any) {
+      setError(e.message ?? "Couldn't start the connection. Please try again.");
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="dash">
+      <Glows />
+      <div className="dash-mhead"><h1>Dashboard</h1><HeaderActions size={32} /></div>
+      <section className="dash-gate">
+        <h1>Welcome, {name}</h1>
+        <p>Connect your X account to unlock your dashboard: your Smart Readiness score, where your voice is strongest, and how you stack up.</p>
+        <button type="button" onClick={connect} disabled={busy} className="dash-gate__btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+            <path d="M18.9 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/>
+          </svg>
+          {busy ? "Opening X…" : "Connect X"}
+        </button>
+        {(error || failedMessage) && <p className="dash-gate__error">{error ?? failedMessage}</p>}
+        <small>We only read public data from your account. Only you see your score.</small>
+      </section>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   usePageTitle("Zerra · Dashboard");
   const { session } = useAuth();
   const { user } = useCurrentUser();
-  const { accounts, loading: accountsLoading } = useSocialAccounts();
+  const { accounts, loading: accountsLoading, error: accountsError } = useSocialAccounts();
   const followers = accounts.reduce((s, a) => s + (a.follower_count ?? 0), 0);
   const tiktokFollowers = accounts.find((a) => a.platform === "tiktok")?.follower_count ?? null;
   const { badges } = useBadges(tiktokFollowers);
@@ -140,6 +179,13 @@ export default function DashboardPage() {
   const attained = badges.filter((b) => b.attained);
   const role = attained[0]?.id === "early-creator" ? "Early Creator" : attained[0]?.shortLabel ?? "Creator";
   const followersValue = accounts.length === 0 && accountsLoading ? "—" : fmt(followers);
+
+  // Nothing on the dashboard until an X account is connected. A request that is
+  // still running, or that failed, must never read as "not connected": only a
+  // finished, successful check with no X account shows the gate.
+  const xConnected = accounts.some((a) => a.platform === "twitter");
+  if (!xConnected && accountsLoading) return <div className="dash"><Glows /></div>;
+  if (!xConnected && !accountsError) return <ConnectXGate name={firstName} />;
 
   return (
     <div className="dash">
