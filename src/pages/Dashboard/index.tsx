@@ -5,14 +5,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useSocialAccounts } from "@/hooks/useSocialAccounts";
 import { useBadges } from "@/hooks/useBadges";
-import { getCreatorProfile } from "@/lib/api";
+import { getCreatorProfile, getReadiness, type ReadinessResponse } from "@/lib/api";
+import { Tag } from "lucide-react";
 import { BadgeGlyph } from "@/components/icons/BadgeIcon";
 import { HeaderActions } from "@/components/layout/HeaderActions";
 import "./dashboard.css";
 
 // The dashboard follows the Bloom design (Figma 541:1370 desktop / 541:1628
 // mobile). Followers, influence, name, avatar and badge are real. XP, the
-// XP-to-next-badge goal, the % change chips and Top Interest have no data
+// XP-to-next-badge goal and the % change chips have no data
 // source yet, so they render as placeholders instead of invented numbers.
 
 function fmt(n: number): string {
@@ -20,14 +21,6 @@ function fmt(n: number): string {
   if (n >= 1_000) return `${parseFloat((n / 1_000).toFixed(1))}K`;
   return String(Math.round(n));
 }
-
-const INTERESTS = [
-  { label: "Technology",       icon: "/dash/int-laptop.svg" },
-  { label: "Entrepreneurship", icon: "/dash/int-bag.svg" },
-  { label: "Investing",        icon: "/dash/int-invest.svg" },
-  { label: "Crypto",           icon: "/dash/int-crypto.svg" },
-  { label: "Fitness",          icon: "/dash/int-fitness.svg" },
-];
 
 function Glows() {
   return (
@@ -125,6 +118,14 @@ export default function DashboardPage() {
     return () => { live = false; };
   }, [user?.username]);
 
+  // Top Voices: the creator niches they are strongest in, from their Smart Readiness data.
+  const [readiness, setReadiness] = useState<ReadinessResponse | null>(null);
+  useEffect(() => {
+    let live = true;
+    getReadiness().then((r) => { if (live) setReadiness(r); }).catch(() => { /* card keeps its empty state */ });
+    return () => { live = false; };
+  }, []);
+
   const now = new Date();
   const lastLogin = session?.user?.last_sign_in_at
     ? new Date(session.user.last_sign_in_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
@@ -219,19 +220,31 @@ export default function DashboardPage() {
           </StatCard>
 
           <section className="dash-interest">
-            <h3>Top Interest</h3>
-            <ul>
-              {INTERESTS.map((i) => (
-                <li key={i.label}>
-                  <span className="ic"><img src={i.icon} alt="" /></span>
-                  <span className="tx">
-                    <span>{i.label}</span>
-                    <span className="track"><i style={{ width: 0 }} /></span>
-                  </span>
-                  <span className="pc">—</span>
-                </li>
-              ))}
-            </ul>
+            <div className="dash-interest__head">
+              <h3>Top Voices</h3>
+              <Link to="/readiness">Details</Link>
+            </div>
+            {readiness && readiness.available && readiness.connected && readiness.voices.length > 0 ? (
+              <ul>
+                {readiness.voices.slice(0, 5).map((v) => (
+                  <li key={v.niche}>
+                    <span className="ic"><Tag size={9} /></span>
+                    <span className="tx">
+                      <span>{v.niche}</span>
+                      <span className="track"><i style={{ width: `${v.score}%` }} /></span>
+                    </span>
+                    <span className="pc">{v.top_percent != null ? `Top ${v.top_percent}%` : v.score}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="dash-interest__empty">
+                {!readiness ? "Loading…"
+                  : !readiness.available ? "Top voices are coming soon."
+                  : !readiness.connected ? <>Connect your X account to see where your voice is strongest. <Link to="/settings">Connect X</Link></>
+                  : "Post at least twice about a topic (DeFi, AI, NFTs and more) to see where your voice is strongest."}
+              </p>
+            )}
           </section>
         </div>
       </div>

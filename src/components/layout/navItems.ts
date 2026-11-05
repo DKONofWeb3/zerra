@@ -3,9 +3,8 @@ import { LayoutDashboard, ClipboardList, TrendingUp, Trophy, Settings } from "lu
 /**
  * Primary navigation (desktop top bar + mobile bottom bar), per the Bloom
  * dashboard design. Tasks / Trending / Leaderboard point at the closest
- * existing pages until their own designs land. Everything that used to live
- * in the sidebar and isn't here (Portfolio, Referrals, Market, Wallet) is
- * reachable from the avatar menu.
+ * existing pages until their own designs land. Other pages live in the avatar
+ * menu (see MENU_LINKS).
  */
 export const PRIMARY_NAV = [
   { to: "/dashboard",           label: "Dashboard",   short: "Home",        icon: LayoutDashboard },
@@ -20,11 +19,9 @@ export function isNavActive(to: string, pathname: string): boolean {
   return pathname === to || pathname.startsWith(to + "/");
 }
 
+// Portfolio, Market, Wallet and Influence are hidden from the menu for now (the
+// pages and routes still exist). Add them back here when they return.
 export const MENU_LINKS = [
-  { to: "/portfolio", label: "Portfolio" },
   { to: "/referrals", label: "Referrals" },
-  { to: "/market",    label: "Market" },
-  { to: "/wallet",    label: "Wallet" },
-  { to: "/influence", label: "Influence" },
   { to: "/readiness", label: "Smart Readiness" },
 ] as const;

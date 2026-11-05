@@ -141,3 +141,11 @@
   .dash-interest li .ic img { width: 8.1px; height: 8.1px; }
   .dash-interest li .track { height: 4.75px; }
 }
+
+.dash-interest__head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+.dash-interest__head h3 { margin: 0; }
+.dash-interest__head a { font-size: 11px; color: #787d92; letter-spacing: -0.5px; text-decoration: none; }
+.dash-interest__head a:hover { color: #fff; }
+.dash-interest__empty { margin: 4px 0 0; color: #787d92; font-size: 12px; line-height: 1.5; letter-spacing: -0.3px; }
+.dash-interest__empty a { color: #4a7dff; text-decoration: none; }
+.dash-interest li { grid-template-columns: 16px minmax(0, 1fr) 54px; }
