@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { computeReadiness, TIERS } from "@/lib/readiness";
-import { connectTwitter, getReadiness, refreshReadiness, type ReadinessResponse } from "@/lib/api";
+import { COMPONENTS, TIERS, biggestGaps, detail, tierFor, tip } from "@/lib/readiness";
+import { connectTwitter, getReadiness, refreshReadiness, type ReadinessResponse, type ReadinessVoice } from "@/lib/api";
 import "./readiness.css";
 
 function Ring({ score }: { score: number }) {
@@ -39,6 +39,11 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function standing(v: ReadinessVoice): string {
+  if (v.top_percent != null) return `Top ${v.top_percent}% of Zerra creators`;
+  return v.cohort <= 1 ? "First on Zerra with this topic" : `#${v.rank} of ${v.cohort} on Zerra`;
+}
+
 export default function ReadinessPage() {
   usePageTitle("Zerra · Smart Readiness");
   const [data, setData] = useState<ReadinessResponse | null>(null);
@@ -71,14 +76,9 @@ export default function ReadinessPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  // First visit with X connected and no snapshot yet: compute it now instead of making the user wait for the daily job.
-  const needsFirstRun = !!data && data.available && data.connected && !data.latest;
-  useEffect(() => { if (needsFirstRun) refresh(); }, [needsFirstRun]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const r = useMemo(() => {
-    const s = data?.latest;
-    return s ? computeReadiness({ qualityFollowers: s.quality_followers, engagementPerPost: s.engagement_per_post, posts: s.posts_30d }) : null;
-  }, [data]);
+  // No score yet, or one from the old scoring model: calculate now instead of waiting for the daily job.
+  const needsRun = !!data && data.available && data.connected && (!data.latest || !data.latest.components);
+  useEffect(() => { if (needsRun) refresh(); }, [needsRun]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (error && !data) return <Shell><p className="rd-lead">{error}</p></Shell>;
   if (!data) return <Shell><p className="rd-lead">Loading…</p></Shell>;
@@ -100,7 +100,7 @@ export default function ReadinessPage() {
         <section className="rd-card">
           <h3>Connect your X account</h3>
           <p className="rd-lead">
-            We look at the public followers and posts of the X account you connect, then show your readiness score, what's holding it back and how it trends. Only you see your score.
+            We look at the public followers and posts of the X account you connect, then show your readiness score, what's holding it back, where your voice is strongest and how it trends. Only you see your score.
           </p>
           <button type="button" className="rd-btn" onClick={() => connectTwitter()}>Connect X</button>
         </section>
@@ -108,72 +108,100 @@ export default function ReadinessPage() {
     );
   }
 
-  if (!data.latest || !r) {
+  const s = data.latest;
+  if (!s || !s.components || !s.metrics) {
     return (
       <Shell>
         <section className="rd-card">
           <h3>@{data.username}</h3>
-          <p className="rd-lead">{busy ? "Calculating your score. This takes a few seconds." : note ?? "Your first score is being prepared."}</p>
+          <p className="rd-lead">{busy ? "Calculating your score. This can take up to half a minute." : note ?? "Your score is being prepared."}</p>
           {!busy && <button type="button" className="rd-btn" onClick={refresh}>Try again</button>}
         </section>
       </Shell>
     );
   }
 
-  const s = data.latest;
-  const w = r.weakest;
+  const tier = tierFor(s.score);
+  const m = s.metrics;
+  const gaps = biggestGaps(s.components);
+  const penalty = Math.round((1 - m.gate) * 100);
+
   return (
     <Shell>
       <div className="rd-grid">
         <section className="rd-card rd-score">
           <div className="rd-ringwrap">
-            <Ring score={r.score} />
-            <div className="rd-ringtext"><b>{r.score}</b><span>/ 100</span></div>
+            <Ring score={s.score} />
+            <div className="rd-ringtext"><b>{s.score}</b><span>/ 100</span></div>
           </div>
           <div>
-            <div className="rd-tier">{r.tier.name}</div>
-            <p className="rd-advice">{r.tier.advice}</p>
-            {r.partial && <p className="rd-note">Engagement per post isn't measured yet, so this score uses the other signals.</p>}
+            <div className="rd-tier">{tier.name}</div>
+            <p className="rd-advice">{tier.advice}</p>
+            {penalty > 0 && (
+              <p className="rd-note">
+                {m.daysSinceLastPost == null ? "No posts in the last 60 days" : `Last post ${m.daysSinceLastPost} days ago`}: inactivity is lowering your score by {penalty}%.
+              </p>
+            )}
           </div>
         </section>
 
         <section className="rd-card">
-          <h3>Signals (last 30 days)</h3>
+          <h3>Score breakdown</h3>
           <ul className="rd-signals">
-            {r.signals.map((x) => (
-              <li key={x.key}>
-                <div className="rd-signals__row">
-                  <span>{x.label}</span>
-                  <span>{x.value == null ? "Not measured yet" : `${x.value} / ${x.target}`}</span>
-                </div>
-                <div className="rd-track"><i style={{ width: `${x.score ?? 0}%` }} /></div>
-              </li>
-            ))}
+            {COMPONENTS.map((c) => {
+              const v = s.components![c.key];
+              return (
+                <li key={c.key}>
+                  <div className="rd-signals__row">
+                    <span>{c.label}</span>
+                    <span>{v == null ? "Not enough data yet" : Math.round(v)}</span>
+                  </div>
+                  <div className="rd-track"><i style={{ width: `${v ?? 0}%` }} /></div>
+                  <small className="rd-detail">{detail(c.key, m)}</small>
+                </li>
+              );
+            })}
           </ul>
         </section>
 
         <section className="rd-card">
-          <h3>What's holding you back</h3>
-          {w ? (
-            <>
-              <p className="rd-lead">Your biggest gap is <b>{w.label.toLowerCase()}</b>: {w.value} of {w.target}.</p>
-              <ul className="rd-next">
-                {r.signals.filter((x) => x.score != null && x.score < 100).map((x) => (
-                  <li key={x.key}>{x.label}: reach {x.target} (you're at {x.value}).</li>
-                ))}
-              </ul>
-            </>
+          <h3>Where your voice is strongest</h3>
+          {data.voices.length === 0 ? (
+            <p className="rd-lead">Post at least twice about a topic (DeFi, AI, NFTs, Bitcoin and more) in the last 60 days and your strongest topics show up here.</p>
           ) : (
-            <p className="rd-lead">You've hit every target. Keep your cadence up.</p>
+            <ul className="rd-voices">
+              {data.voices.map((v) => (
+                <li key={v.niche}>
+                  <div className="rd-voices__top">
+                    <b>{v.niche}</b>
+                    <span className="rd-pill">{v.label}</span>
+                  </div>
+                  <div className="rd-track"><i style={{ width: `${v.score}%` }} /></div>
+                  <small className="rd-detail">{standing(v)} · {v.posts} post{v.posts === 1 ? "" : "s"}</small>
+                </li>
+              ))}
+            </ul>
           )}
         </section>
 
         <section className="rd-card">
-          <h3>Trend</h3>
+          <h3>What's holding you back</h3>
+          {gaps.length === 0 ? (
+            <p className="rd-lead">Nothing major. Keep your cadence and engagement up.</p>
+          ) : (
+            <ul className="rd-next">
+              {gaps.map((g) => (
+                <li key={g.key}>
+                  <b>{COMPONENTS.find((c) => c.key === g.key)!.label}:</b> {tip(g.key, m)}
+                </li>
+              ))}
+            </ul>
+          )}
+          <h3 className="rd-sub">Trend</h3>
           <Trend data={data.trend.map((t) => t.score)} />
           <div className="rd-tiers">
             {TIERS.map((t) => (
-              <span key={t.name} className={t.name === r.tier.name ? "is-on" : ""}>{t.name} · {t.min}+</span>
+              <span key={t.name} className={t.name === tier.name ? "is-on" : ""}>{t.name} · {t.min}+</span>
             ))}
           </div>
         </section>
@@ -185,9 +213,8 @@ export default function ReadinessPage() {
       </div>
 
       <p className="rd-foot">
-        Based on a sample of {s.sampled.toLocaleString()} of your {s.followers_total.toLocaleString()} followers for @{data.username}; quality follower count is an estimate.
-        {s.seed_followers > 0 && <> {s.seed_followers} of the sampled followers are on our curated high-signal list.</>}
-        {" "}This is Zerra's own readiness estimate. It is not an official Kaito score and does not guarantee Smart Account classification.
+        Based on a sample of {s.sampled.toLocaleString()} of your {s.followers_total.toLocaleString()} followers for @{data.username}; follower quality is estimated from that sample.
+        {s.seed_followers > 0 && <> {s.seed_followers} of them are on our curated high-signal list.</>}
       </p>
     </Shell>
   );

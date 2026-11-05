@@ -1,67 +1,98 @@
-// Smart Account Readiness Score: our own estimate, NOT Kaito's classification.
-// Targets and weights are proposed product thresholds from the founder's spec.
+// Display side of the Smart Readiness score. The score itself is calculated on
+// the backend (zerra-backend/src/lib/readiness/score.ts); keep the weights and
+// tier thresholds here in sync with it.
 
-export const TARGETS = { qualityFollowers: 1000, engagementPerPost: 50, posts: 12 } as const;
-const WEIGHTS = { followers: 0.4, engagement: 0.4, consistency: 0.2 } as const;
+export type ComponentKey = "reach" | "audience" | "engagement" | "activity" | "momentum";
 
-export interface ReadinessInput {
-  qualityFollowers: number;
-  /** Avg distinct quality followers engaging per post (30d). null = the data source can't provide it. */
-  engagementPerPost: number | null;
-  /** Qualifying posts in the last 30 days. */
-  posts: number;
-}
-
-export type SignalKey = "followers" | "engagement" | "consistency";
-
-export interface Signal {
-  key: SignalKey;
-  label: string;
-  value: number | null;
-  target: number;
-  /** 0-100, capped. null when the input is unavailable. */
-  score: number | null;
-  weight: number;
-}
+export const COMPONENTS: { key: ComponentKey; label: string; weight: number }[] = [
+  { key: "reach",      label: "Audience size",    weight: 0.2 },
+  { key: "audience",   label: "Audience quality", weight: 0.2 },
+  { key: "engagement", label: "Engagement",       weight: 0.25 },
+  { key: "activity",   label: "Activity",         weight: 0.2 },
+  { key: "momentum",   label: "Momentum",         weight: 0.15 },
+];
 
 export interface Tier { name: string; min: number; advice: string }
 
-export interface Readiness {
-  score: number;
-  /** True when a signal was unavailable and the remaining weights were rescaled. */
-  partial: boolean;
-  tier: Tier;
-  signals: Signal[];
-  /** The signal losing the most weighted points, or null if every target is met. */
-  weakest: Signal | null;
-}
-
 export const TIERS: Tier[] = [
-  { name: "Emerging",            min: 0,  advice: "Build a relevant audience and establish consistent publishing." },
-  { name: "Gaining Recognition", min: 40, advice: "Grow your network of quality followers and earn more meaningful engagement." },
-  { name: "Near Target",         min: 60, advice: "Find your weakest metric and focus on improving it." },
-  { name: "High Readiness",      min: 80, advice: "Strong against our targets. Keep your cadence up." },
+  { name: "Emerging",    min: 0,  advice: "Build a real audience and post consistently. Everything compounds from there." },
+  { name: "Rising",      min: 30, advice: "You're gaining ground. Sharper engagement and steady posting will move you fastest." },
+  { name: "Established", min: 50, advice: "A solid voice. Close the weakest gap below to break into the top tier." },
+  { name: "Influential", min: 70, advice: "People listen to you. Keep your cadence and keep growing the right audience." },
+  { name: "Elite",       min: 85, advice: "Top of the board. Protect your consistency and your engagement." },
 ];
 
-const pct = (v: number, t: number) => 100 * Math.min(Math.max(v, 0) / t, 1);
+export const tierFor = (score: number): Tier => [...TIERS].reverse().find((t) => score >= t.min) ?? TIERS[0];
 
-export function computeReadiness(i: ReadinessInput): Readiness {
-  const signals: Signal[] = [
-    { key: "followers",   label: "Quality follower network",    value: i.qualityFollowers,    target: TARGETS.qualityFollowers,    score: pct(i.qualityFollowers, TARGETS.qualityFollowers), weight: WEIGHTS.followers },
-    { key: "engagement",  label: "Quality engagement per post", value: i.engagementPerPost, target: TARGETS.engagementPerPost, score: i.engagementPerPost == null ? null : pct(i.engagementPerPost, TARGETS.engagementPerPost), weight: WEIGHTS.engagement },
-    { key: "consistency", label: "Posting consistency",       value: i.posts,             target: TARGETS.posts,             score: pct(i.posts, TARGETS.posts), weight: WEIGHTS.consistency },
-  ];
-  const live = signals.filter((s) => s.score != null);
-  const totalW = live.reduce((s, x) => s + x.weight, 0);
-  const score = live.reduce((s, x) => s + (x.score as number) * x.weight, 0) / totalW;
-  const tier = [...TIERS].reverse().find((t) => score >= t.min) ?? TIERS[0];
-  const lost = (x: Signal) => (100 - (x.score as number)) * x.weight;
-  const weakest = live.reduce<Signal | null>((w, x) => (!w || lost(x) > lost(w) ? x : w), null);
-  return {
-    score: Math.round(score * 10) / 10,
-    partial: live.length < signals.length,
-    tier,
-    signals,
-    weakest: weakest && lost(weakest) > 0 ? weakest : null,
-  };
+export interface ReadinessMetrics {
+  followers: number;
+  meanFollowerQuality: number;
+  strongShare: number;
+  knownCreators: number;
+  posts30: number;
+  posts60: number;
+  daysSinceLastPost: number | null;
+  erViews: number | null;
+  viewsPerFollower: number | null;
+  erTrend: number | null;
+  followerGrowth: number | null;
+  gate: number;
+}
+
+export type ReadinessComponents = Record<ComponentKey, number | null>;
+
+const fmtNum = (n: number) =>
+  n >= 1_000_000 ? `${parseFloat((n / 1_000_000).toFixed(1))}M` : n >= 1_000 ? `${parseFloat((n / 1_000).toFixed(1))}K` : String(Math.round(n));
+const pct = (x: number, digits = 1) => `${(x * 100).toFixed(digits)}%`;
+const signed = (x: number) => `${x >= 0 ? "+" : ""}${Math.round(x * 100)}%`;
+
+/** One line of evidence behind a component's score. */
+export function detail(key: ComponentKey, m: ReadinessMetrics): string {
+  switch (key) {
+    case "reach":
+      return `${fmtNum(m.followers)} followers`;
+    case "audience":
+      return `${Math.round(m.strongShare * 100)}% of the followers we checked are strong accounts`;
+    case "engagement":
+      return m.erViews == null
+        ? "No recent posts to measure"
+        : `${pct(m.erViews)} of viewers engage` + (m.viewsPerFollower != null ? `, posts reach ${pct(m.viewsPerFollower, 0)} of your followers` : "");
+    case "activity":
+      return `${m.posts30} post${m.posts30 === 1 ? "" : "s"} in 30 days, ` +
+        (m.daysSinceLastPost == null ? "none in the last 60" : m.daysSinceLastPost === 0 ? "last one today" : `last one ${m.daysSinceLastPost}d ago`);
+    case "momentum": {
+      const parts: string[] = [];
+      if (m.erTrend != null) parts.push(m.erTrend <= -1 ? "went quiet vs last month" : `engagement ${signed(m.erTrend)} vs last month`);
+      if (m.followerGrowth != null) parts.push(`followers ${signed(m.followerGrowth)} (30d)`);
+      return parts.length ? parts.join(", ") : "Builds after a few days of history";
+    }
+  }
+}
+
+/** What to do about a weak component. */
+export function tip(key: ComponentKey, m: ReadinessMetrics): string {
+  switch (key) {
+    case "reach":
+      return "Grow your audience: reply early on big accounts in your niche, and share takes people want to repost.";
+    case "audience":
+      return "Followers with real history count more. Engage with active accounts in your niche so they find and follow you.";
+    case "engagement":
+      return "Write for replies and reposts: ask questions, share opinions people can answer. Aim for 2%+ of viewers engaging.";
+    case "activity":
+      return m.daysSinceLastPost == null || m.daysSinceLastPost > 14
+        ? "You've gone quiet, and that holds your whole score down. Start posting again, even a few times a week."
+        : "Post more regularly. Around 12 posts a month, spread across the week, is the sweet spot.";
+    case "momentum":
+      return "Your engagement or follower growth is slipping. Double down on the posts that worked best last month.";
+  }
+}
+
+/** The component costing the most weighted points, with how many. */
+export function biggestGaps(components: ReadinessComponents, count = 2): { key: ComponentKey; lost: number }[] {
+  return COMPONENTS
+    .filter((c) => components[c.key] != null)
+    .map((c) => ({ key: c.key, lost: (100 - (components[c.key] as number)) * c.weight }))
+    .filter((g) => g.lost > 1)
+    .sort((a, b) => b.lost - a.lost)
+    .slice(0, count);
 }

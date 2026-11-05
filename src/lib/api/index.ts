@@ -1,6 +1,7 @@
 import { apiGet, apiPost, apiGetPublic, apiPut, apiDelete } from "./client";
 import { supabase } from "./supabase";
 import type { InfluenceRatingResponse, AnalyticsInsights, CreatorProfileResponse } from "../types";
+import type { ReadinessComponents, ReadinessMetrics } from "../readiness";
 
 // ——— Auth / User ———
 export const getMe = () => apiGet<{ user: any }>("/me");
@@ -114,16 +115,29 @@ export interface ReadinessSnapshot {
   quality_followers: number;
   seed_followers: number;
   posts_30d: number;
-  engagement_per_post: number | null;
   score: number;
   tier: string;
   created_at: string;
+  algo_version: number | null;
+  components: ReadinessComponents | null;
+  metrics: ReadinessMetrics | null;
+  niches: { niche: string; score: number; label: string; posts: number }[] | null;
+}
+export interface ReadinessVoice {
+  niche: string;
+  score: number;
+  label: string;
+  posts: number;
+  rank: number;
+  cohort: number;
+  top_percent: number | null;
 }
 export interface ReadinessResponse {
   available: boolean;
   connected: boolean;
   username: string | null;
   latest: ReadinessSnapshot | null;
+  voices: ReadinessVoice[];
   trend: { date: string; score: number }[];
 }
 export const getReadiness = () => apiGet<ReadinessResponse>("/readiness/me");
