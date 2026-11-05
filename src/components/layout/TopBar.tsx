@@ -78,7 +78,7 @@ export function TopBar() {
   };
 
   // The dashboard has its own header (see pages/Dashboard).
-  if (location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/trending")) return null;
+  if (location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/trending") || location.pathname.startsWith("/tasks")) return null;
 
   return (
     <>

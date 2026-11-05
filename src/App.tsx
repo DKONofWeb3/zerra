@@ -11,6 +11,7 @@ import DashboardPage from "./pages/Dashboard";
 import PortfolioPage from "./pages/Portfolio";
 import ReadinessPage from "./pages/Readiness";
 import TrendingPage from "./pages/Trending";
+import TasksPage from "./pages/Tasks";
 import TopCreatorsPage from "./pages/Influence/TopCreators";
 import InfluencePage from "./pages/Influence";
 import TopPerformingPage from "./pages/Influence/TopPerforming";
@@ -173,6 +174,7 @@ export default function App() {
           <Route path="/portfolio"                element={<PortfolioPage />} />
           <Route path="/readiness"                element={<ReadinessPage />} />
           <Route path="/trending"                 element={<TrendingPage />} />
+          <Route path="/tasks"                    element={<TasksPage />} />
           <Route path="/influence"                element={<TopCreatorsPage />} />
           <Route path="/influence/top-creators"   element={<InfluencePage />} />
           <Route path="/influence/top-performing" element={<TopPerformingPage />} />

@@ -1,0 +1,26 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="153.188" height="193.162" viewBox="0 0 153.188 193.162" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="Vector" filter="url(#filter0_d_0_12)">
+<use xlink:href="#stroke0_0_12" fill="url(#paint0_linear_0_12)"/>
+<mask id="stroke1_0_12" fill="white">
+<use xlink:href="#stroke0_0_12"/>
+</mask>
+<path d="M134.388 11.2413C133.769 9.96067 132.833 8.88747 131.683 8.13933C130.533 7.39119 129.213 6.99702 127.868 7.00002H61.938C59.081 7.00002 56.4438 8.80648 55.2717 11.634L18.6441 98.03C17.6185 100.465 17.8383 103.292 19.1568 105.57C20.4754 107.848 22.8196 109.183 25.3103 109.183H61.938V156.308C61.938 158.391 62.7098 160.389 64.0836 161.862C65.4574 163.335 67.3207 164.162 69.2635 164.162C71.5344 164.162 73.8054 162.984 75.1972 160.942L133.801 74.546C134.591 73.3741 135.063 71.9914 135.167 70.5502C135.27 69.109 135 67.6652 134.388 66.3776C133.786 65.0766 132.856 63.9824 131.703 63.2189C130.551 62.4554 129.222 62.0532 127.868 62.0578H105.452L133.801 19.4882C134.591 18.3163 135.063 16.9336 135.167 15.4924C135.27 14.0512 135 12.6073 134.388 11.3198V11.2413Z" stroke-width="2" stroke="white" mask="url(#stroke1_0_12)"/>
+</g>
+<defs>
+<filter id="filter0_d_0_12" x="-4.48921e-09" y="0" width="153.188" height="193.162" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="11"/>
+<feGaussianBlur stdDeviation="9"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.19 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_12"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_12" result="shape"/>
+</filter>
+<linearGradient id="paint0_linear_0_12" x1="76.594" y1="7" x2="76.594" y2="164.162" gradientUnits="userSpaceOnUse">
+<stop stop-color="white"/>
+<stop offset="1" stop-color="#8BBEF8"/>
+</linearGradient>
+<path id="stroke0_0_12" d="M134.388 11.2413C133.769 9.96067 132.833 8.88747 131.683 8.13933C130.533 7.39119 129.213 6.99702 127.868 7.00002H61.938C59.081 7.00002 56.4438 8.80648 55.2717 11.634L18.6441 98.03C17.6185 100.465 17.8383 103.292 19.1568 105.57C20.4754 107.848 22.8196 109.183 25.3103 109.183H61.938V156.308C61.938 158.391 62.7098 160.389 64.0836 161.862C65.4574 163.335 67.3207 164.162 69.2635 164.162C71.5344 164.162 73.8054 162.984 75.1972 160.942L133.801 74.546C134.591 73.3741 135.063 71.9914 135.167 70.5502C135.27 69.109 135 67.6652 134.388 66.3776C133.786 65.0766 132.856 63.9824 131.703 63.2189C130.551 62.4554 129.222 62.0532 127.868 62.0578H105.452L133.801 19.4882C134.591 18.3163 135.063 16.9336 135.167 15.4924C135.27 14.0512 135 12.6073 134.388 11.3198V11.2413Z"/>
+</defs>
+</svg>

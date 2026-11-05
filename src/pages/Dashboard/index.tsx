@@ -206,7 +206,7 @@ export default function DashboardPage() {
               {now.toLocaleDateString("en-US", { month: "long" })}
             </div>
           </div>
-          <Link to="/explore" className="dash-tasks">
+          <Link to="/tasks" className="dash-tasks">
             Show my Tasks <img src="/dash/arrow-right.svg" alt="" />
           </Link>
         </div>

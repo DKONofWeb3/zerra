@@ -169,3 +169,20 @@ export interface TrendingResponse {
   niches: { niche: string; share: number }[];
 }
 export const getTrending = () => apiGetPublic<TrendingResponse>("/analytics/trending");
+
+// ——— Creator Tasks ———
+export interface CreatorTask { id: string; title: string; done: boolean }
+export interface TaskWeekDay { date: string; active: boolean; future: boolean; today: boolean }
+export interface TasksState {
+  tasks: CreatorTask[];
+  done: number;
+  total: number;
+  streak: number;
+  week: TaskWeekDay[];
+}
+export const getTasks = (today: string) => apiGet<TasksState>(`/tasks?today=${today}`);
+export const getTaskActivity = (from: string, to: string) =>
+  apiGet<{ days: string[] }>(`/tasks/activity?from=${from}&to=${to}`);
+export const addTask = (title: string) => apiPost<{ task: CreatorTask }>("/tasks", { title });
+export const toggleTask = (id: string, day: string) => apiPost<{ done: boolean }>(`/tasks/${id}/toggle`, { day });
+export const deleteTask = (id: string) => apiDelete<{ ok: true }>(`/tasks/${id}`);

@@ -9,7 +9,7 @@ export function AppLayout() {
   // its own welcome row on desktop, so the generic page-title bar and the
   // mobile identity row would only repeat it. Every other page keeps them.
   const { pathname } = useLocation();
-  const onDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/trending");
+  const onDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/trending") || pathname.startsWith("/tasks");
 
   return (
     <div className="atmosphere-root flex h-screen overflow-hidden bg-bg-base text-fg-primary">

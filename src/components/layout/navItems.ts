@@ -8,7 +8,7 @@ import { LayoutDashboard, ClipboardList, TrendingUp, Trophy, Settings } from "lu
  */
 export const PRIMARY_NAV = [
   { to: "/dashboard",           label: "Dashboard",   short: "Home",        icon: LayoutDashboard },
-  { to: "/explore",             label: "Tasks",       short: "Tasks",       icon: ClipboardList },
+  { to: "/tasks",               label: "Tasks",       short: "Tasks",       icon: ClipboardList },
   { to: "/trending",            label: "Trending",    short: "Trending",    icon: TrendingUp },
   { to: "/explore/leaderboard", label: "Leaderboard", short: "Leaderboard", icon: Trophy },
   { to: "/settings",            label: "Settings",    short: "Settings",    icon: Settings },
@@ -22,6 +22,7 @@ export function isNavActive(to: string, pathname: string): boolean {
 // Portfolio, Market, Wallet and Influence are hidden from the menu for now (the
 // pages and routes still exist). Add them back here when they return.
 export const MENU_LINKS = [
+  { to: "/explore",   label: "Campaigns" },
   { to: "/referrals", label: "Referrals" },
   { to: "/readiness", label: "Smart Readiness" },
 ] as const;
