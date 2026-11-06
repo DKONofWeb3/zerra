@@ -153,7 +153,7 @@ export default function TasksPage() {
           <img className="tk-streak__bolt" src="/tasks/bolt.svg" alt="" />
           <div className="tk-streak__text">
             <h2>{state ? `${state.streak} Day${state.streak === 1 ? "" : "s"} Streak` : "Streak"}</h2>
-            <p>{state && state.streak > 0 ? `You’re doing really great${firstName ? `, ${firstName}` : ""}` : "Tick a task today to start your streak"}</p>
+            <p>{state && state.streak > 0 ? `You’re doing really great${firstName ? `, ${firstName}` : ""}` : "Set a task today to activate streak"}</p>
           </div>
           <div className="tk-week">
             {(state?.week ?? Array.from({ length: 7 }, (_, i) => ({ date: String(i), active: false, future: false, today: false }))).map((d, i) => (
