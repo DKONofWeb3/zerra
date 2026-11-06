@@ -7,13 +7,14 @@ import { useSocialAccounts } from "@/hooks/useSocialAccounts";
 import { useBadges } from "@/hooks/useBadges";
 import { connectTwitter, getCreatorProfile, getReadiness, type ReadinessResponse } from "@/lib/api";
 import { Tag } from "lucide-react";
+import { TIERS, tierFor } from "@/lib/readiness";
 import { BadgeGlyph } from "@/components/icons/BadgeIcon";
 import { HeaderActions } from "@/components/layout/HeaderActions";
 import "./dashboard.css";
 
 // The dashboard follows the Bloom design (Figma 541:1370 desktop / 541:1628
-// mobile). Followers, influence, name, avatar and badge are real. XP, the
-// XP-to-next-badge goal and the % change chips have no data
+// mobile). Followers, influence, readiness score, name, avatar and badge are real. The
+// % change chips have no data
 // source yet, so they render as placeholders instead of invented numbers.
 
 function fmt(n: number): string {
@@ -43,11 +44,11 @@ function GlowBlob({ src, left, top, opacity }: { src: string; left: number; top:
   );
 }
 
-function StatCard({ label, icon, value, soon, children }: {
-  label: string; icon: string; value: string; soon?: boolean; children?: React.ReactNode;
+function StatCard({ label, icon, value, note, to, children }: {
+  label: string; icon: string; value: string; note?: string; to?: string; children?: React.ReactNode;
 }) {
-  return (
-    <div className="dash-card">
+  const body = (
+    <>
       {children}
       <div className="dash-card__label">
         <span className="dash-card__icon"><img src={icon} alt="" /></span>
@@ -55,10 +56,11 @@ function StatCard({ label, icon, value, soon, children }: {
       </div>
       <div className={value === "—" ? "dash-card__value is-empty" : "dash-card__value"}>
         {value}
-        {soon && <span className="dash-card__soon">Coming soon</span>}
+        {note && <span className="dash-card__soon">{note}</span>}
       </div>
-    </div>
+    </>
   );
+  return to ? <Link to={to} className="dash-card">{body}</Link> : <div className="dash-card">{body}</div>;
 }
 
 const centred = (cx: string | number, cy: string | number, size: number, rotate: string): React.CSSProperties => ({
@@ -180,6 +182,16 @@ export default function DashboardPage() {
   const role = attained[0]?.id === "early-creator" ? "Early Creator" : attained[0]?.shortLabel ?? "Creator";
   const followersValue = accounts.length === 0 && accountsLoading ? "—" : fmt(followers);
 
+  // Smart Readiness score (replaces the old XP placeholders).
+  const latest = readiness?.latest;
+  const score = latest?.components ? latest.score : null;
+  const tier = score != null ? tierFor(score) : null;
+  const nextTier = score != null ? TIERS.find((t) => t.min > score) : null;
+  const scoreNote = score != null ? tier!.name
+    : !readiness ? undefined
+    : !readiness.available ? "Coming soon"
+    : readiness.connected ? "Open to calculate" : undefined;
+
   // Nothing on the dashboard until an X account is connected. A request that is
   // still running, or that failed, must never read as "not connected": only a
   // finished, successful check with no X account shows the gate.
@@ -217,7 +229,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="dash-grid">
-        {/* Profile + XP */}
+        {/* Profile + readiness progress */}
         <section className="dash-profile">
           <div className="dash-profile__id">
             <div className="dash-profile__avatar">
@@ -235,11 +247,15 @@ export default function DashboardPage() {
           </div>
           <div>
             <div className="dash-profile__meta">
-              <span>XP rewards are <em>coming soon</em></span>
-              <b>— XP</b>
+              <span>
+                {score == null ? "Your Smart Readiness score will show here"
+                  : nextTier ? <>Earn {(nextTier.min - score).toFixed(1)} more points to reach <em>{nextTier.name}</em></>
+                  : <>You're at the <em>top tier</em></>}
+              </span>
+              <b>{score == null ? "— / 100" : `${score} / 100`}</b>
             </div>
             <div className="dash-bar" aria-hidden>
-              <div className="dash-bar__fill" style={{ width: 0 }} />
+              <div className="dash-bar__fill" style={{ width: `${score ?? 0}%` }} />
             </div>
           </div>
         </section>
@@ -252,7 +268,7 @@ export default function DashboardPage() {
             </div>
           </StatCard>
 
-          <StatCard label="XP Point" icon="/dash/ic-star.svg" value="—" soon>
+          <StatCard label="Readiness Score" icon="/dash/ic-star.svg" value={score == null ? "—" : String(score)} note={scoreNote} to="/readiness">
             <div className="dash-card__art">
               <GlowBlob src="/dash/card-glow-green.svg" left={56.66} top={188.29} opacity={0.48} />
               <StarsArt />

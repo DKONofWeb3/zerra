@@ -160,3 +160,6 @@
 .dash-gate__error { color: #ffd28a !important; font-size: 13px !important; margin-top: 14px !important; }
 .dash-gate small { display: block; margin-top: 22px; color: #787d92; font-size: 12px; }
 @media (max-width: 767px) { .dash-gate { margin-top: 6vh; } .dash-gate h1 { font-size: 34px; letter-spacing: -2px; } }
+
+a.dash-card { display: block; color: inherit; text-decoration: none; }
+a.dash-card:hover { border-color: rgba(255, 255, 255, 0.32); }
