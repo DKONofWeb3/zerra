@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { updateProfile, updateNotifications, updatePrivacy, changePassword, connectInstagram, connectTwitter } from "@/lib/api";
 import { apiDelete } from "@/lib/api/client";
+import "./settings.css";
 
 interface SettingsItem {
   id: string;
@@ -39,17 +40,10 @@ const SETTINGS_ITEMS: SettingsItem[] = [
 function SettingsMenuRow({ item, active, onClick }: { item: SettingsItem; active: boolean; onClick: () => void }) {
   const Icon = item.icon;
   return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left",
-        active ? "glass-strong" : "hover:bg-white/[0.03]"
-      )}
-    >
-      <Icon className={cn("w-4 h-4 shrink-0", active ? "text-fg-primary" : "text-fg-tertiary")} />
-      <span className={cn("flex-1 text-[14px]", active ? "text-fg-primary font-medium" : "text-fg-secondary")}>
-        {item.label}
-      </span>
+    <button onClick={onClick} className={cn("st-row", active && "is-active")}>
+      <span className="st-ico"><Icon className="w-[18px] h-[18px]" /></span>
+      <span className="st-label">{item.label}</span>
+      {active && <i className="st-bar" aria-hidden />}
     </button>
   );
 }
@@ -72,12 +66,7 @@ function MobileMenuRow({ item, onClick }: { item: SettingsItem; onClick: () => v
 
 function CardSection({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div
-      className={cn("relative overflow-hidden rounded-2xl border border-white/[0.06] p-6", className)}
-      style={{ background: "rgb(8 10 16 / 0.7)" }}
-    >
-      <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
-        style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
+    <div className={cn("st-card", className)}>
       <div className="relative">{children}</div>
     </div>
   );
@@ -885,18 +874,11 @@ export default function SettingsPage() {
           back button + section title (below) takes its place instead
           of stacking on top of it */}
       <div className={cn("pt-2", mobileView && "hidden md:block")}>
-        <div className="flex items-center gap-2.5 text-fg-tertiary">
+        <div className="flex items-center gap-2.5 text-fg-tertiary md:hidden">
           <DiamondIcon size={14} />
           <span className="text-[12.5px]">Manage your account, preferences and payment method</span>
         </div>
-        <h2 className={cn(
-          "mt-4 font-display font-medium tracking-[-0.03em]",
-          "text-[40px] md:text-[64px] leading-[0.95]",
-          "bg-clip-text text-transparent",
-          "bg-gradient-to-b from-white via-white to-[#7d8aa8]"
-        )}>
-          My Settings
-        </h2>
+        <h2 className="st-title mt-4 md:mt-0">My Settings</h2>
       </div>
 
       {/* Mobile drill-down header — back button + section name, only
@@ -916,17 +898,14 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6 mt-8 md:mt-8">
+      <div className="grid grid-cols-1 lg:grid-cols-[331px_1fr] gap-6 mt-8 md:mt-12">
         {/* Menu — on mobile only rendered while mobileView is null (i.e.
             user hasn't drilled in yet). On desktop always rendered. */}
         <div className={cn(
-          "relative overflow-hidden rounded-2xl border border-white/[0.06] p-3 self-start",
+          "relative overflow-hidden rounded-2xl border border-white/[0.06] p-3 self-start st-menu bg-[rgb(8_10_16/0.7)]",
           mobileView ? "hidden md:block" : "block"
-        )}
-          style={{ background: "rgb(8 10 16 / 0.7)" }}>
-          <div aria-hidden className="absolute inset-x-0 top-0 h-px pointer-events-none"
-            style={{ background: "linear-gradient(90deg, transparent, rgb(255 255 255 / 0.10), transparent)" }} />
-          <div className="relative space-y-1">
+        )}>
+          <div className="relative space-y-1 md:space-y-[25px]">
             {SETTINGS_ITEMS.map((item) => (
               <div key={item.id}>
                 {/* Desktop row — swaps content in place, no navigation */}
@@ -945,7 +924,7 @@ export default function SettingsPage() {
         {/* Content — on mobile only rendered while drilled into a
             section; on desktop always rendered beside the menu */}
         <div className={cn(
-          "space-y-4",
+          "space-y-4 st-panel md:space-y-[30px]",
           mobileView ? "block" : "hidden md:block"
         )}>
           <SettingsContent active={mobileView ?? activeTab} />

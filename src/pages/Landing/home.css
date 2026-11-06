@@ -1,0 +1,108 @@
+/* Zerra homepage, from Figma 587:337 (desktop) and 587:391 (mobile). */
+.hm {
+  position: relative; min-height: 100vh; overflow: hidden; background: #02050e; color: #fff;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+.hm a { text-decoration: none; color: inherit; }
+
+.hm-bg { position: absolute; inset: 0; background: url("/home/bg.png") center -38px / max(1571px, 100%) auto no-repeat; }
+
+/* black 3D shape, top right (cut from the same sprite) */
+.hm-shape { position: absolute; left: calc(75% - 10px); top: -700px; width: 802px; height: 1212px; overflow: hidden; pointer-events: none; }
+.hm-shape img { position: absolute; height: 100%; left: -202.21%; width: 302.21%; max-width: none; top: 0; }
+
+/* ── header ── */
+.hm-head { position: absolute; inset: 0 0 auto 0; z-index: 5; height: 100px; }
+.hm-brand { position: absolute; display: flex; align-items: center; gap: 12px; left: 23px; top: 33px; }
+.hm-brand img { width: 40px; height: 32px; object-fit: cover; }
+.hm-brand span { font-size: 32px; font-weight: 500; letter-spacing: -2.24px; line-height: 1.02; }
+
+.hm-toggle { display: none; position: absolute; left: 50%; top: 34.5px; transform: translateX(-50%); gap: 11px; padding: 5.6px; border-radius: 16.7px; background: #000; }
+.hm-toggle a { padding: 14px 28px; border-radius: 11px; font-size: 27.9px; font-weight: 500; letter-spacing: -1.67px; line-height: 1.02; white-space: nowrap; }
+.hm-toggle a.is-on { background: #3268dc; }
+
+.hm-burger { position: absolute; right: 14px; top: 33px; width: 40px; height: 34px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.hm-burger img { width: 100%; height: 100%; }
+.hm-menu { position: absolute; right: 14px; top: 76px; min-width: 190px; padding: 6px; border-radius: 16px; background: rgba(2, 7, 17, 0.92); border: 1px solid rgba(250, 248, 245, 0.12); backdrop-filter: blur(14px); display: flex; flex-direction: column; }
+.hm-menu a { padding: 12px 14px; border-radius: 10px; font-size: 15px; }
+.hm-menu a:hover { background: rgba(255, 255, 255, 0.07); }
+
+/* ── headline ── */
+.hm-copy { position: relative; z-index: 2; text-align: center; padding: 183px 20px 0; }
+.hm-copy h1 { margin: 0 auto; width: 315px; font-family: Impact, "Anton", "Haettenschweiler", "Arial Narrow Bold", sans-serif; font-weight: 400; font-size: 60px; line-height: 1.02; letter-spacing: 0; color: #afccff; }
+.hm-copy p { margin: 8px 0 0; font-size: 16px; font-weight: 500; letter-spacing: -0.96px; color: rgba(175, 204, 255, 0.87); }
+.hm-cta { margin-top: 38px; display: flex; justify-content: center; gap: 12px; }
+.hm-cta a { height: 40px; padding: 0 24px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 16px; letter-spacing: -1.44px; white-space: nowrap; }
+.hm-cta__ghost { border: 1px solid rgba(255, 255, 255, 0.2); }
+.hm-cta__solid { background: #fff; color: #000 !important; }
+
+/* ── showcase card ── */
+.hm-card { position: relative; z-index: 2; border: 1px solid rgba(250, 248, 245, 0.1); background: rgba(2, 7, 17, 0.26); backdrop-filter: blur(21px); -webkit-backdrop-filter: blur(21px); overflow: hidden; box-sizing: border-box; }
+.hm-panel { position: relative; overflow: hidden; background: #01040e; }
+.hm-art { position: absolute; left: 0; top: 0; width: 356px; height: 379px; transform-origin: 0 0; }
+.hm-sp { position: absolute; overflow: hidden; pointer-events: none; }
+.hm-sp img, .hm-sp4 img { position: absolute; max-width: none; top: 0; height: 100%; }
+.hm-sp1 { left: 49px; top: 11.21px; width: 255.055px; height: 385.215px; }
+.hm-sp1 img { left: -202.21%; width: 302.21%; }
+.hm-sp2 { left: 56.15px; top: -17px; width: 251.669px; height: 385.215px; }
+.hm-sp2 img { left: -104.93%; width: 306.28%; }
+.hm-sp4 { position: absolute; left: 56px; top: 0; width: 263.137px; height: 318.775px; display: flex; align-items: center; justify-content: center; }
+.hm-sp4 > div { position: relative; width: 244.849px; height: 310.778px; overflow: hidden; transform: rotate(2deg) skewX(5.4deg); flex: none; }
+.hm-sp4 img { left: 0; width: 291.88%; }
+.hm-g1 { position: absolute; left: calc(50% - 49.72px); transform: translateX(-50%); top: 156.55px; width: 122.479px; height: 61.487px; mix-blend-mode: plus-lighter; }
+.hm-g1 img { position: absolute; max-width: none; left: -51.17%; top: -101.94%; width: 202.34%; height: 303.88%; }
+.hm-g2 { position: absolute; left: -114.47px; top: -652px; width: 720.376px; height: 724.014px; transform: rotate(180deg); }
+.hm-g2 img { position: absolute; max-width: none; left: -84.99%; top: -84.56%; width: 269.98%; height: 269.12%; }
+.hm-g3 { position: absolute; left: -168px; top: -336.71px; width: 828.366px; height: 400.329px; mix-blend-mode: plus-lighter; }
+.hm-g3 img { position: absolute; max-width: none; left: -18.15%; top: -37.57%; width: 136.3%; height: 175.14%; }
+
+.hm-who { display: flex; align-items: center; gap: 8px; }
+.hm-who__avatar { width: 48px; height: 48px; border-radius: 50%; flex: none; }
+.hm-who__name { display: flex; align-items: center; gap: 5px; font-size: 24px; letter-spacing: -2.16px; line-height: 1.02; white-space: nowrap; }
+.hm-who__name img { width: 20px; height: 20px; }
+.hm-who__handle { margin-top: 5px; font-size: 16px; font-weight: 300; letter-spacing: -1.44px; color: rgba(255, 255, 255, 0.32); }
+.hm-metrics { margin: 0; display: flex; flex-direction: column; font-size: 20px; letter-spacing: -1.8px; line-height: 1.02; }
+.hm-metrics div { display: flex; align-items: center; justify-content: space-between; }
+.hm-metrics dt, .hm-metrics dd { margin: 0; }
+.hm-btn { display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 20px; letter-spacing: -1.8px; line-height: 1.02; }
+.hm-btn--ghost { border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; }
+.hm-btn--solid { background: #fff; color: #000 !important; }
+
+/* mobile (default): the card sits under the buttons, panel beside the profile */
+.hm-card--desk { display: none; }
+.hm-card--mob { display: flex; gap: 9.4px; margin: 56px auto 0; width: min(358px, calc(100% - 72px)); padding: 7.5px 7px; border-radius: 28px; }
+.hm-card--mob .hm-panel { width: 166.6px; height: 177.9px; border-radius: 20.6px; flex: none; }
+.hm-card--mob .hm-art { transform: scale(0.4682); }
+.hm-mob__info { display: flex; flex-direction: column; justify-content: space-between; padding: 19px 0; min-width: 0; flex: 1; }
+.hm-card--mob .hm-who { gap: 3.75px; }
+.hm-card--mob .hm-who__avatar { width: 32px; height: 32px; }
+.hm-card--mob .hm-who__name { font-size: 16px; letter-spacing: -1.44px; gap: 2.3px; }
+.hm-card--mob .hm-who__name img { width: 12px; height: 12px; }
+.hm-card--mob .hm-who__handle { font-size: 12px; letter-spacing: -1.08px; margin-top: 2.3px; }
+.hm-card--mob .hm-metrics { font-size: 9.4px; letter-spacing: -0.84px; gap: 11.3px; }
+.hm-card--mob { padding-bottom: 7.5px; }
+.hm { padding-bottom: 60px; }
+
+/* ── desktop ── */
+@media (min-width: 1000px) {
+  .hm { height: 100vh; min-height: 780px; padding-bottom: 0; }
+  .hm-bg { background-position: center top; background-size: max(1638px, 100%) auto; }
+  .hm-burger, .hm-menu, .hm-cta, .hm-card--mob { display: none; }
+  .hm-toggle { display: flex; }
+  .hm-brand { left: auto; right: 32px; top: 62px; }
+
+  .hm-copy { position: absolute; left: calc(75% - 238px); top: calc(50% - 127px); padding: 0; text-align: left; }
+  .hm-copy h1 { width: 482px; margin: 0; font-size: 90px; letter-spacing: 0; }
+  .hm-copy p { margin-top: 8px; font-size: 16px; letter-spacing: -0.96px; color: rgba(175, 204, 255, 0.32); }
+
+  .hm-card--desk { display: block; position: absolute; left: 32px; top: 35px; width: 387px; height: 730px; border-radius: 60px; }
+  .hm-card--desk .hm-panel { position: absolute; left: 15px; top: 15px; width: 356px; height: 379px; border-radius: 44px; }
+  .hm-card--desk .hm-who { position: absolute; left: 15px; top: 411px; }
+  .hm-card--desk .hm-metrics { position: absolute; left: 15px; top: 486px; width: 356px; gap: 24px; }
+  .hm-card--desk .hm-btn { position: absolute; left: 50%; transform: translateX(-50%) translateX(-2.5px); width: 350px; height: 50px; }
+  .hm-card--desk .hm-btn--ghost { top: 596px; }
+  .hm-card--desk .hm-btn--solid { top: 653px; }
+}
+@media (min-width: 1000px) and (max-height: 820px) {
+  .hm { height: auto; min-height: 800px; }
+}

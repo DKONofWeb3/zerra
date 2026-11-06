@@ -7,6 +7,7 @@ import { useAuth } from "./contexts/AuthContext";
 import { supabase } from "./lib/api/supabase";
 import LandingPage from "./pages/Landing";
 import NewHomePage from "./pages/Landing/NewHome";
+import HomePage from "./pages/Landing/Home";
 import DashboardPage from "./pages/Dashboard";
 import PortfolioPage from "./pages/Portfolio";
 import ReadinessPage from "./pages/Readiness";
@@ -159,7 +160,8 @@ export default function App() {
         {/* "/" intentionally stays on the OLD homepage — per the founder, the
             redesigned homepage is not to go live yet. It lives at /new-home so
             it stays reviewable without being the public landing page. */}
-        <Route path="/"              element={<LandingPage />} />
+        <Route path="/"              element={<HomePage />} />
+        <Route path="/old-home"      element={<LandingPage />} />
         <Route path="/new-home"      element={<NewHomePage />} />
         <Route path="/login"         element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />

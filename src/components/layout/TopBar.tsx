@@ -83,7 +83,7 @@ export function TopBar() {
   return (
     <>
       {/* ── DESKTOP TopBar ── */}
-      <div className="hidden md:flex items-center justify-between gap-6 px-10 pt-6 pb-2">
+      <div className={cn("items-center justify-between gap-6 px-10 pt-6 pb-2", location.pathname.startsWith("/settings") ? "hidden" : "hidden md:flex")}>
         <div className="flex items-baseline gap-8">
           {tabs.map((tab) => (
             <button key={tab} onClick={() => onTabClick(tab)}
