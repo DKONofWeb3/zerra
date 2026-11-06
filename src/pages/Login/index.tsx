@@ -278,20 +278,6 @@ export default function LoginPage() {
                 </svg>
                 {googleLoading ? "..." : "Google"}
               </button>
-
-              <button style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "11px 6px", background: "rgb(8 9 14)", border: "1px solid rgb(22 25 36)", borderRadius: 10, fontSize: 12.5, fontWeight: 600, color: "rgb(220 222 228)", cursor: "not-allowed", fontFamily: "inherit" }} title="Coming soon">
-                <svg width="13" height="15" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V9.15a8.16 8.16 0 0 0 4.77 1.52V7.22a4.85 4.85 0 0 1-1-.53z"/>
-                </svg>
-                TikTok
-              </button>
-
-              <button style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "11px 6px", background: "rgb(8 9 14)", border: "1px solid rgb(22 25 36)", borderRadius: 10, fontSize: 12.5, fontWeight: 600, color: "rgb(220 222 228)", cursor: "not-allowed", fontFamily: "inherit" }} title="Coming soon">
-                <svg width="16" height="11" viewBox="0 0 24 17" fill="none">
-                  <path d="M23.5 2.5s-.3-1.8-1-2.6c-1-.9-2-.9-2.5-1C17 .7 12 .7 12 .7s-5 0-8 .2C3.5.9 2.4.9 1.5 1.9c-.7.8-1 2.6-1 2.6S.2 4.6.2 6.7v2C.2 10.8.5 12.6.5 12.6s.3 1.8 1 2.6c1 .9 2.2.9 2.8 1C6.2 16.4 12 16.4 12 16.4s5 0 8-.2c.5-.1 1.5-.1 2.5-1 .7-.8 1-2.6 1-2.6s.3-1.8.3-3.9v-2C23.8 4.6 23.5 2.5 23.5 2.5zM9.7 11.5v-6l6.6 3-6.6 3z" fill="#FF0000"/>
-                </svg>
-                YouTube
-              </button>
             </div>
 
             <p style={{ textAlign: "center", fontSize: 13, color: "rgb(70 74 86)", margin: 0 }}>
