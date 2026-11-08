@@ -7,7 +7,7 @@ import { useSocialAccounts } from "@/hooks/useSocialAccounts";
 import { useBadges } from "@/hooks/useBadges";
 import { connectTwitter, getCreatorProfile, getReadiness, type ReadinessResponse } from "@/lib/api";
 import { Tag } from "lucide-react";
-import { TIERS, tierFor } from "@/lib/readiness";
+import { COMPONENTS, TIERS, biggestGaps, tierFor, tip } from "@/lib/readiness";
 import { BadgeGlyph } from "@/components/icons/BadgeIcon";
 import { HeaderActions } from "@/components/layout/HeaderActions";
 import "./dashboard.css";
@@ -189,6 +189,13 @@ export default function DashboardPage() {
   const nextTier = score != null ? TIERS.find((t) => t.min > score) : null;
   // The bar fills across the current tier (e.g. 50 to 70), so it matches the "points to go" text and the target shown.
   const barPct = score == null ? 0 : nextTier ? ((score - (tier?.min ?? 0)) / (nextTier.min - (tier?.min ?? 0))) * 100 : 100;
+  // The one area costing the most points, with what to do about it.
+  const topGap = latest?.components ? biggestGaps(latest.components, 1)[0] : undefined;
+  const focus = topGap && latest?.metrics
+    ? { label: COMPONENTS.find((c) => c.key === topGap.key)!.label, tip: tip(topGap.key, latest.metrics) }
+    : null;
+  const ringR = 52;
+  const ringC = 2 * Math.PI * ringR;
   const scoreNote = score != null ? tier!.name
     : !readiness ? undefined
     : !readiness.available ? "Coming soon"
@@ -247,6 +254,16 @@ export default function DashboardPage() {
               <div className="dash-profile__role">{role}</div>
             </div>
           </div>
+          {score != null && (
+            <Link to="/readiness" className="dash-ring" aria-label={`Readiness score ${score}, ${tier!.name}`}>
+              <svg viewBox="0 0 120 120" aria-hidden>
+                <circle cx="60" cy="60" r={ringR} className="dash-ring__bg" />
+                <circle cx="60" cy="60" r={ringR} className="dash-ring__fg" strokeDasharray={ringC} strokeDashoffset={ringC * (1 - score / 100)} />
+              </svg>
+              <span className="dash-ring__num"><b>{score}</b><small>/ 100</small></span>
+              <span className="dash-ring__tier">{tier!.name}</span>
+            </Link>
+          )}
           <div>
             <div className="dash-profile__meta">
               <span>
@@ -259,6 +276,11 @@ export default function DashboardPage() {
             <div className="dash-bar" aria-hidden>
               <div className="dash-bar__fill" style={{ width: `${Math.max(0, Math.min(100, barPct))}%` }} />
             </div>
+            {focus && (
+              <p className="dash-focus">
+                <b>Focus: {focus.label}.</b> {focus.tip} <Link to="/readiness">See full breakdown</Link>
+              </p>
+            )}
           </div>
         </section>
 

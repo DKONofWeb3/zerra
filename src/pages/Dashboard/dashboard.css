@@ -163,3 +163,26 @@
 
 a.dash-card { display: block; color: inherit; text-decoration: none; }
 a.dash-card:hover { border-color: rgba(255, 255, 255, 0.32); }
+
+/* Readiness ring in the profile card: the score is the dashboard's main feature */
+.dash-ring { position: absolute; right: 18px; top: 18px; width: 84px; text-align: center; color: #fff; text-decoration: none; z-index: 2; }
+.dash-ring svg { width: 84px; height: 84px; transform: rotate(-90deg); display: block; }
+.dash-ring circle { fill: none; stroke-width: 9; }
+.dash-ring__bg { stroke: rgba(255, 255, 255, 0.12); }
+.dash-ring__fg { stroke: #fff; stroke-linecap: round; filter: drop-shadow(0 0 6px rgba(117, 182, 255, 0.9)); }
+.dash-ring__num { position: absolute; left: 0; right: 0; top: 0; height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.dash-ring__num b { font-size: 22px; font-weight: 400; letter-spacing: -1.2px; line-height: 1; }
+.dash-ring__num small { font-size: 9px; color: rgba(255, 255, 255, 0.6); margin-top: 2px; }
+.dash-ring__tier { display: block; margin-top: 6px; font-size: 11px; letter-spacing: -0.4px; color: rgba(255, 255, 255, 0.85); }
+.dash-focus { margin: 12px 0 0; font-size: 11px; line-height: 1.5; color: rgba(255, 255, 255, 0.6); letter-spacing: -0.2px; }
+.dash-focus b { color: #fff; font-weight: 500; }
+.dash-focus a { color: #75b6ff; text-decoration: none; margin-left: 4px; white-space: nowrap; }
+@media (min-width: 768px) {
+  .dash-ring { right: 34px; top: 14px; width: 112px; }
+  .dash-ring svg { width: 112px; height: 112px; }
+  .dash-ring__num { height: 112px; }
+  .dash-ring__num b { font-size: 30px; letter-spacing: -1.6px; }
+  .dash-ring__num small { font-size: 11px; }
+  .dash-ring__tier { font-size: 14px; margin-top: 6px; }
+  .dash-focus { font-size: 14px; margin-top: 16px; }
+}
