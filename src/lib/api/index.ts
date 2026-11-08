@@ -161,6 +161,7 @@ export interface TrendingPost {
   views: number;
   engagement_rate: number;
   posted_at: string;
+  url: string | null;
 }
 export interface TrendingResponse {
   updated_at: string | null;

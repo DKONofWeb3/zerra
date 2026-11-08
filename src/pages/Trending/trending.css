@@ -74,3 +74,8 @@
 .tr-perf li .track { height: 4.6px; border-radius: 46px; background: #373737; overflow: hidden; }
 .tr-perf li .track i { display: block; height: 100%; background: #06f; border-radius: 46px; }
 .tr-perf li .pc { text-align: right; }
+
+/* rows are links to the post on X */
+a.tr-row { color: inherit; text-decoration: none; }
+a.tr-row[href]:not(.tr-row--head):hover { background: rgba(255, 255, 255, 0.04); }
+.tr-thumb__ph { position: absolute; inset: 0; display: grid; place-items: center; color: #787d92; }

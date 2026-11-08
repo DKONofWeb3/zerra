@@ -36,7 +36,7 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title="2. Information We Collect">
-            We collect information you provide directly to us, including: name, email address, and profile information when you create an account. We also collect data from connected social media accounts (such as TikTok) including profile information, post metrics, engagement data, and follower counts — only with your explicit authorization. If you connect an X (Twitter) account, we also analyze the public followers and public posts of that account, through a third-party data provider, to calculate your Smart Readiness score. This score is visible only to you.
+            We collect information you provide directly to us, including: name, email address, and profile information when you create an account. We also collect data from connected social media accounts (such as TikTok) including profile information, post metrics, engagement data, and follower counts — only with your explicit authorization. If you connect an X (Twitter) account, we also analyze the public followers and public posts of that account, through a third-party data provider, to calculate your Smart Readiness score. This score is visible only to you. Your public posts on X may also be shown, with your name and handle, on Zerra's Trending page.
           </Section>
 
           <Section title="3. How We Use Your Information">

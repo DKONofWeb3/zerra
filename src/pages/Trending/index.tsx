@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { Tag } from "lucide-react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { getTrending, type TrendingPost, type TrendingResponse } from "@/lib/api";
 import "./trending.css";
 
-// Bloom "Trending" (Figma 553:1379). Everything shown is real: TikTok posts with
-// their views / engagement rate, the three best by engagement, and the niches
-// the views come from. Duration isn't stored for synced posts, so the thumbnail
-// carries no time label.
+// Bloom "Trending" (Figma 553:1379). Everything shown is real: X posts from
+// connected Zerra creators with their views / engagement rate, the three best by
+// engagement, and the topics the views come from. TikTok is out for now.
 
 function fmt(n: number): string {
   if (n >= 1_000_000) return `${parseFloat((n / 1_000_000).toFixed(1))}M`;
@@ -32,10 +30,10 @@ const SORTS = [
 ] as const;
 type SortKey = (typeof SORTS)[number]["key"];
 
-function TikTokIcon() {
+function XIcon() {
   return (
-    <svg width="9" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V9.15a8.16 8.16 0 0 0 4.77 1.52V7.22a4.85 4.85 0 0 1-1-.53z" />
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M18.9 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
     </svg>
   );
 }
@@ -126,7 +124,7 @@ export default function TrendingPage() {
         <>
           <h2 className="tr-h2">Top Contents</h2>
           {data.top.length === 0 ? (
-            <p className="tr-empty">Nothing is trending yet. Posts appear once creators connect and sync TikTok.</p>
+            <p className="tr-empty">Nothing is trending yet. Posts appear once creators connect their X account.</p>
           ) : (
             <div className="tr-tops">
               {data.top.map((p, i) => <TopCard key={p.id} post={p} tone={i === 0 ? "green" : "red"} />)}
@@ -138,7 +136,7 @@ export default function TrendingPage() {
               <div className="tr-posts__head">
                 <h2 className="tr-h2">Trending Posts</h2>
                 <div className="tr-filters">
-                  <Select value={platform} onChange={setPlatform} options={[{ key: "all", label: "All Platform" }, { key: "tiktok", label: "TikTok" }]} />
+                  <Select value={platform} onChange={setPlatform} options={[{ key: "all", label: "All Platform" }, { key: "x", label: "X" }]} />
                   <Select value={sort} onChange={setSort} options={[...SORTS]} prefix="Sort by:" />
                 </div>
               </div>
@@ -149,33 +147,33 @@ export default function TrendingPage() {
                 </div>
                 {rows.length === 0 && <div className="tr-row tr-row--empty">No posts to show.</div>}
                 {rows.map((p) => (
-                  <div className="tr-row" key={p.id}>
+                  <a className="tr-row" key={p.id} href={p.url ?? undefined} target="_blank" rel="noreferrer">
                     <div className="tr-cell-content">
                       <div className="tr-thumb">
-                        {p.cover_image_url && <img src={p.cover_image_url} alt="" referrerPolicy="no-referrer" />}
-                        <span className="tr-play" aria-hidden><svg width="9" height="9" viewBox="0 0 10 10"><path d="M2 1l7 4-7 4z" fill="#fff" /></svg></span>
+                        {p.creator_avatar
+                          ? <img src={p.creator_avatar} alt="" referrerPolicy="no-referrer" />
+                          : <span className="tr-thumb__ph"><XIcon /></span>}
                       </div>
                       <div className="tr-cell-text">
                         <b>{p.title || "Untitled post"}</b>
                         <small>{p.handle ? `@${p.handle}` : p.creator_name ?? ""}</small>
                       </div>
                     </div>
-                    <span className="tr-plat"><i><TikTokIcon /></i>TikTok</span>
+                    <span className="tr-plat"><i><XIcon /></i>X</span>
                     <span>{fmt(p.views)}</span>
                     <span className="tr-eng">{p.engagement_rate.toFixed(1)}%</span>
                     <span className="tr-date">{dateFmt(p.posted_at)}</span>
-                  </div>
+                  </a>
                 ))}
               </div>
             </section>
 
             <aside className="tr-perf">
               <div className="tr-perf__head">
-                <h3>Top Performing Content</h3>
-                <Link to="/influence/top-performing">View more</Link>
+                <h3>Top Performing Topics</h3>
               </div>
               {data.niches.length === 0 ? (
-                <p className="tr-perf__empty">No niche data yet. Creators pick a niche in Settings.</p>
+                <p className="tr-perf__empty">No topic data yet. It fills in as creators post about DeFi, AI, NFTs and more.</p>
               ) : (
                 <ul>
                   {data.niches.map((n) => (

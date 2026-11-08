@@ -30,8 +30,8 @@ function Profile() {
       <div className="hm-who">
         <img className="hm-who__avatar" src="/home/avatar.png" alt="" />
         <div>
-          <div className="hm-who__name">Akin Kreative <img src="/home/verified.svg" alt="" /></div>
-          <div className="hm-who__handle">@web3kreative</div>
+          <div className="hm-who__name">John Doe <img src="/home/verified.svg" alt="" /></div>
+          <div className="hm-who__handle">@johndoe</div>
         </div>
       </div>
       <dl className="hm-metrics">
