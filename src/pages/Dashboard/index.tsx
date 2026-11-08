@@ -266,7 +266,7 @@ export default function DashboardPage() {
                 <span>{name}</span>
                 {attained.slice(0, 1).map((b) => <BadgeGlyph key={b.id} theme={b.theme} size={32} glow={false} />)}
               </div>
-              <div className="dash-profile__role">{role}</div>
+              <div className="dash-profile__role">{tier?.name ?? role}</div>
             </div>
           </div>
           {score != null && (
@@ -284,7 +284,7 @@ export default function DashboardPage() {
               <span>
                 {score == null ? "Your Smart Readiness score will show here"
                   : nextTier ? <>Earn {(nextTier.min - score).toFixed(1)} more points to reach <em>{nextTier.name}</em></>
-                  : <>You're at the <em>top tier</em></>}
+                  : <>You've reached <em>{tier!.name}</em></>}
               </span>
               <b>{score == null ? "—" : nextTier ? `${score} / ${nextTier.min}` : `${score} / 100`}</b>
             </div>
