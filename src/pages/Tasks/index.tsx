@@ -33,13 +33,17 @@ function Heatmap() {
   const lastSunday = addDays(start, WEEKS * 7 - 1);
   const end = lastSunday > today ? today : lastSunday;
 
+  // Depend on the date strings, not the Date objects: `end` is a fresh object every render on
+  // Sundays (and when paging back), which re-ran this effect forever and flooded the API.
+  const fromStr = ymd(start);
+  const toStr = ymd(end);
   useEffect(() => {
     let live = true;
-    getTaskActivity(ymd(start), ymd(end))
+    getTaskActivity(fromStr, toStr)
       .then((r) => { if (live) setActive(new Set(r.days)); })
       .catch(() => { if (live) setActive(new Set()); });
     return () => { live = false; };
-  }, [start, end]);
+  }, [fromStr, toStr]);
 
   const todayStr = ymd(today);
   return (

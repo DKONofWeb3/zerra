@@ -24,8 +24,8 @@ const updatedFmt = (iso: string) => {
 };
 
 const SORTS = [
+  { key: "views", label: "Impressions" },
   { key: "engagement", label: "Engagement" },
-  { key: "views", label: "Views" },
   { key: "recent", label: "Most recent" },
 ] as const;
 type SortKey = (typeof SORTS)[number]["key"];
@@ -85,7 +85,7 @@ export default function TrendingPage() {
   const [data, setData] = useState<TrendingResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [platform, setPlatform] = useState("all");
-  const [sort, setSort] = useState<SortKey>("engagement");
+  const [sort, setSort] = useState<SortKey>("views");
 
   useEffect(() => {
     let live = true;
@@ -143,7 +143,7 @@ export default function TrendingPage() {
 
               <div className="tr-table">
                 <div className="tr-row tr-row--head">
-                  <span>Content</span><span>Platform</span><span>Views</span><span>Eng. Rate</span><span>Date</span>
+                  <span>Content</span><span>Platform</span><span>Impressions</span><span>Eng. Rate</span><span>Date</span>
                 </div>
                 {rows.length === 0 && <div className="tr-row tr-row--empty">No posts to show.</div>}
                 {rows.map((p) => (
