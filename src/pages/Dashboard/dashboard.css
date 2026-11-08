@@ -186,3 +186,22 @@ a.dash-card:hover { border-color: rgba(255, 255, 255, 0.32); }
   .dash-ring__tier { font-size: 14px; margin-top: 6px; }
   .dash-focus { font-size: 14px; margin-top: 16px; }
 }
+
+/* ── Mobile: give the readiness card room (identity, then ring beside it, then the bar) ── */
+@media (max-width: 767px) {
+  .dash-profile { justify-content: flex-start; gap: 26px; padding: 22px 16px 22px; }
+  .dash-profile__id { padding-right: 88px; min-width: 0; }
+  .dash-profile__id > div:last-child { min-width: 0; }
+  .dash-profile__name { min-width: 0; }
+  .dash-profile__name > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .dash-profile__role { margin-top: 5px; }
+  .dash-ring { right: 16px; top: 16px; width: 72px; }
+  .dash-ring svg { width: 72px; height: 72px; }
+  .dash-ring__num { height: 72px; }
+  .dash-ring__num b { font-size: 20px; }
+  .dash-ring__num small { font-size: 8px; }
+  .dash-ring__tier { font-size: 10.5px; margin-top: 5px; }
+  .dash-profile__meta { font-size: 11px; gap: 10px; margin-bottom: 12px; }
+  .dash-profile__meta b { white-space: nowrap; font-size: 11px; }
+  .dash-focus { margin-top: 14px; font-size: 11.5px; }
+}

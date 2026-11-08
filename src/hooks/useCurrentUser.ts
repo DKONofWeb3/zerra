@@ -49,5 +49,12 @@ export function useCurrentUser() {
     fetchUser();
   }, [fetchUser]);
 
+  // Lets another part of the app (e.g. after the X profile sync) ask every useCurrentUser to reload.
+  useEffect(() => {
+    const onRefresh = () => { fetchUser(); };
+    window.addEventListener("zerra:user-refresh", onRefresh);
+    return () => window.removeEventListener("zerra:user-refresh", onRefresh);
+  }, [fetchUser]);
+
   return { user, loading, refresh: fetchUser };
 }

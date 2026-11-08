@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useSocialAccounts } from "@/hooks/useSocialAccounts";
 import { useBadges } from "@/hooks/useBadges";
-import { connectTwitter, getCreatorProfile, getReadiness, type ReadinessResponse } from "@/lib/api";
+import { connectTwitter, getCreatorProfile, getReadiness, syncXProfileNow, type ReadinessResponse } from "@/lib/api";
 import { Tag } from "lucide-react";
 import { COMPONENTS, TIERS, biggestGaps, tierFor, tip } from "@/lib/readiness";
 import { BadgeGlyph } from "@/components/icons/BadgeIcon";
@@ -166,6 +166,21 @@ export default function DashboardPage() {
     getReadiness().then((r) => { if (live) setReadiness(r); }).catch(() => { /* card keeps its empty state */ });
     return () => { live = false; };
   }, []);
+
+  // Bring the X name and picture across (throttled here and on the server), then reload the profile.
+  useEffect(() => {
+    if (!user?.id || !readiness?.available || !readiness.connected) return;
+    const key = `zerra_x_profile_sync:${user.id}`;
+    try {
+      if (Date.now() - Number(localStorage.getItem(key) ?? 0) < 6 * 3600_000) return;
+    } catch { /* storage unavailable: fall through, the server throttles too */ }
+    syncXProfileNow()
+      .then((r) => {
+        try { localStorage.setItem(key, String(Date.now())); } catch { /* ignore */ }
+        if (r.ok && !r.skipped) window.dispatchEvent(new Event("zerra:user-refresh"));
+      })
+      .catch(() => { /* try again next visit */ });
+  }, [user?.id, readiness?.available, readiness?.connected]);
 
   const now = new Date();
   const lastLogin = session?.user?.last_sign_in_at

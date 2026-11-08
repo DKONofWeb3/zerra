@@ -186,3 +186,8 @@ export const getTaskActivity = (from: string, to: string) =>
 export const addTask = (title: string) => apiPost<{ task: CreatorTask }>("/tasks", { title });
 export const toggleTask = (id: string, day: string) => apiPost<{ done: boolean }>(`/tasks/${id}/toggle`, { day });
 export const deleteTask = (id: string) => apiDelete<{ ok: true }>(`/tasks/${id}`);
+
+// ——— X profile sync ———
+// Pulls the connected X account's name and picture into the user's profile. Throttled server-side.
+export const syncXProfileNow = () =>
+  apiPost<{ ok: boolean; skipped?: boolean; reason?: string }>("/readiness/me/sync-profile");
