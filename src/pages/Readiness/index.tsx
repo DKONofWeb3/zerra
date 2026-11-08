@@ -65,11 +65,12 @@ export default function ReadinessPage() {
     setNote(null);
     try {
       await refreshReadiness();
-      await load();
     } catch (e: any) {
-      // A cooldown or provider hiccup is not a failure of the page itself.
+      // A cooldown ("refreshed recently") means a score was already saved, and a dropped connection can
+      // leave one saved too, so never treat this as final: look again below.
       setNote(e.message ?? "Couldn't refresh right now");
     } finally {
+      await load();
       setBusy(false);
     }
   }, [load]);
@@ -79,6 +80,15 @@ export default function ReadinessPage() {
   // No score yet, or one from the old scoring model: calculate now instead of waiting for the daily job.
   const needsRun = !!data && data.available && data.connected && (!data.latest || !data.latest.components);
   useEffect(() => { if (needsRun) refresh(); }, [needsRun]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // If the score is still being calculated on the server (e.g. the phone dropped the connection mid-run),
+  // check again every few seconds for a while so it shows up by itself.
+  const [polls, setPolls] = useState(0);
+  useEffect(() => {
+    if (!needsRun || busy || polls >= 8) return;
+    const timer = setTimeout(async () => { await load(); setPolls((p) => p + 1); }, 8000);
+    return () => clearTimeout(timer);
+  }, [needsRun, busy, polls, load]);
 
   if (error && !data) return <Shell><p className="rd-lead">{error}</p></Shell>;
   if (!data) return <Shell><p className="rd-lead">Loading…</p></Shell>;
