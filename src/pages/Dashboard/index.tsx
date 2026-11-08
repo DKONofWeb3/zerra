@@ -187,6 +187,8 @@ export default function DashboardPage() {
   const score = latest?.components ? latest.score : null;
   const tier = score != null ? tierFor(score) : null;
   const nextTier = score != null ? TIERS.find((t) => t.min > score) : null;
+  // The bar fills across the current tier (e.g. 50 to 70), so it matches the "points to go" text and the target shown.
+  const barPct = score == null ? 0 : nextTier ? ((score - (tier?.min ?? 0)) / (nextTier.min - (tier?.min ?? 0))) * 100 : 100;
   const scoreNote = score != null ? tier!.name
     : !readiness ? undefined
     : !readiness.available ? "Coming soon"
@@ -252,10 +254,10 @@ export default function DashboardPage() {
                   : nextTier ? <>Earn {(nextTier.min - score).toFixed(1)} more points to reach <em>{nextTier.name}</em></>
                   : <>You're at the <em>top tier</em></>}
               </span>
-              <b>{score == null ? "— / 100" : `${score} / 100`}</b>
+              <b>{score == null ? "—" : nextTier ? `${score} / ${nextTier.min}` : `${score} / 100`}</b>
             </div>
             <div className="dash-bar" aria-hidden>
-              <div className="dash-bar__fill" style={{ width: `${score ?? 0}%` }} />
+              <div className="dash-bar__fill" style={{ width: `${Math.max(0, Math.min(100, barPct))}%` }} />
             </div>
           </div>
         </section>
