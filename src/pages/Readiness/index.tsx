@@ -31,7 +31,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="rd">
       <header className="rd-head">
-        <h1>Your path to Smart Account status</h1>
+        <h1>Your path to the Inner Circle</h1>
         <p>Know where you stand. Know what to do next.</p>
       </header>
       {children}

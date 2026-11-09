@@ -15,10 +15,11 @@ export const COMPONENTS: { key: ComponentKey; label: string; weight: number }[] 
 export interface Tier { name: string; min: number; advice: string }
 
 export const TIERS: Tier[] = [
-  { name: "Emerging CT",   min: 0,  advice: "You're just getting started on CT. Build a real audience and post consistently. Everything compounds from there." },
-  { name: "Discovered",    min: 45, advice: "People are finding you. Sharper engagement and steady posting will move you fastest." },
-  { name: "Smart Account", min: 70, advice: "You're a Smart Account: a voice the right people listen to. Keep your cadence and keep growing the right audience." },
-  { name: "Legend",        min: 85, advice: "Top of the board. Protect your consistency and your engagement." },
+  { name: "Emerging CT",         min: 0,  advice: "You're just getting started on CT. Build a real audience and post consistently. Everything compounds from there." },
+  { name: "Discovered",          min: 20, advice: "People are finding you. Sharper engagement and steady posting will move you fastest." },
+  { name: "Recognised CT",       min: 40, advice: "You're recognised on CT. Keep your cadence and keep growing the right audience." },
+  { name: "Inner Circle",        min: 60, advice: "You're in the Inner Circle: a voice the right people listen to. Protect your consistency and your engagement." },
+  { name: "Elite Inner Circle",  min: 80, advice: "Top of the board. Keep doing what got you here." },
 ];
 
 export const tierFor = (score: number): Tier => [...TIERS].reverse().find((t) => score >= t.min) ?? TIERS[0];
