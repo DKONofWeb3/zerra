@@ -28,3 +28,19 @@
 .lb-who__text small { font-size: 12px; color: #787d92; }
 .lb-tag { justify-self: start; font-size: 12px; padding: 4px 11px; border-radius: 99px; background: rgba(74, 125, 255, 0.15); border: 1px solid rgba(74, 125, 255, 0.6); color: #cfdcff; white-space: nowrap; }
 .lb-score { font-size: 18px; color: #7aff99; }
+
+/* Phones: three columns (rank, creator with followers and tag underneath, score) so nothing scrolls sideways */
+.lb-tag--mob, .lb-mob-only { display: none; }
+@media (max-width: 767px) {
+  .lb-table { overflow-x: hidden; }
+  .lb-row { grid-template-columns: 34px minmax(0, 1fr) 58px; min-width: 0; padding: 0 16px; height: auto; min-height: 76px; padding-top: 10px; padding-bottom: 10px; }
+  .lb-row--head { min-height: 46px; padding-top: 0; padding-bottom: 0; }
+  .lb-row > span:nth-child(3), .lb-row > span:nth-child(4) { display: none; }
+  .lb-row > .lb-tag { display: none; }
+  .lb-rank { font-size: 16px; }
+  .lb-who { gap: 10px; }
+  .lb-who__text { gap: 3px; }
+  .lb-tag--mob { display: inline-block; align-self: flex-start; font-size: 10.5px; padding: 2px 9px; margin-top: 2px; }
+  .lb-mob-only { display: inline; }
+  .lb-score { text-align: right; font-size: 16px; }
+}

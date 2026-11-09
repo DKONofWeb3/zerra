@@ -40,7 +40,7 @@ export default function LeaderboardPage() {
       {data && (
         <div className="lb-table">
           <div className="lb-row lb-row--head">
-            <span>Rank</span><span>Creator</span><span>Tag</span><span>Followers</span><span>Score</span>
+            <span>#</span><span>Creator</span><span>Tag</span><span>Followers</span><span>Score</span>
           </div>
           {data.entries.length === 0 && (
             <div className="lb-row lb-row--empty">
@@ -58,7 +58,8 @@ export default function LeaderboardPage() {
                 </div>
                 <div className="lb-who__text">
                   <b>{e.name ?? (e.handle ? `@${e.handle}` : "Creator")}</b>
-                  {e.handle && <small>@{e.handle}</small>}
+                  <small>{e.handle ? `@${e.handle}` : ""}<span className="lb-mob-only">{e.handle ? " · " : ""}{fmt(e.followers)}</span></small>
+                  <span className="lb-tag lb-tag--mob">{tierFor(e.score).name}</span>
                 </div>
               </div>
               <span className="lb-tag">{tierFor(e.score).name}</span>
