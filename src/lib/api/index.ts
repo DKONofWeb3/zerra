@@ -162,11 +162,19 @@ export interface TrendingPost {
   engagement_rate: number;
   posted_at: string;
   url: string | null;
+  topics: string[];
+}
+export interface TrendingTopic {
+  topic: string;
+  posts: number;
+  views: number;
+  sample: { title: string | null; handle: string } | null;
 }
 export interface TrendingResponse {
   updated_at: string | null;
   top: TrendingPost[];
   posts: TrendingPost[];
+  topics: TrendingTopic[];
   niches: { niche: string; share: number }[];
 }
 export const getTrending = () => apiGetPublic<TrendingResponse>("/analytics/trending");

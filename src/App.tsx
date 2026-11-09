@@ -177,6 +177,7 @@ export default function App() {
           <Route path="/portfolio"                element={<PortfolioPage />} />
           <Route path="/readiness"                element={<ReadinessPage />} />
           <Route path="/trending"                 element={<TrendingPage />} />
+          <Route path="/trending/:topic"          element={<TrendingPage />} />
           <Route path="/tasks"                    element={<TasksPage />} />
           <Route path="/leaderboard"              element={<LeaderboardPage />} />
           <Route path="/influence"                element={<TopCreatorsPage />} />

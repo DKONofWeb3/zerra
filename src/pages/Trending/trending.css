@@ -79,3 +79,26 @@
 a.tr-row { color: inherit; text-decoration: none; }
 a.tr-row[href]:not(.tr-row--head):hover { background: rgba(255, 255, 255, 0.04); }
 .tr-thumb__ph { position: absolute; inset: 0; display: grid; place-items: center; color: #787d92; }
+
+/* ── topics view ── */
+.tr-topics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 28px; }
+@media (max-width: 1100px) { .tr-topics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .tr-topics { grid-template-columns: minmax(0, 1fr); } }
+.tr-topic { display: block; color: inherit; text-decoration: none; background: #000; border: 2.5px solid rgba(255, 255, 255, 0.19); border-radius: 17.5px; padding: 22px 24px 22px; transition: border-color 0.15s, transform 0.15s; }
+.tr-topic:hover { border-color: rgba(255, 255, 255, 0.4); transform: translateY(-2px); }
+.tr-topic__top { display: flex; align-items: center; gap: 12px; }
+.tr-topic__rank { width: 30px; height: 30px; border-radius: 9px; border: 0.5px solid #787878; background: #0b0c10; display: grid; place-items: center; font-size: 13px; color: #b4b8c8; flex: none; }
+.tr-topic__top b { flex: 1; font-size: 22px; font-weight: 400; letter-spacing: -1.2px; min-width: 0; }
+.tr-topic__go { color: #787d92; font-size: 18px; }
+.tr-topic:hover .tr-topic__go { color: #fff; }
+.tr-topic__stats { display: flex; gap: 16px; margin-top: 14px; font-size: 13px; color: #787d92; letter-spacing: -0.4px; }
+.tr-topic__bar { margin-top: 14px; height: 5px; border-radius: 99px; background: #373737; overflow: hidden; }
+.tr-topic__bar i { display: block; height: 100%; background: #06f; border-radius: 99px; }
+.tr-topic__sample { margin: 14px 0 0; font-size: 13px; line-height: 1.45; color: #b4b8c8; letter-spacing: -0.3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tr-topic__sample small { color: #787d92; margin-left: 4px; }
+
+.tr-back { display: inline-block; margin-top: 20px; color: #787d92; text-decoration: none; font-size: 14px; letter-spacing: -0.4px; }
+.tr-back:hover { color: #fff; }
+.tr-perf__link { color: inherit; text-decoration: none; }
+.tr-perf__link:hover { color: #fff; text-decoration: underline; }
+a.tr-top { display: block; color: inherit; text-decoration: none; }
