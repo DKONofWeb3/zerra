@@ -4,9 +4,9 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { getTrending, type TrendingPost, type TrendingResponse } from "@/lib/api";
 import "./trending.css";
 
-// Bloom "Trending" (Figma 553:1379). Everything shown is real: X posts from
-// connected Zerra creators with their views / engagement rate, the three best by
-// engagement, and the topics the views come from. TikTok is out for now.
+// Bloom "Trending" (Figma 553:1379). Everything shown is real: the most-viewed
+// original posts and quotes on Crypto Twitter (collected every few hours by the
+// backend), the top three, and the topics the views come from.
 
 function fmt(n: number): string {
   if (n >= 1_000_000) return `${parseFloat((n / 1_000_000).toFixed(1))}M`;
@@ -124,7 +124,7 @@ export default function TrendingPage() {
         <>
           <h2 className="tr-h2">Top Contents</h2>
           {data.top.length === 0 ? (
-            <p className="tr-empty">Nothing is trending yet. Posts appear once creators connect their X account.</p>
+            <p className="tr-empty">Nothing to show yet. We pull the top posts on Crypto Twitter every few hours, so check back soon.</p>
           ) : (
             <div className="tr-tops">
               {data.top.map((p, i) => <TopCard key={p.id} post={p} tone={i === 0 ? "green" : "red"} />)}
@@ -170,10 +170,10 @@ export default function TrendingPage() {
 
             <aside className="tr-perf">
               <div className="tr-perf__head">
-                <h3>Top Performing Topics</h3>
+                <h3>Trending Topics</h3>
               </div>
               {data.niches.length === 0 ? (
-                <p className="tr-perf__empty">No topic data yet. It fills in as creators post about DeFi, AI, NFTs and more.</p>
+                <p className="tr-perf__empty">No topic data yet. It fills in as CT posts about DeFi, AI, NFTs and more.</p>
               ) : (
                 <ul>
                   {data.niches.map((n) => (

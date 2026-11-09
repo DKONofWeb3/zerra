@@ -10,7 +10,7 @@ export const PRIMARY_NAV = [
   { to: "/dashboard",           label: "Dashboard",   short: "Home",        icon: LayoutDashboard },
   { to: "/tasks",               label: "Tasks",       short: "Tasks",       icon: ClipboardList },
   { to: "/trending",            label: "Trending",    short: "Trending",    icon: TrendingUp },
-  { to: "/explore/leaderboard", label: "Leaderboard", short: "Leaderboard", icon: Trophy },
+  { to: "/leaderboard",         label: "Leaderboard", short: "Leaderboard", icon: Trophy },
   { to: "/settings",            label: "Settings",    short: "Settings",    icon: Settings },
 ] as const;
 

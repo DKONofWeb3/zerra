@@ -192,3 +192,15 @@ export const deleteTask = (id: string) => apiDelete<{ ok: true }>(`/tasks/${id}`
 // Pulls the connected X account's name and picture into the user's profile. Throttled server-side.
 export const syncXProfileNow = () =>
   apiPost<{ ok: boolean; skipped?: boolean; reason?: string }>("/readiness/me/sync-profile");
+
+// ——— Leaderboard ———
+export interface LeaderboardEntry {
+  rank: number;
+  name: string | null;
+  avatar: string | null;
+  handle: string | null;
+  score: number;
+  followers: number;
+}
+export const getLeaderboard = () =>
+  apiGetPublic<{ total: number; entries: LeaderboardEntry[] }>("/readiness/leaderboard");
