@@ -12,6 +12,7 @@ export default function AdminReadinessPage() {
   const [filter, setFilter] = useState("");
   const [cands, setCands] = useState<Candidate[]>([]);
   const [candsLoaded, setCandsLoaded] = useState(false);
+  const [shownCount, setShownCount] = useState(50);
 
   const loadCands = useCallback(async () => {
     try {
@@ -81,10 +82,10 @@ export default function AdminReadinessPage() {
 
       <h2 className="text-[16px] font-medium text-fg-primary mb-1">Suggested accounts</h2>
       <p className="text-[12.5px] text-fg-tertiary mb-3">
-        Authors of the most-viewed posts on CT. Approve the ones that are credible; rejected ones won't show up again. {seeds.length} approved so far (about 100 needed to switch the score over).
+        Accounts that keep landing among the most-viewed CT posts over the last 30 days, most consistent first. Approve the ones that are credible; rejected ones won't show up again. {seeds.length} approved so far (about 100 needed to switch the score over).
       </p>
       <ul className="glass rounded-2xl divide-y divide-white/[0.05] mb-8 max-h-[460px] overflow-y-auto">
-        {cands.map((c) => (
+        {cands.slice(0, shownCount).map((c) => (
           <li key={c.handle} className="flex items-center gap-3 px-4 py-3">
             <div className="w-9 h-9 rounded-full overflow-hidden bg-white/[0.06] shrink-0">
               {c.avatar && <img src={c.avatar} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />}
@@ -93,13 +94,14 @@ export default function AdminReadinessPage() {
               <a href={`https://x.com/${c.handle}`} target="_blank" rel="noreferrer" className="text-[14px] text-fg-primary hover:underline block truncate">
                 {c.name ?? `@${c.handle}`} <span className="text-fg-tertiary">@{c.handle}</span>
               </a>
-              <span className="text-[12px] text-fg-tertiary">{fmt(c.followers)} followers · {c.posts} top post{c.posts === 1 ? "" : "s"} · {fmt(c.views)} views</span>
+              <span className="text-[12px] text-fg-tertiary">{fmt(c.followers)} followers · {c.days} active day{c.days === 1 ? "" : "s"} · {c.posts} top post{c.posts === 1 ? "" : "s"} · {fmt(c.views)} views</span>
             </div>
             <button type="button" onClick={() => decide(c, "rejected")} className="h-8 px-4 rounded-full text-[12.5px] text-fg-secondary border border-white/[0.12] hover:text-red-400">Reject</button>
             <button type="button" onClick={() => decide(c, "approved")} className="h-8 px-4 rounded-full text-[12.5px] font-medium text-white" style={{ background: "rgb(74 125 255)" }}>Approve</button>
           </li>
         ))}
         {cands.length === 0 && <li className="px-4 py-6 text-[13px] text-fg-tertiary">{candsLoaded ? "No suggestions right now. They appear as the CT collector finds more accounts." : "Loading…"}</li>}
+        {cands.length > shownCount && <li className="px-4 py-3"><button type="button" onClick={() => setShownCount((n) => n + 50)} className="text-[13px] text-fg-secondary hover:text-fg-primary">Show more ({cands.length - shownCount} left)</button></li>}
       </ul>
 
       <h2 className="text-[16px] font-medium text-fg-primary mb-1">Add handles yourself</h2>

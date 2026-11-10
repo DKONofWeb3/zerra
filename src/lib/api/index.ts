@@ -146,7 +146,7 @@ export const refreshReadiness = () => apiPost<{ ok: true }>("/readiness/me/refre
 export interface SeedAccount { id: string; handle: string; note: string | null; created_at: string }
 export const getSeedAccounts = () => apiGet<{ seeds: SeedAccount[] }>("/admin/readiness/seeds");
 export const addSeedAccounts = (handles: string[]) => apiPost<{ added: number }>("/admin/readiness/seeds", { handles });
-export interface Candidate { handle: string; name: string | null; avatar: string | null; followers: number; posts: number; views: number }
+export interface Candidate { handle: string; name: string | null; avatar: string | null; followers: number; posts: number; views: number; days: number }
 export const getCandidates = () => apiGet<{ candidates: Candidate[]; approved: number; rejected: number }>("/admin/readiness/candidates");
 export const decideCandidate = (c: Candidate, decision: "approved" | "rejected") =>
   apiPost<{ ok: true }>("/admin/readiness/candidates/decide", { handle: c.handle, decision, name: c.name, avatar: c.avatar, followers: c.followers });
