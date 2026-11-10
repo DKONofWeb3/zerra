@@ -14,6 +14,7 @@ export default function AdminReadinessPage() {
   const [candsLoaded, setCandsLoaded] = useState(false);
   const [shownCount, setShownCount] = useState(50);
   const [candQuery, setCandQuery] = useState("");
+  const [tab, setTab] = useState<"discovered" | "emerging" | "under_review">("discovered");
 
   const loadCands = useCallback(async () => {
     try {
@@ -26,8 +27,10 @@ export default function AdminReadinessPage() {
   }, []);
   useEffect(() => { loadCands(); }, [loadCands]);
 
-  const decide = async (c: Candidate, decision: "approved" | "rejected") => {
-    setCands((list) => list.filter((x) => x.handle !== c.handle));
+  const decide = async (c: Candidate, decision: "approved" | "rejected" | "under_review") => {
+    setCands((list) => decision === "under_review"
+      ? list.map((x) => (x.handle === c.handle ? { ...x, status: "under_review" } : x))
+      : list.filter((x) => x.handle !== c.handle));
     try {
       await decideCandidate(c, decision);
       if (decision === "approved") await load();
@@ -37,8 +40,11 @@ export default function AdminReadinessPage() {
     }
   };
   const q = candQuery.trim().toLowerCase().replace(/^@/, "");
-  const matched = q ? cands.filter((c) => c.handle.includes(q) || (c.name ?? "").toLowerCase().includes(q)) : cands;
-  const fmt = (n: number) => n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : String(n);
+  const inTab = cands.filter((c) => c.status === tab);
+  const counts = { discovered: 0, emerging: 0, under_review: 0 };
+  for (const c of cands) counts[c.status]++;
+  const matched = q ? inTab.filter((c) => c.handle.includes(q) || (c.name ?? "").toLowerCase().includes(q)) : inTab;
+  const fmt = (n: number | null) => n === null ? "n/a" : n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : String(n);
 
   const load = useCallback(async () => {
     try {
@@ -85,8 +91,21 @@ export default function AdminReadinessPage() {
 
       <h2 className="text-[16px] font-medium text-fg-primary mb-1">Suggested accounts</h2>
       <p className="text-[12.5px] text-fg-tertiary mb-3">
-        Accounts that keep landing among the most-viewed CT posts over the last 30 days, most consistent first. Approve the ones that are credible; rejected ones won't show up again. {seeds.length} approved so far (about 100 needed to switch the score over).
+        Ranked by discovery score from the last 30 days of CT posts (reach, engagement quality, niche and authenticity). Recognition by credible accounts isn't measured yet, so treat the score as a first filter, not a verdict. Approve the ones that are credible; rejected ones won't show up again. {seeds.length} approved so far (about 100 needed to switch the score over).
       </p>
+      <div className="flex gap-2 mb-3 flex-wrap">
+        {([["discovered", "Discovered"], ["emerging", "Emerging"], ["under_review", "Under review"]] as const).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => { setTab(key); setShownCount(50); }}
+            className={"h-8 px-4 rounded-full text-[12.5px] border " + (tab === key ? "text-white border-transparent" : "text-fg-secondary border-white/[0.12] hover:text-fg-primary")}
+            style={tab === key ? { background: "rgb(74 125 255)" } : undefined}
+          >
+            {label} ({counts[key]})
+          </button>
+        ))}
+      </div>
       <input
         value={candQuery}
         onChange={(e) => { setCandQuery(e.target.value); setShownCount(50); }}
@@ -103,9 +122,21 @@ export default function AdminReadinessPage() {
               <a href={`https://x.com/${c.handle}`} target="_blank" rel="noreferrer" className="text-[14px] text-fg-primary hover:underline block truncate">
                 {c.name ?? `@${c.handle}`} <span className="text-fg-tertiary">@{c.handle}</span>
               </a>
-              <span className="text-[12px] text-fg-tertiary">{fmt(c.followers)} followers · {c.days} active day{c.days === 1 ? "" : "s"} · {c.posts} top post{c.posts === 1 ? "" : "s"} · {fmt(c.views)} views</span>
+              <span className="text-[12px] text-fg-tertiary block">
+                {fmt(c.followers)} followers · median {fmt(c.median_views)} views · ER {c.median_er === null ? "n/a" : `${c.median_er}%`} · {c.active_days} active day{c.active_days === 1 ? "" : "s"} · {c.originals} post{c.originals === 1 ? "" : "s"}{c.quotes ? ` + ${c.quotes} quote${c.quotes === 1 ? "" : "s"}` : ""}
+              </span>
+              <span className="text-[11.5px] text-fg-tertiary block">
+                {c.niche_primary ?? "No niche yet"}{c.niche_secondary ? ` / ${c.niche_secondary}` : ""} · authenticity {c.authenticity ?? "n/a"} · data confidence {c.data_confidence ?? "n/a"}
+              </span>
             </div>
-            <button type="button" onClick={() => decide(c, "rejected")} className="h-8 px-4 rounded-full text-[12.5px] text-fg-secondary border border-white/[0.12] hover:text-red-400">Reject</button>
+            <div className="text-right shrink-0 mr-1" title={`Discovery score out of 100. Only ${Math.round(c.coverage * 100)}% of the score can be measured so far (recognition and network quality aren't collected yet).`}>
+              <div className="text-[16px] text-fg-primary">{c.discovery_score}</div>
+              <div className="text-[10.5px] text-fg-tertiary">{Math.round(c.coverage * 100)}% coverage</div>
+            </div>
+            <button type="button" onClick={() => decide(c, "rejected")} className="h-8 px-3 rounded-full text-[12.5px] text-fg-secondary border border-white/[0.12] hover:text-red-400">Reject</button>
+            {c.status !== "under_review" && (
+              <button type="button" onClick={() => decide(c, "under_review")} className="h-8 px-3 rounded-full text-[12.5px] text-fg-secondary border border-white/[0.12] hover:text-fg-primary">Review later</button>
+            )}
             <button type="button" onClick={() => decide(c, "approved")} className="h-8 px-4 rounded-full text-[12.5px] font-medium text-white" style={{ background: "rgb(74 125 255)" }}>Approve</button>
           </li>
         ))}

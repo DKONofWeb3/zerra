@@ -146,9 +146,18 @@ export const refreshReadiness = () => apiPost<{ ok: true }>("/readiness/me/refre
 export interface SeedAccount { id: string; handle: string; note: string | null; created_at: string }
 export const getSeedAccounts = () => apiGet<{ seeds: SeedAccount[] }>("/admin/readiness/seeds");
 export const addSeedAccounts = (handles: string[]) => apiPost<{ added: number }>("/admin/readiness/seeds", { handles });
-export interface Candidate { handle: string; name: string | null; avatar: string | null; followers: number; posts: number; views: number; days: number }
+export type CandidateStatus = "discovered" | "emerging" | "under_review";
+export interface Candidate {
+  handle: string; name: string | null; avatar: string | null; followers: number | null; status: CandidateStatus;
+  niche_primary: string | null; niche_secondary: string | null;
+  originals: number; quotes: number; active_days: number;
+  median_views: number | null; median_er: number | null;
+  discovery_score: number; coverage: number;
+  authenticity: "High" | "Medium" | "Low" | null; data_confidence: "High" | "Medium" | "Low" | null;
+  last_post_at: string | null;
+}
 export const getCandidates = () => apiGet<{ candidates: Candidate[]; approved: number; rejected: number }>("/admin/readiness/candidates");
-export const decideCandidate = (c: Candidate, decision: "approved" | "rejected") =>
+export const decideCandidate = (c: Candidate, decision: "approved" | "rejected" | "under_review") =>
   apiPost<{ ok: true }>("/admin/readiness/candidates/decide", { handle: c.handle, decision, name: c.name, avatar: c.avatar, followers: c.followers });
 export const deleteSeedAccount = (id: string) => apiDelete<{ ok: true }>(`/admin/readiness/seeds/${id}`);
 
