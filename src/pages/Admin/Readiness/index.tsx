@@ -13,6 +13,7 @@ export default function AdminReadinessPage() {
   const [cands, setCands] = useState<Candidate[]>([]);
   const [candsLoaded, setCandsLoaded] = useState(false);
   const [shownCount, setShownCount] = useState(50);
+  const [candQuery, setCandQuery] = useState("");
 
   const loadCands = useCallback(async () => {
     try {
@@ -35,6 +36,8 @@ export default function AdminReadinessPage() {
       loadCands();
     }
   };
+  const q = candQuery.trim().toLowerCase().replace(/^@/, "");
+  const matched = q ? cands.filter((c) => c.handle.includes(q) || (c.name ?? "").toLowerCase().includes(q)) : cands;
   const fmt = (n: number) => n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : String(n);
 
   const load = useCallback(async () => {
@@ -84,8 +87,14 @@ export default function AdminReadinessPage() {
       <p className="text-[12.5px] text-fg-tertiary mb-3">
         Accounts that keep landing among the most-viewed CT posts over the last 30 days, most consistent first. Approve the ones that are credible; rejected ones won't show up again. {seeds.length} approved so far (about 100 needed to switch the score over).
       </p>
+      <input
+        value={candQuery}
+        onChange={(e) => { setCandQuery(e.target.value); setShownCount(50); }}
+        placeholder="Search suggestions by name or @handle"
+        className="glass h-10 px-4 w-full rounded-full text-[13px] text-fg-primary placeholder:text-fg-tertiary focus:outline-none mb-3"
+      />
       <ul className="glass rounded-2xl divide-y divide-white/[0.05] mb-8 max-h-[460px] overflow-y-auto">
-        {cands.slice(0, shownCount).map((c) => (
+        {matched.slice(0, shownCount).map((c) => (
           <li key={c.handle} className="flex items-center gap-3 px-4 py-3">
             <div className="w-9 h-9 rounded-full overflow-hidden bg-white/[0.06] shrink-0">
               {c.avatar && <img src={c.avatar} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />}
@@ -100,8 +109,8 @@ export default function AdminReadinessPage() {
             <button type="button" onClick={() => decide(c, "approved")} className="h-8 px-4 rounded-full text-[12.5px] font-medium text-white" style={{ background: "rgb(74 125 255)" }}>Approve</button>
           </li>
         ))}
-        {cands.length === 0 && <li className="px-4 py-6 text-[13px] text-fg-tertiary">{candsLoaded ? "No suggestions right now. They appear as the CT collector finds more accounts." : "Loading…"}</li>}
-        {cands.length > shownCount && <li className="px-4 py-3"><button type="button" onClick={() => setShownCount((n) => n + 50)} className="text-[13px] text-fg-secondary hover:text-fg-primary">Show more ({cands.length - shownCount} left)</button></li>}
+        {matched.length === 0 && <li className="px-4 py-6 text-[13px] text-fg-tertiary">{candsLoaded ? (q ? "No suggestions match that search." : "No suggestions right now. They appear as the CT collector finds more accounts.") : "Loading…"}</li>}
+        {matched.length > shownCount && <li className="px-4 py-3"><button type="button" onClick={() => setShownCount((n) => n + 50)} className="text-[13px] text-fg-secondary hover:text-fg-primary">Show more ({matched.length - shownCount} left)</button></li>}
       </ul>
 
       <h2 className="text-[16px] font-medium text-fg-primary mb-1">Add handles yourself</h2>
