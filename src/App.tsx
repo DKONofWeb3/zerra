@@ -162,6 +162,7 @@ export default function App() {
             redesigned homepage is not to go live yet. It lives at /new-home so
             it stays reviewable without being the public landing page. */}
         <Route path="/"              element={<HomePage />} />
+        <Route path="/react-home"   element={<HomePage />} />
         <Route path="/old-home"      element={<LandingPage />} />
         <Route path="/new-home"      element={<NewHomePage />} />
         <Route path="/login"         element={<LoginPage />} />

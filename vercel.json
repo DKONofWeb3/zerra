@@ -3,6 +3,7 @@
     { "source": "/home", "destination": "/", "permanent": false }
   ],
   "rewrites": [
+    { "source": "/", "destination": "https://valuable-guest-578488.framer.app/" },
     { "source": "/pitch-deck", "destination": "https://valuable-guest-578488.framer.app/pitch-deck" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
