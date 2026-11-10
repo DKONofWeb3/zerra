@@ -1,6 +1,7 @@
 {
   "routes": [
     { "src": "^/home$", "status": 302, "headers": { "Location": "/" } },
+    { "src": "^/$", "dest": "https://valuable-guest-578488.framer.app/" },
     { "src": "^/pitch-deck$", "dest": "https://valuable-guest-578488.framer.app/pitch-deck" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
