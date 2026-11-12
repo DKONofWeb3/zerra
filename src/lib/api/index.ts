@@ -146,7 +146,7 @@ export const refreshReadiness = () => apiPost<{ ok: true }>("/readiness/me/refre
 export interface SeedAccount { id: string; handle: string; note: string | null; created_at: string; name?: string | null; avatar?: string | null; followers?: number | null }
 export const getSeedAccounts = () => apiGet<{ seeds: SeedAccount[] }>("/admin/readiness/seeds");
 export interface XUserSuggestion { handle: string; name: string | null; avatar: string | null; followers: number | null; verified: boolean }
-export const searchXUsers = (q: string) => apiGet<{ users: XUserSuggestion[] }>(`/admin/readiness/user-search?q=${encodeURIComponent(q)}`);
+export const searchXUsers = (q: string) => apiGet<{ users: XUserSuggestion[]; note?: string }>(`/admin/readiness/user-search?q=${encodeURIComponent(q)}`);
 export const addSeedAccount = (u: XUserSuggestion) =>
   apiPost<{ added: number }>("/admin/readiness/seeds", { handle: u.handle, name: u.name, avatar: u.avatar, followers: u.followers });
 export const addSeedAccounts = (handles: string[]) => apiPost<{ added: number }>("/admin/readiness/seeds", { handles });

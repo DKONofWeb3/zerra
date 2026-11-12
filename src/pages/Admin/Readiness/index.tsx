@@ -18,6 +18,7 @@ export default function AdminReadinessPage() {
   const [suggestions, setSuggestions] = useState<XUserSuggestion[]>([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchNote, setSearchNote] = useState<string | null>(null);
   const [justAdded, setJustAdded] = useState<string | null>(null);
 
   // Suggest X accounts while typing (waits for a short pause so we don't search on every key).
@@ -29,7 +30,7 @@ export default function AdminReadinessPage() {
     const t = setTimeout(async () => {
       try {
         const r = await searchXUsers(q);
-        if (live) { setSuggestions(r.users); setSearchError(null); }
+        if (live) { setSuggestions(r.users); setSearchNote(r.note ?? null); setSearchError(null); }
       } catch (e: any) {
         if (live) { setSuggestions([]); setSearchError(e?.message ?? "Search failed"); }
       } finally {
@@ -206,6 +207,7 @@ export default function AdminReadinessPage() {
                 </button>
               </li>
             ))}
+            {searchNote && <li className="px-4 py-2 text-[11.5px] text-fg-tertiary border-t border-white/[0.06]">{searchNote}</li>}
             {suggestions.length === 0 && (
               <li className="px-4 py-3 text-[13px] text-fg-tertiary">{searching ? "Searching…" : searchError ? `Search failed: ${searchError}` : "No accounts found."}</li>
             )}
