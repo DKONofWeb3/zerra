@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { addSeedAccounts, decideCandidate, deleteSeedAccount, getCandidates, getSeedAccounts, type Candidate, type SeedAccount } from "@/lib/api";
+import { addSeedAccount, addSeedAccounts, decideCandidate, deleteSeedAccount, getCandidates, getSeedAccounts, searchXUsers, type Candidate, type SeedAccount, type XUserSuggestion } from "@/lib/api";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
 // The curated high-signal Crypto Twitter list that Smart Readiness scores against.
@@ -14,6 +14,29 @@ export default function AdminReadinessPage() {
   const [candsLoaded, setCandsLoaded] = useState(false);
   const [shownCount, setShownCount] = useState(50);
   const [candQuery, setCandQuery] = useState("");
+  const [typed, setTyped] = useState("");
+  const [suggestions, setSuggestions] = useState<XUserSuggestion[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [justAdded, setJustAdded] = useState<string | null>(null);
+
+  // Suggest X accounts while typing (waits for a short pause so we don't search on every key).
+  useEffect(() => {
+    const q = typed.trim().replace(/^@/, "");
+    if (q.length < 2) { setSuggestions([]); setSearching(false); return; }
+    let live = true;
+    setSearching(true);
+    const t = setTimeout(async () => {
+      try {
+        const r = await searchXUsers(q);
+        if (live) setSuggestions(r.users);
+      } catch {
+        if (live) setSuggestions([]);
+      } finally {
+        if (live) setSearching(false);
+      }
+    }, 350);
+    return () => { live = false; clearTimeout(t); };
+  }, [typed]);
   const [tab, setTab] = useState<"discovered" | "emerging" | "under_review">("discovered");
 
   const loadCands = useCallback(async () => {
@@ -37,6 +60,19 @@ export default function AdminReadinessPage() {
     } catch (e: any) {
       setError(e.message);
       loadCands();
+    }
+  };
+  const pick = async (u: XUserSuggestion) => {
+    setError(null);
+    try {
+      await addSeedAccount(u);
+      setJustAdded(u.handle);
+      setTyped("");
+      setSuggestions([]);
+      await load();
+      loadCands();
+    } catch (e: any) {
+      setError(e.message);
     }
   };
   const q = candQuery.trim().toLowerCase().replace(/^@/, "");
@@ -145,6 +181,37 @@ export default function AdminReadinessPage() {
       </ul>
 
       <h2 className="text-[16px] font-medium text-fg-primary mb-1">Add handles yourself</h2>
+      <div className="relative mb-3">
+        <input
+          value={typed}
+          onChange={(e) => { setTyped(e.target.value); setJustAdded(null); }}
+          placeholder="Search X by name or @handle, then pick the account"
+          className="glass h-11 px-4 w-full rounded-full text-[14px] text-fg-primary placeholder:text-fg-tertiary focus:outline-none"
+        />
+        {justAdded && <p className="text-[12px] text-fg-tertiary mt-2 ml-2">Added @{justAdded} to the list.</p>}
+        {typed.trim().length >= 2 && (
+          <ul className="absolute z-20 left-0 right-0 mt-2 rounded-2xl overflow-hidden border border-white/[0.1] bg-[#0b0e16] shadow-xl">
+            {suggestions.map((u) => (
+              <li key={u.handle}>
+                <button type="button" onClick={() => pick(u)} className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-white/[0.05]">
+                  <span className="w-9 h-9 rounded-full overflow-hidden bg-white/[0.06] shrink-0">
+                    {u.avatar && <img src={u.avatar} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[14px] text-fg-primary truncate">{u.name ?? u.handle}</span>
+                    <span className="block text-[12px] text-fg-tertiary truncate">@{u.handle}{u.followers !== null ? ` · ${fmt(u.followers)} followers` : ""}</span>
+                  </span>
+                  <span className="text-[12px] text-fg-secondary shrink-0">Add</span>
+                </button>
+              </li>
+            ))}
+            {suggestions.length === 0 && (
+              <li className="px-4 py-3 text-[13px] text-fg-tertiary">{searching ? "Searching…" : "No accounts found."}</li>
+            )}
+          </ul>
+        )}
+      </div>
+      <p className="text-[12px] text-fg-tertiary mb-2">Or paste several handles at once:</p>
       <div className="glass rounded-2xl p-4 mb-6">
         <textarea
           value={input}
