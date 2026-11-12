@@ -17,20 +17,21 @@ export default function AdminReadinessPage() {
   const [typed, setTyped] = useState("");
   const [suggestions, setSuggestions] = useState<XUserSuggestion[]>([]);
   const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [justAdded, setJustAdded] = useState<string | null>(null);
 
   // Suggest X accounts while typing (waits for a short pause so we don't search on every key).
   useEffect(() => {
     const q = typed.trim().replace(/^@/, "");
-    if (q.length < 2) { setSuggestions([]); setSearching(false); return; }
+    if (q.length < 2) { setSuggestions([]); setSearching(false); setSearchError(null); return; }
     let live = true;
     setSearching(true);
     const t = setTimeout(async () => {
       try {
         const r = await searchXUsers(q);
-        if (live) setSuggestions(r.users);
-      } catch {
-        if (live) setSuggestions([]);
+        if (live) { setSuggestions(r.users); setSearchError(null); }
+      } catch (e: any) {
+        if (live) { setSuggestions([]); setSearchError(e?.message ?? "Search failed"); }
       } finally {
         if (live) setSearching(false);
       }
@@ -206,7 +207,7 @@ export default function AdminReadinessPage() {
               </li>
             ))}
             {suggestions.length === 0 && (
-              <li className="px-4 py-3 text-[13px] text-fg-tertiary">{searching ? "Searching…" : "No accounts found."}</li>
+              <li className="px-4 py-3 text-[13px] text-fg-tertiary">{searching ? "Searching…" : searchError ? `Search failed: ${searchError}` : "No accounts found."}</li>
             )}
           </ul>
         )}
@@ -245,9 +246,13 @@ export default function AdminReadinessPage() {
 
       <ul className="divide-y divide-white/[0.05]">
         {shown.map((s) => (
-          <li key={s.id} className="flex items-center justify-between py-2.5">
-            <a href={`https://x.com/${s.handle}`} target="_blank" rel="noreferrer" className="text-[14px] text-fg-primary hover:underline">
-              @{s.handle}
+          <li key={s.id} className="flex items-center justify-between gap-3 py-2.5">
+            <span className="w-9 h-9 rounded-full overflow-hidden bg-white/[0.06] shrink-0">
+              {s.avatar && <img src={s.avatar} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />}
+            </span>
+            <a href={`https://x.com/${s.handle}`} target="_blank" rel="noreferrer" className="min-w-0 flex-1 text-[14px] text-fg-primary hover:underline">
+              <span className="block truncate">{s.name ?? `@${s.handle}`}</span>
+              <span className="block text-[12px] text-fg-tertiary truncate">@{s.handle}{typeof s.followers === "number" ? ` · ${fmt(s.followers)} followers` : ""}</span>
             </a>
             <button type="button" onClick={() => remove(s.id)} className="text-[12px] text-fg-tertiary hover:text-red-400">Remove</button>
           </li>

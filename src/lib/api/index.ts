@@ -143,7 +143,7 @@ export interface ReadinessResponse {
 export const getReadiness = () => apiGet<ReadinessResponse>("/readiness/me");
 export const refreshReadiness = () => apiPost<{ ok: true }>("/readiness/me/refresh");
 
-export interface SeedAccount { id: string; handle: string; note: string | null; created_at: string }
+export interface SeedAccount { id: string; handle: string; note: string | null; created_at: string; name?: string | null; avatar?: string | null; followers?: number | null }
 export const getSeedAccounts = () => apiGet<{ seeds: SeedAccount[] }>("/admin/readiness/seeds");
 export interface XUserSuggestion { handle: string; name: string | null; avatar: string | null; followers: number | null; verified: boolean }
 export const searchXUsers = (q: string) => apiGet<{ users: XUserSuggestion[] }>(`/admin/readiness/user-search?q=${encodeURIComponent(q)}`);
