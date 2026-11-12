@@ -199,14 +199,25 @@ export const getTrending = () => apiGetPublic<TrendingResponse>("/analytics/tren
 // ——— Creator Tasks ———
 export interface CreatorTask { id: string; title: string; done: boolean }
 export interface TaskWeekDay { date: string; active: boolean; future: boolean; today: boolean }
+export type PlanKind = "reply" | "thread" | "article" | "post";
+export interface TaskPlan {
+  id: string; kind: PlanKind; per_week: number; unit: "weeks" | "months"; duration: number;
+  start_date: string; end_date: string; week_index: number; total_weeks: number;
+  this_week: number; weeks_met: number; ended: boolean;
+}
 export interface TasksState {
+  plans: TaskPlan[];
+  syncing: boolean;
   tasks: CreatorTask[];
   done: number;
   total: number;
   streak: number;
   week: TaskWeekDay[];
 }
-export const getTasks = (today: string) => apiGet<TasksState>(`/tasks?today=${today}`);
+export const getTasks = (today: string) => apiGet<TasksState>(`/tasks?today=${today}&tz=${new Date().getTimezoneOffset()}`);
+export const addPlan = (p: { kind: PlanKind; per_week: number; unit: "weeks" | "months"; duration: number; today: string }) =>
+  apiPost<{ id: string }>("/tasks/plans", { ...p, tz: new Date().getTimezoneOffset() });
+export const deletePlan = (id: string) => apiDelete<{ ok: true }>(`/tasks/plans/${id}`);
 export const getTaskActivity = (from: string, to: string) =>
   apiGet<{ days: string[] }>(`/tasks/activity?from=${from}&to=${to}`);
 export const addTask = (title: string) => apiPost<{ task: CreatorTask }>("/tasks", { title });

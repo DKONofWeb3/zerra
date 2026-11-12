@@ -103,3 +103,27 @@
   .tk-grid__rows { font-size: 16px; row-gap: 14px; }
   .tk-grid__cells { gap: 14px 14px; }
 }
+
+/* Weekly plan builder and plan cards */
+.tk-builder { position: relative; overflow: hidden; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1); background: #050607; box-sizing: border-box; grid-area: presets; }
+.tk-builder::before { content: ""; position: absolute; left: 4%; top: -91px; width: 400px; height: 376px; border-radius: 50%; background: radial-gradient(closest-side, rgba(120, 150, 225, 0.25), transparent); pointer-events: none; }
+.tk-builder h3 { position: relative; margin: 0; padding: 10px 14px; font-size: 18px; font-weight: 400; letter-spacing: -1px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); line-height: 23px; }
+.tk-builder__body { position: relative; padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 14px; }
+.tk-builder label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #9aa0b4; flex: 1; min-width: 0; }
+.tk-builder select { height: 44px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.04); color: #fff; font-size: 15px; padding: 0 12px; font-family: inherit; }
+.tk-builder select option { background: #0b0e16; color: #fff; }
+.tk-builder__row { display: flex; gap: 10px; }
+.tk-builder__go { height: 46px; border-radius: 99px; border: 0; background: rgb(74, 125, 255); color: #fff; font-size: 15px; cursor: pointer; margin-top: 4px; }
+.tk-builder__go:disabled { opacity: 0.5; cursor: default; }
+.tk-builder small { font-size: 12px; color: #787d92; line-height: 1.4; }
+@media (max-width: 1099px) { .tk-builder { grid-column: 1 / -1; } }
+
+.tk-plans { display: flex; flex-direction: column; gap: 14px; }
+.tk-sync { margin: 0; font-size: 13px; color: #787d92; }
+.tk-plan { padding: 16px 21px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.09); background: rgba(8, 9, 12, 0.85); }
+.tk-plan__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tk-plan__top b { font-weight: 400; font-size: 17px; letter-spacing: -0.6px; }
+.tk-plan__bar { height: 8px; border-radius: 99px; background: rgba(255, 255, 255, 0.08); margin: 12px 0 10px; overflow: hidden; }
+.tk-plan__bar i { display: block; height: 100%; border-radius: 99px; background: rgb(74, 125, 255); transition: width 0.3s; }
+.tk-plan__bar i.is-met { background: #52ff7c; }
+.tk-plan p { margin: 0; font-size: 13px; color: #787d92; }

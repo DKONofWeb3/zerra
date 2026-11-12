@@ -4,7 +4,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { HeaderActions } from "@/components/layout/HeaderActions";
 import {
-  addTask, deleteTask, getTaskActivity, getTasks, toggleTask, type TasksState,
+  addPlan, addTask, deletePlan, deleteTask, getTaskActivity, getTasks, toggleTask, type PlanKind, type TaskPlan, type TasksState,
 } from "@/lib/api";
 import "./tasks.css";
 
@@ -12,7 +12,27 @@ import "./tasks.css";
 // daily checklist. A day counts toward the streak and the activity grid when at
 // least one task was ticked that day. Days are the user's local calendar days.
 
-const PRESETS = ["Post 1 short/ reel", "Reply to 20 comments", "Pitch to 2 Devs"];
+const KIND_LABEL: Record<PlanKind, string> = { post: "Posts", reply: "Replies", thread: "Threads", article: "Articles" };
+const planEnd = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+function PlanCard({ plan, onRemove }: { plan: TaskPlan; onRemove: () => void }) {
+  const pct = Math.min(100, (plan.this_week / plan.per_week) * 100);
+  const met = plan.this_week >= plan.per_week;
+  return (
+    <div className="tk-plan">
+      <div className="tk-plan__top">
+        <b>{KIND_LABEL[plan.kind]} · {plan.per_week} per week</b>
+        <button type="button" className="tk-trash" aria-label="Remove plan" onClick={onRemove}><Trash2 size={15} /></button>
+      </div>
+      <div className="tk-plan__bar"><i className={met ? "is-met" : ""} style={{ width: `${pct}%` }} /></div>
+      <p>
+        {plan.ended
+          ? `Finished · ${plan.weeks_met} of ${plan.total_weeks} weeks hit`
+          : `${plan.this_week} of ${plan.per_week} this week · week ${plan.week_index} of ${plan.total_weeks} · ends ${planEnd(plan.end_date)}`}
+      </p>
+    </div>
+  );
+}
 const DAY_LABEL = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
 const ROW_LABEL = ["M", "T", "W", "T", "F", "S", "S"];
 const WEEKS = 20;
@@ -76,6 +96,10 @@ export default function TasksPage() {
   const [error, setError] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  const [kind, setKind] = useState<PlanKind>("post");
+  const [perWeek, setPerWeek] = useState(5);
+  const [unit, setUnit] = useState<"weeks" | "months">("weeks");
+  const [duration, setDuration] = useState(4);
   const [heatKey, setHeatKey] = useState(0); // remount the grid after a change so it refetches
 
   const load = useCallback(async () => {
@@ -87,6 +111,13 @@ export default function TasksPage() {
     }
   }, [today]);
   useEffect(() => { load(); }, [load]);
+
+  // While the server is reading your X account, check back until it has finished.
+  useEffect(() => {
+    if (!state?.syncing) return;
+    const t = setTimeout(() => { load().then(() => setHeatKey((k) => k + 1)); }, 6000);
+    return () => clearTimeout(t);
+  }, [state, load]);
 
   const refreshAll = async () => { await load(); setHeatKey((k) => k + 1); };
 
@@ -122,6 +153,28 @@ export default function TasksPage() {
     }
   };
 
+  const onStartPlan = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await addPlan({ kind, per_week: perWeek, unit, duration, today });
+      await refreshAll();
+    } catch (e: any) {
+      setError(e.message ?? "Couldn't start that plan");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onRemovePlan = async (id: string) => {
+    try {
+      await deletePlan(id);
+      await refreshAll();
+    } catch (e: any) {
+      setError(e.message ?? "Couldn't remove that plan");
+    }
+  };
+
   const onDelete = async (id: string) => {
     try {
       await deleteTask(id);
@@ -132,7 +185,6 @@ export default function TasksPage() {
   };
 
   const firstName = (user?.name ?? user?.username ?? "").split(" ")[0];
-  const have = new Set((state?.tasks ?? []).map((t) => t.title.trim().toLowerCase()));
 
   return (
     <div className="tk">
@@ -173,21 +225,45 @@ export default function TasksPage() {
           </div>
         </section>
 
-        <aside className="tk-presets">
-          <h3>Creator Habits &amp; Presets</h3>
-          <ul>
-            {PRESETS.map((p) => (
-              <li key={p}>
-                <span className="ic"><img src="/dash/ic-followers.svg" alt="" /></span>
-                <span className="tx">{p}</span>
-                <button type="button" aria-label={`Add ${p}`} disabled={have.has(p.toLowerCase()) || busy} onClick={() => onAdd(p)}><Plus size={18} /></button>
-              </li>
-            ))}
-          </ul>
+        <aside className="tk-builder">
+          <h3>Plan your week</h3>
+          <div className="tk-builder__body">
+            <label>What do you want to do?
+              <select value={kind} onChange={(e) => setKind(e.target.value as PlanKind)}>
+                {(Object.keys(KIND_LABEL) as PlanKind[]).map((k) => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}
+              </select>
+            </label>
+            <label>How many each week?
+              <select value={perWeek} onChange={(e) => setPerWeek(Number(e.target.value))}>
+                {Array.from({ length: 30 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n} per week</option>)}
+              </select>
+            </label>
+            <div className="tk-builder__row">
+              <label>For how long?
+                <select value={duration} onChange={(e) => setDuration(Number(e.target.value))}>
+                  {Array.from({ length: unit === "weeks" ? 12 : 6 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </label>
+              <label>&nbsp;
+                <select value={unit} onChange={(e) => { const u = e.target.value as "weeks" | "months"; setUnit(u); setDuration((d) => Math.min(d, u === "weeks" ? 12 : 6)); }}>
+                  <option value="weeks">weeks</option>
+                  <option value="months">months</option>
+                </select>
+              </label>
+            </div>
+            <button type="button" className="tk-builder__go" disabled={busy} onClick={onStartPlan}>{busy ? "Starting…" : "Start plan"}</button>
+            <small>We read your connected X account and light up your streak when you do the work.</small>
+          </div>
         </aside>
 
         <div className="tk-list">
-          {state && state.tasks.length === 0 && <p className="tk-empty">No tasks yet. Add one below, or pick a preset.</p>}
+          {state && state.plans.length > 0 && (
+            <div className="tk-plans">
+              {state.syncing && <p className="tk-sync">Checking your X account…</p>}
+              {state.plans.map((p) => <PlanCard key={p.id} plan={p} onRemove={() => onRemovePlan(p.id)} />)}
+            </div>
+          )}
+          {state && state.tasks.length === 0 && <p className="tk-empty">No personal tasks yet. Add one below, or start a weekly plan.</p>}
           {state?.tasks.map((t) => (
             <div className={t.done ? "tk-task is-done" : "tk-task"} key={t.id}>
               <button type="button" className="tk-box" aria-label={t.done ? "Mark not done" : "Mark done"} onClick={() => onToggle(t.id)}>
